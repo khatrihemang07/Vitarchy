@@ -1,0 +1,7 @@
+target
+node_modules
+.env
+dist
+web/openapi.json
+*.tsbuildinfo
+.DS_Store

@@ -1,0 +1,92 @@
+/* Global base styles: typography, texture (grain) and accent glow. */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  body {
+    @apply min-h-dvh bg-background;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--module-accent) 40%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/*
+ * Subtle film grain. The noise is an inline SVG data URI, so it costs no
+ * network request.
+ */
+@utility bg-grain {
+  position: relative;
+  &::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.06;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/* Soft accent glow behind the page; follows --module-accent. */
+@utility bg-glow {
+  background-image:
+    radial-gradient(60rem 36rem at 85% -12%, color-mix(in srgb, var(--module-accent) 16%, transparent), transparent 70%),
+    radial-gradient(40rem 28rem at -10% 110%, color-mix(in srgb, var(--module-accent) 8%, transparent), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* Chroma card: accent-tinted gradient, border and glow. */
+@utility surface-chroma {
+  background-image: linear-gradient(
+    155deg,
+    color-mix(in srgb, var(--module-accent) 18%, var(--card)),
+    var(--card) 62%
+  );
+  border: 1px solid color-mix(in srgb, var(--module-accent) 35%, transparent);
+  box-shadow: var(--shadow-card);
+}
+
+/* Shell frame: fixed sidebar column beside the content. */
+@utility grid-cols-shell {
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+}
+
+/* Keyboard focus ring, driven by the focus tokens. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 var(--focus-ring-width)
+      color-mix(in srgb, var(--ring) var(--focus-ring-opacity), transparent);
+  }
+}
+
+/* Hexagonal badge outline (Quest achievements). */
+@utility clip-hex {
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}

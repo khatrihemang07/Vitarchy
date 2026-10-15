@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vitarchy
+      POSTGRES_PASSWORD: vitarchy
+      POSTGRES_DB: vitarchy
+    ports:
+      # Host port is configurable because 5432 is often taken by another local Postgres.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - vitarchy-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vitarchy -d vitarchy"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  vitarchy-pgdata:

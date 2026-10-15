@@ -1,0 +1,169 @@
+/*
+ * Vitarchy design tokens. Single source of truth for colour, radius, shadow,
+ * type and timing. Components use the utilities these generate (bg-card,
+ * text-module, shadow-key, duration-base, ...) and never hard-code values.
+ *
+ * Dark-first: the app ships dark-only. The shadcn semantic names are mapped
+ * onto the Chroma + Quest palette below.
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* The app is dark-only; the class on <html> keeps shadcn's dark: variants on. */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (shadcn semantic names) */
+  --background: #0e0e13;
+  --foreground: #f4f3fa;
+  --card: #17171f;
+  --card-foreground: #f4f3fa;
+  --popover: #1d1d28;
+  --popover-foreground: #f4f3fa;
+  --secondary: #1d1d28;
+  --secondary-foreground: #f4f3fa;
+  --muted: #1d1d28;
+  --muted-foreground: #a09eb4;
+  --accent: #24242f;
+  --accent-foreground: #f4f3fa;
+  --destructive: #ff6b7a;
+  --border: #2c2c3a;
+  --input: #2c2c3a;
+
+  /* Brand and per-module accents */
+  --brand: #ff8ad8;
+  --module-time: #9d6bff;
+  --module-finance: #b6f23a;
+  --on-accent: #0e0e13;
+
+  /*
+   * The active module's accent. The shell overrides this on its root element
+   * from the module manifest; primary, ring and every `module` utility follow.
+   */
+  --module-accent: var(--brand);
+  --primary: var(--module-accent);
+  --primary-foreground: var(--on-accent);
+  --ring: var(--module-accent);
+
+  /* Quest layer */
+  --xp-from: #8cb0ff;
+  --xp-to: #a46bff;
+  --xp-track: #0f0c20;
+  --flame: #ff9a3c;
+  --flame-hot: #ff5a3c;
+  --gold: #ffcf48;
+  --mint: #7be0b0;
+  --sky: #8cb0ff;
+  --success: #5fd6a0;
+  --warning: #ffcf48;
+
+  /* Shape and depth */
+  --radius: 1.375rem;
+  --shadow-key-color: #07070a;
+
+  /* Timing */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 600ms;
+
+  /* Layout and focus */
+  --sidebar-width: 16rem;
+  --focus-ring-width: 3px;
+  --focus-ring-opacity: 50%;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-module: var(--module-accent);
+  --color-on-accent: var(--on-accent);
+  --color-brand: var(--brand);
+  --color-time: var(--module-time);
+  --color-finance: var(--module-finance);
+
+  --color-xp-from: var(--xp-from);
+  --color-xp-to: var(--xp-to);
+  --color-xp-track: var(--xp-track);
+  --color-flame: var(--flame);
+  --color-flame-hot: var(--flame-hot);
+  --color-gold: var(--gold);
+  --color-mint: var(--mint);
+  --color-sky: var(--sky);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --radius-sm: calc(var(--radius) * 0.45);
+  --radius-md: calc(var(--radius) * 0.65);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.3);
+  --radius-2xl: calc(var(--radius) * 1.6);
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Tactile "key" shadow (Chroma) and accent glows */
+  --shadow-key: 0 4px 0 var(--shadow-key-color);
+  --shadow-key-hover: 0 6px 0 var(--shadow-key-color);
+  --shadow-key-pressed: 0 1px 0 var(--shadow-key-color);
+  --shadow-card: 0 14px 34px -16px color-mix(in srgb, var(--module-accent) 70%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+  --shadow-glow: 0 0 24px -4px color-mix(in srgb, var(--module-accent) 55%, transparent);
+
+  --shadow-glow-warning: 0 0 28px -10px var(--warning);
+  --shadow-glow-destructive: 0 0 28px -10px var(--destructive);
+  --drop-shadow-flame-hot: 0 0 6px var(--flame-hot);
+
+  /* Micro type for compact badges */
+  --text-2xs: 0.55rem;
+
+  --background-image-brand-conic: conic-gradient(
+    var(--module-time),
+    var(--module-finance),
+    var(--brand),
+    var(--module-time)
+  );
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-flame: flame 1.2s ease-in-out infinite alternate;
+  --animate-fade-up: fade-up var(--duration-slow) var(--ease-spring) both;
+
+  @keyframes flame {
+    from {
+      transform: scale(1) rotate(-4deg);
+    }
+    to {
+      transform: scale(1.15, 1.2) rotate(5deg);
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
