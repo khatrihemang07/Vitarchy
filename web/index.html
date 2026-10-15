@@ -1,8 +1,15 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Browser chrome colours: keep in step with --background in src/design/theme/tokens.css (light and dark). -->
+    <meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e0e13" media="(prefers-color-scheme: dark)" />
+    <!-- Blocking on purpose: sets the theme before first paint so there is no flash. -->
+    <script src="/appearance-boot.js"></script>
     <title>Vitarchy</title>
   </head>
   <body>

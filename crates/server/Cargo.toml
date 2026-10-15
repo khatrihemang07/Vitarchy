@@ -15,6 +15,7 @@ path = "src/main.rs"
 
 [dependencies]
 vitarchy-core.workspace = true
+vitarchy-settings.workspace = true
 axum.workspace = true
 tokio.workspace = true
 sqlx.workspace = true

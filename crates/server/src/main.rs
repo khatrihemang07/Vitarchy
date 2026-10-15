@@ -31,7 +31,7 @@ async fn main() -> ExitCode {
 }
 
 fn print_openapi() -> ExitCode {
-    match openapi::spec(registry::modules()).to_pretty_json() {
+    match openapi::spec(registry::all()).to_pretty_json() {
         Ok(json) => {
             println!("{json}");
             ExitCode::SUCCESS
@@ -51,7 +51,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let pool = PgPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_secs(5))
         .connect_lazy(&config.database_url)?;
-    let modules = registry::modules();
+    let modules = registry::all();
     migrate::run(&pool, &modules).await?;
 
     let router = app::build(AppState::new(pool), modules);

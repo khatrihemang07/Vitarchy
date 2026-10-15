@@ -5,7 +5,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "src/api/schema.d.ts", "openapi.json"] },
+  { ignores: ["dist", "public", "src/api/schema.d.ts", "openapi.json"] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {

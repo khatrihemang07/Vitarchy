@@ -3,10 +3,13 @@ import {
   createRoute,
   createRouter,
   lazyRouteComponent,
+  redirect,
 } from "@tanstack/react-router";
 import { HomePage } from "./home/HomePage";
 import type { ModuleManifest } from "./module-manifest";
 import { buildNav } from "./nav";
+import { SettingsRoute } from "./settings/SettingsRoute";
+import { buildSections } from "./settings/sections";
 import { Shell } from "./shell/Shell";
 
 /** Folded to `undefined` in production builds, so the showcase is not even bundled. */
@@ -22,11 +25,25 @@ export function createAppRouter(
   { includeDesignShowcase = import.meta.env.DEV }: RouterOptions = {},
 ) {
   const nav = buildNav(modules);
-  const root = createRootRoute({ component: () => <Shell nav={nav} /> });
+  const sections = buildSections(modules);
+  const root = createRootRoute({ component: () => <Shell nav={nav} sections={sections} /> });
   const home = createRoute({
     getParentRoute: () => root,
     path: "/",
     component: () => <HomePage moduleCount={modules.length} />,
+  });
+  const settingsIndex = createRoute({
+    getParentRoute: () => root,
+    path: "/settings",
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router's redirect() is thrown by design.
+      throw redirect({ to: "/settings/$section", params: { section: sections[0]?.id ?? "general" } });
+    },
+  });
+  const settings = createRoute({
+    getParentRoute: () => root,
+    path: "/settings/$section",
+    component: () => <SettingsRoute sections={sections} />,
   });
   const design =
     includeDesignShowcase && loadShowcase
@@ -41,6 +58,8 @@ export function createAppRouter(
   return createRouter({
     routeTree: root.addChildren([
       home,
+      settingsIndex,
+      settings,
       ...design,
       ...modules.flatMap((m) => m.routes(root)),
     ]),

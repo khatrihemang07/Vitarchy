@@ -17,7 +17,7 @@ db: ## Start Postgres and wait until healthy
 db-stop: ## Stop Postgres
 	docker compose stop
 
-dev: setup db ## Run API (127.0.0.1:3000) and UI (127.0.0.1:5173); Ctrl+C stops both
+dev: setup db ## Run API (127.0.0.1:3000) and UI (127.0.0.1:7420); Ctrl+C stops both
 	@trap 'kill $$(jobs -p) 2>/dev/null' EXIT INT TERM; \
 	cargo run -p vitarchy-server & \
 	pnpm --dir web dev & \

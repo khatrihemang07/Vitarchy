@@ -10,11 +10,17 @@ import {
   CommandList,
   MotionButton,
 } from "@/design";
-import { HOME_NAV, type NavEntry } from "../nav";
+import { HOME_NAV, SETTINGS_NAV, type NavEntry } from "../nav";
+import type { SettingsSection } from "../settings/schema";
 import { useCommandHotkey } from "./useCommandHotkey";
 
 /** Quick-add / jump bar. Navigation only until Modules contribute actions. */
-export function CommandBar({ nav }: { nav: readonly NavEntry[] }) {
+interface CommandBarProps {
+  nav: readonly NavEntry[];
+  sections: readonly SettingsSection[];
+}
+
+export function CommandBar({ nav, sections }: CommandBarProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const toggle = useCallback(() => {
@@ -61,6 +67,26 @@ export function CommandBar({ nav }: { nav: readonly NavEntry[] }) {
                 }}
               >
                 <Icon /> {label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Settings">
+            <CommandItem
+              onSelect={() => {
+                go(SETTINGS_NAV.to);
+              }}
+            >
+              <SETTINGS_NAV.icon /> {SETTINGS_NAV.label}
+            </CommandItem>
+            {sections.map(({ id, label, icon: Icon }) => (
+              <CommandItem
+                key={id}
+                value={`Settings ${label}`}
+                onSelect={() => {
+                  go(`/settings/${id}`);
+                }}
+              >
+                <Icon /> Settings: {label}
               </CommandItem>
             ))}
           </CommandGroup>

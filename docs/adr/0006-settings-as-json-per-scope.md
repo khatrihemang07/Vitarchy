@@ -1,0 +1,5 @@
+# Settings stored as one JSON document per scope
+
+Settings live on the server in a single `settings.entries` table, with one JSONB document per scope (`core`, or a Module's id). Core settings are a typed Rust struct, validated by the server, where every field has a default, so adding a setting needs no data migration. Module settings are declared in the Module's frontend manifest and rendered by one generic Settings page. The server only checks that they are a JSON object under a valid Module id, and the app applies the defaults and types. We chose this over a table or endpoint per Module so a Module can add settings without touching the server or the Settings page. The trade-off is that Module settings are not validated by the server; a Module that needs that can validate in its own crate later.
+
+The settings code is a Core feature, not a Module. It reuses the `Module` contract (router, migrator, own schema) but is listed in the server's separate `CORE` registry, so it never appears as a life area in the app.

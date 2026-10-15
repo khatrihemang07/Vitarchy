@@ -4,9 +4,12 @@ import {
   createRoute,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Wallet } from "lucide-react";
 import type { ModuleManifest } from "./module-manifest";
 import { createAppRouter } from "./router";
+import { DEFAULT_CORE } from "./settings/core-sections";
 
 const timeModule: ModuleManifest = {
   id: "time",
@@ -32,6 +35,20 @@ function renderAt(path: string, modules: ModuleManifest[], includeDesignShowcase
     </QueryClientProvider>,
   );
 }
+
+const financeModule: ModuleManifest = {
+  id: "finance",
+  label: "Finance",
+  accent: "#0a8",
+  icon: () => null,
+  routes: () => [],
+  navItem: { to: "/finance" },
+  settings: {
+    label: "Finance",
+    icon: Wallet,
+    fields: [{ kind: "toggle", key: "roundUp", label: "Round up savings", default: false }],
+  },
+};
 
 describe("app router", () => {
   beforeEach(() => {
@@ -79,9 +96,52 @@ describe("app router", () => {
     expect(screen.queryByRole("heading", { name: "Design system" })).not.toBeInTheDocument();
   });
 
+  it("links Settings from the sidebar", async () => {
+    renderAt("/", []);
+    expect(await screen.findByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings/general",
+    );
+  });
+
+  it("lists Settings and each section in the command bar", async () => {
+    renderAt("/", []);
+    await userEvent.click(await screen.findByRole("button", { name: /quick add/i }));
+    expect(await screen.findByRole("option", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Settings: Appearance" })).toBeInTheDocument();
+  });
+
+  it("opens a settings section from the command bar", async () => {
+    renderAt("/", []);
+    await userEvent.click(await screen.findByRole("button", { name: /quick add/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Settings: Appearance" }));
+    await waitFor(() => {
+      expect(screen.getByRole("navigation", { name: "Settings sections" })).toBeInTheDocument();
+    });
+  });
+
   it("builds nav links and routes from the registry", async () => {
     renderAt("/time", [timeModule]);
     expect(await screen.findByText("time page")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Time/ })).toHaveAttribute("href", "/time");
+  });
+
+  it("shows a Module's declared settings in the Settings nav and at /settings/<id>", async () => {
+    const reply = (body: unknown) =>
+      new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(reply({ core: DEFAULT_CORE, modules: { finance: { roundUp: true } } })),
+    );
+    renderAt("/settings/finance", [timeModule, financeModule]);
+
+    const nav = await screen.findByRole("navigation", { name: "Settings sections" });
+    // Only Modules that declare `settings` get a section.
+    expect(within(nav).getAllByRole("link").map((l) => l.textContent)).toEqual([
+      "General",
+      "Appearance",
+      "Finance",
+    ]);
+    expect(await screen.findByRole("heading", { name: "Finance" })).toBeInTheDocument();
+    expect(await screen.findByRole("switch", { name: "Round up savings" })).toBeChecked();
   });
 });

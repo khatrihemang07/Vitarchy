@@ -7,7 +7,7 @@ export function AddModuleButton() {
     <Button
       variant="outline"
       disabled
-      className="shrink-0 rounded-full border-dashed text-muted-foreground"
+      className="shrink-0 rounded-full border-dashed text-muted-foreground disabled:opacity-100"
     >
       <Plus />
       Add module

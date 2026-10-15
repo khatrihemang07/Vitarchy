@@ -1,58 +1,52 @@
 # Vitarchy
 
-A personal life-management app built from Modules (Time, Finance, ...). Rust (Axum) server, Postgres, and a React SPA. See `GLOSSARY.md` and `docs/adr/`.
+Your personal life-management app. Vitarchy grows one area of life at a time (time, money and more), each as its own **Module**, behind a colourful, game-flavoured interface.
 
-**Local-only.** Everything runs on your machine. The server binds to `127.0.0.1` only (a non-loopback `BIND_ADDR` is rejected), and the frontend loads no external runtime resources: no CDN scripts or fonts, no analytics, no remote API calls. All assets are bundled.
+It runs entirely on your own machine. Your data stays in a local database, and the app never talks to the internet.
 
-## Prerequisites
-Rust (stable), Node 22+, pnpm, Docker.
+## Features
 
-## Run
+- **Modular.** Each area of life is a self-contained Module. None are built yet; Time and Finance come first.
+- **Settings in one place.** Theme (light, dark or system), motion, your name, week start, clock and date format. Modules add their own sections.
+- **Chroma + Quest design.** Each Module has its own accent colour, with springy motion and game touches like XP, levels and streaks.
+- **Private by default.** The server listens only on `127.0.0.1`, and nothing loads from the internet.
+
+## Quick start
+
+You need [Rust](https://rustup.rs), [Node 22+](https://nodejs.org), [pnpm](https://pnpm.io) and [Docker](https://www.docker.com).
+
 ```sh
-make dev                          # does everything below: .env, deps, Postgres, API + UI; Ctrl+C stops both
-make help                         # other targets: db, db-stop, gen-api, check
-```
-Or step by step:
-```sh
-cp .env.example .env              # once
-docker compose up -d              # Postgres 17 on 127.0.0.1:5433
-cargo run -p vitarchy-server      # API on http://127.0.0.1:3000
-cd web && cp .env.example .env    # once (optional)
-pnpm install && pnpm dev          # UI on http://127.0.0.1:5173 (proxies /api)
-```
-Check it: `curl localhost:3000/api/health` returns `{"status":"ok","db":"ok"}`. The OpenAPI document is at `/api/openapi.json`.
-
-## Test and check
-```sh
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace            # needs Postgres up and DATABASE_URL (from .env)
-cd web && pnpm gen:api            # regenerate src/api/schema.d.ts after API changes
-pnpm typecheck && pnpm lint && pnpm test && pnpm build
+make dev
 ```
 
-## Adding a Module
-- Backend: new crate in `crates/modules/<id>` depending only on `vitarchy-core`, exporting `fn module() -> Module` (built with `Module::new`); the Module owns one Postgres schema named after its id, and its migrations create and use only that schema; add it to the workspace members, to `crates/server/Cargo.toml`, and one line in `crates/server/src/registry.rs`.
-- Frontend: new folder `web/src/modules/<id>/` whose `index.ts` exports a `ModuleManifest` (`id`, `label`, `accent`, `icon`, `routes`, `navItem`); add one entry in `web/src/app/modules.ts`. Nav, routes, command bar and accent colour all flow from the manifest. A Module imports only `@/design`, `@/api` and `app/` public helpers, never another Module.
+Then open **http://127.0.0.1:7420**. Press Ctrl+C to stop.
 
-## Design system
-Dark-only "Chroma + Quest" look on shadcn/ui, Tailwind v4 and Motion. All of it lives in `web/src/design/` and is imported from the barrel (`import { Button, XpBar } from "@/design"`); deep paths are blocked by ESLint outside `design/`.
-```
-design/theme    tokens.css (@theme: colours, radius, shadows, timing), base.css (grain, glow), fonts.ts
-design/ui       shadcn components (generated: `pnpm dlx shadcn add <name>`, close to upstream)
-design/effects  copied-in Magic UI effects (NumberTicker, BorderBeam, MagicCard)
-design/motion   spring presets, MotionProvider (honours reduced motion), MotionButton, Pressable
-design/quest    Vitarchy primitives: XpBar, LevelBadge, StreakFlame, AchievementBadge, StatCard, QuestList
-```
-Everything is bundled: fonts come from `@fontsource-variable/*`, the grain texture is an inline SVG. Run `pnpm dev` and open `/design` for a showcase of every primitive (dev builds only; it uses sample data).
+The first run creates your `.env` files, installs packages and starts the database for you.
 
-**Module accent.** A manifest's `accent` (any CSS colour) is all a Module needs. The shell sets `--module-accent` on its root from the active route, so `text-module`, `bg-module/20`, primary buttons and focus rings pick it up. Home uses the brand colour.
+## Everyday commands
 
-## Layout
+| Command | What it does |
+|---|---|
+| `make dev` | Start everything (database, API, app) |
+| `make check` | Run every lint and test |
+| `make db` / `make db-stop` | Start or stop just the database |
+| `make gen-api` | Refresh the app's API types after changing the server |
+| `make help` | List all commands |
+
+## Settings
+
+Open **Settings** from the gear at the bottom of the sidebar, or press **⌘K** and type "settings". Changes save as you make them.
+
+## Project layout
+
 ```
-crates/core     Module contract, AppState, ApiError, telemetry (no domain types)
-crates/server   composition root: registry, app, health, migrations, openapi CLI
-web/src/app     shell, router, home, module registry
-web/src/design  design system (see above)
-web/src/api     generated schema + typed client
-web/src/modules one folder per Module
+crates/      Rust server: core, settings, server (and one crate per Module)
+web/         React app: app shell, design system, API client, modules
+docs/        development guide and architecture decisions
 ```
+
+## Learn more
+
+- [Development guide](docs/development.md): architecture, adding a Module, design system, checks
+- [Glossary](GLOSSARY.md): what words like Module, Core and Setting mean here
+- [Decisions](docs/adr/): why things are the way they are

@@ -21,10 +21,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** All settings, with defaults filled in for anything not yet saved. */
+        get: operations["get_all"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/core": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replaces the core settings. */
+        put: operations["put_core"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/modules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replaces one Module's settings. The shape is the Module's own business. */
+        put: operations["put_module"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AllSettings: {
+            core: components["schemas"]["CoreSettings"];
+            /** @description Each Module's settings object, keyed by Module id. */
+            modules: {
+                [key: string]: Record<string, never>;
+            };
+        };
+        /** @enum {string} */
+        Clock: "system" | "h12" | "h24";
+        /**
+         * @description Settings that apply across all of Vitarchy. Missing keys fall back to their
+         *     defaults, so adding a setting later needs no data migration.
+         */
+        CoreSettings: {
+            /** @default system */
+            clock: components["schemas"]["Clock"];
+            /** @default system */
+            date_format: components["schemas"]["DateFormat"];
+            /**
+             * @description What Vitarchy calls the user; trimmed, at most 50 characters.
+             * @default
+             */
+            display_name: string;
+            /** @default system */
+            motion: components["schemas"]["Motion"];
+            /** @default system */
+            theme: components["schemas"]["Theme"];
+            /** @default monday */
+            week_start: components["schemas"]["WeekStart"];
+        };
+        /** @enum {string} */
+        DateFormat: "system" | "day_month_year" | "month_day_year" | "iso";
         /** @enum {string} */
         DbStatus: "ok" | "down";
         Health: {
@@ -32,7 +115,22 @@ export interface components {
             status: components["schemas"]["Status"];
         };
         /** @enum {string} */
+        Motion: "system" | "reduced" | "full";
+        /** @description JSON body of every error response (`application/problem+json`). */
+        Problem: {
+            detail: string;
+            /** Format: int32 */
+            status: number;
+            title: string;
+            /** @description URI identifying the problem type; `about:blank` when the status says it all. */
+            type: string;
+        };
+        /** @enum {string} */
         Status: "ok" | "degraded";
+        /** @enum {string} */
+        Theme: "system" | "light" | "dark";
+        /** @enum {string} */
+        WeekStart: "monday" | "sunday";
     };
     responses: never;
     parameters: never;
@@ -67,6 +165,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    get_all: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Core and Module settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllSettings"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    put_core: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoreSettings"];
+            };
+        };
+        responses: {
+            /** @description The saved core settings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoreSettings"];
+                };
+            };
+            /** @description Invalid settings */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    put_module: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Module id: lowercase letters, digits and dashes, at most 32 characters */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description The Module's settings object */
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description The saved settings object */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            /** @description Invalid Module id or body is not a JSON object */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
                 };
             };
         };

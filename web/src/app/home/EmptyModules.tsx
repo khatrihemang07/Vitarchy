@@ -22,7 +22,7 @@ export function EmptyModules() {
       <QuestList quests={firstQuest} className="mt-4" />
       <p className="mt-2 text-xs text-muted-foreground">
         Modules are added in code: one folder in <code className="font-mono">src/modules</code> plus
-        one registry entry. See the README.
+        one registry entry. See docs/development.md.
       </p>
     </section>
   );

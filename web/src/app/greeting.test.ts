@@ -1,4 +1,4 @@
-import { formatLongDate, greetingFor } from "./greeting";
+import { greeting, greetingFor } from "./greeting";
 
 const at = (hour: number) => new Date(2026, 9, 16, hour, 30);
 
@@ -17,8 +17,16 @@ describe("greetingFor", () => {
   });
 });
 
-describe("formatLongDate", () => {
-  it("writes weekday, month and day in English", () => {
-    expect(formatLongDate(new Date(2026, 9, 16))).toBe("Friday, October 16");
+describe("greeting", () => {
+  it("adds the display name", () => {
+    expect(greeting(at(20), "Hemang")).toBe("Good evening, Hemang");
+  });
+
+  it.each(["", "   "])("omits a blank name (%j)", (name) => {
+    expect(greeting(at(8), name)).toBe("Good morning");
+  });
+
+  it("trims the name", () => {
+    expect(greeting(at(14), "  Ada ")).toBe("Good afternoon, Ada");
   });
 });

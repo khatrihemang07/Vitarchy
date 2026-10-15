@@ -1,4 +1,4 @@
-import { Home } from "lucide-react";
+import { Home, Settings } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleManifest } from "./module-manifest";
 
@@ -12,6 +12,9 @@ export interface NavEntry {
 
 /** Home is not a Module, so it has no manifest or accent; the shell and command bar both list it from here. */
 export const HOME_NAV = { label: "Home", to: "/", icon: Home } as const;
+
+/** Settings is Core too: the gear in the sidebar and the command bar both link here. */
+export const SETTINGS_NAV = { label: "Settings", to: "/settings/general", icon: Settings } as const;
 
 export function buildNav(modules: readonly ModuleManifest[]): NavEntry[] {
   return modules.map((m) => ({

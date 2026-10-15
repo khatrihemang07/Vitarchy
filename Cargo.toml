@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/server"]
+members = ["crates/core", "crates/settings", "crates/server"]
 # Module crates (crates/modules/*) are added here, one line each.
 
 [workspace.package]
@@ -11,6 +11,7 @@ publish = false
 
 [workspace.dependencies]
 vitarchy-core = { path = "crates/core" }
+vitarchy-settings = { path = "crates/settings" }
 
 axum = "0.8.9"
 tokio = { version = "1.53", features = ["macros", "rt-multi-thread", "net", "signal", "time"] }

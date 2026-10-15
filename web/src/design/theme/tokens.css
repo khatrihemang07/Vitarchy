@@ -3,16 +3,19 @@
  * type and timing. Components use the utilities these generate (bg-card,
  * text-module, shadow-key, duration-base, ...) and never hard-code values.
  *
- * Dark-first: the app ships dark-only. The shadcn semantic names are mapped
- * onto the Chroma + Quest palette below.
+ * Two themes share every name: dark (the default, `:root`) and light
+ * (`[data-theme=light]`, soft paper). The shadcn semantic names are mapped
+ * onto the Chroma + Quest palette below. The theme is chosen by `data-theme`
+ * on <html>, set before first paint by public/appearance-boot.js.
  */
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* The app is dark-only; the class on <html> keeps shadcn's dark: variants on. */
-@custom-variant dark (&:is(.dark *));
+/* shadcn's dark: variants follow the theme attribute. */
+@custom-variant dark (&:is([data-theme="dark"], [data-theme="dark"] *));
 
-:root {
+:root,
+[data-theme="dark"] {
   color-scheme: dark;
 
   /* Surfaces (shadcn semantic names) */
@@ -63,6 +66,15 @@
   --radius: 1.375rem;
   --shadow-key-color: #07070a;
 
+  /* Theme-dependent depth and texture */
+  --highlight: rgb(255 255 255 / 0.08);
+  --card-shadow-strength: 70%;
+  --glow-strength: 55%;
+  --page-glow-top: 16%;
+  --page-glow-bottom: 8%;
+  --grain-opacity: 0.06;
+  --grain-blend: overlay;
+
   /* Timing */
   --duration-fast: 150ms;
   --duration-base: 250ms;
@@ -72,6 +84,61 @@
   --sidebar-width: 16rem;
   --focus-ring-width: 3px;
   --focus-ring-opacity: 50%;
+}
+
+/* The logo's colours: the same in both themes, matching public/favicon.svg. */
+:root {
+  --logo-pink: #ff8ad8;
+  --logo-violet: #9d6bff;
+  --logo-lime: #b6f23a;
+  --logo-shadow: #3b1a7a;
+  --logo-letter: #ffffff;
+}
+
+/* Soft paper: warm off-white, white cards, ink text, accents deepened for AA. */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --background: #f6f3ec;
+  --foreground: #1e1b2e;
+  --card: #ffffff;
+  --card-foreground: #1e1b2e;
+  --popover: #ffffff;
+  --popover-foreground: #1e1b2e;
+  --secondary: #ece7db;
+  --secondary-foreground: #1e1b2e;
+  --muted: #ece7db;
+  --muted-foreground: #5c5870;
+  --accent: #e9e3d5;
+  --accent-foreground: #1e1b2e;
+  --destructive: #c4243c;
+  --border: #ddd6c6;
+  --input: #cfc7b4;
+
+  --brand: #c4207f;
+  --module-time: #6d3ae6;
+  --module-finance: #4a7a0c;
+  --on-accent: #ffffff;
+
+  --xp-from: #3b6fe0;
+  --xp-to: #7c3aed;
+  --xp-track: #e4def0;
+  --flame: #e8630a;
+  --flame-hot: #d9381e;
+  --gold: #b7791f;
+  --mint: #1f9d6a;
+  --sky: #2f6fe0;
+  --success: #15804f;
+  --warning: #a8620a;
+
+  --shadow-key-color: #d5ccb6;
+  --highlight: rgb(255 255 255 / 0.9);
+  --card-shadow-strength: 30%;
+  --glow-strength: 28%;
+  --page-glow-top: 10%;
+  --page-glow-bottom: 5%;
+  --grain-opacity: 0.035;
+  --grain-blend: multiply;
 }
 
 @theme inline {
@@ -125,9 +192,9 @@
   --shadow-key: 0 4px 0 var(--shadow-key-color);
   --shadow-key-hover: 0 6px 0 var(--shadow-key-color);
   --shadow-key-pressed: 0 1px 0 var(--shadow-key-color);
-  --shadow-card: 0 14px 34px -16px color-mix(in srgb, var(--module-accent) 70%, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 0.08);
-  --shadow-glow: 0 0 24px -4px color-mix(in srgb, var(--module-accent) 55%, transparent);
+  --shadow-card: 0 14px 34px -16px color-mix(in srgb, var(--module-accent) var(--card-shadow-strength), transparent),
+    inset 0 1px 0 var(--highlight);
+  --shadow-glow: 0 0 24px -4px color-mix(in srgb, var(--module-accent) var(--glow-strength), transparent);
 
   --shadow-glow-warning: 0 0 28px -10px var(--warning);
   --shadow-glow-destructive: 0 0 28px -10px var(--destructive);
@@ -135,13 +202,6 @@
 
   /* Micro type for compact badges */
   --text-2xs: 0.55rem;
-
-  --background-image-brand-conic: conic-gradient(
-    var(--module-time),
-    var(--module-finance),
-    var(--brand),
-    var(--module-time)
-  );
 
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --animate-flame: flame 1.2s ease-in-out infinite alternate;
