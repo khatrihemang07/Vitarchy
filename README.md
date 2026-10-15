@@ -9,6 +9,11 @@ Rust (stable), Node 22+, pnpm, Docker.
 
 ## Run
 ```sh
+make dev                          # does everything below: .env, deps, Postgres, API + UI; Ctrl+C stops both
+make help                         # other targets: db, db-stop, gen-api, check
+```
+Or step by step:
+```sh
 cp .env.example .env              # once
 docker compose up -d              # Postgres 17 on 127.0.0.1:5433
 cargo run -p vitarchy-server      # API on http://127.0.0.1:3000
