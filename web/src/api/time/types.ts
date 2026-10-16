@@ -33,3 +33,20 @@ export type ActivityTrend = components["schemas"]["Trend"];
 export type ActivityOverview = components["schemas"]["Overview"];
 /** Which weekday a week starts on. */
 export type WeekStart = components["schemas"]["WeekStart"];
+
+/** Everything the Life log tab draws for a Period, from one response. */
+export type LifeLogOverview = components["schemas"]["LifeLogOverview"];
+/** One Day's hours per project and its unlogged time. */
+export type LifeLogDaySplit = components["schemas"]["DaySplit"];
+/** Logged time by project and by description. */
+export type LifeLogTotals = components["schemas"]["LifeLogTotals"];
+/** One project's time, with its descriptions. */
+export type LifeLogProjectTotal = components["schemas"]["ProjectTotal"];
+/** One description's time. */
+export type LifeLogDescriptionTotal = components["schemas"]["DescriptionTotal"];
+/** When a frequent description usually starts, ends and how long it lasts. */
+export type LifeLogDescriptionStat = components["schemas"]["DescriptionStat"];
+/** One Day's lane of Time Entries. */
+export type LifeLogTimeline = components["schemas"]["LifeLogTimeline"];
+/** One Time Entry's part of a Day. */
+export type LifeLogSpan = components["schemas"]["LifeLogSpan"];

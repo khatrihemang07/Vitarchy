@@ -125,3 +125,39 @@ pub async fn stats(pool: &PgPool) -> Result<Stats, sqlx::Error> {
     .fetch_one(pool)
     .await
 }
+
+/// A stored entry with its project's name and colour, as analysis needs it.
+#[derive(Debug, sqlx::FromRow)]
+pub struct Stored {
+    /// The project's name; `None` when the entry has no project, or one that was never synced.
+    pub project: Option<String>,
+    /// The project's Toggl colour.
+    pub color: Option<String>,
+    /// The description as stored.
+    pub description: String,
+    /// When it began.
+    pub start_at: DateTime<Utc>,
+    /// When it ended.
+    pub end_at: DateTime<Utc>,
+}
+
+/// Entries that overlap `[from, to)`, earliest first. An entry overlapping `from` cannot
+/// have started earlier than `from` minus the longest stored entry, so `start` is bounded on
+/// both sides (the `start` index is used) and the longest entry comes from `time_entries_span_idx`.
+pub async fn overlapping(
+    pool: &PgPool,
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+) -> Result<Vec<Stored>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT p.name AS project, p.color, e.description, e.start AS start_at, e.stop AS end_at
+         FROM time.time_entries e LEFT JOIN time.projects p ON p.toggl_id = e.project_id
+         WHERE e.start < $2 AND e.stop > $1
+           AND e.start > $1 - COALESCE((SELECT max(stop - start) FROM time.time_entries), interval '0')
+         ORDER BY e.start",
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(pool)
+    .await
+}

@@ -44,6 +44,12 @@ pub fn router_with(factory: TogglFactory, snapshot: SnapshotFile) -> OpenApiRout
         .routes(utoipa_axum::routes!(
             analysis::activity::timeline::get_timeline
         ))
+        .routes(utoipa_axum::routes!(
+            analysis::lifelog::overview::get_lifelog_overview
+        ))
+        .routes(utoipa_axum::routes!(
+            analysis::lifelog::timeline::get_lifelog_timeline
+        ))
         .layer(Extension(factory))
         .layer(Extension(snapshot))
 }

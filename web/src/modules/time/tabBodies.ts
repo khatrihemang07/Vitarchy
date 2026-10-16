@@ -13,4 +13,5 @@ export interface PeriodBodyProps {
  */
 export const LAZY_BODIES: Partial<Record<TimeTabId, LazyExoticComponent<ComponentType<PeriodBodyProps>>>> = {
   activity: lazy(() => import("./activity/ActivityTab")),
+  "life-log": lazy(() => import("./lifelog/LifeLogTab")),
 };

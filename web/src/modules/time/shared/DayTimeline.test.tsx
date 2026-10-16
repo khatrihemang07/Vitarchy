@@ -33,4 +33,18 @@ describe("DayTimeline", () => {
     render(<DayTimeline {...props} segments={[{ start: "2026-05-01T09:00:00Z", end: "2026-05-01T10:00:00Z", label: "A" }]} />);
     expect(screen.getByRole("img", { name: /Activity across the day, 1 stretches/ })).toBeInTheDocument();
   });
+
+  it("shows one legend entry per group, in the group's own colour", () => {
+    render(
+      <DayTimeline
+        {...props}
+        segments={[
+          { start: "2026-05-01T09:00:00Z", end: "2026-05-01T10:00:00Z", label: "job", group: "office", color: "#2a78d6" },
+          { start: "2026-05-01T10:00:00Z", end: "2026-05-01T11:00:00Z", label: "travel", group: "office", color: "#2a78d6" },
+        ]}
+      />,
+    );
+    expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["office"]);
+    expect(document.querySelector("rect")).toHaveAttribute("fill", "#2a78d6");
+  });
 });

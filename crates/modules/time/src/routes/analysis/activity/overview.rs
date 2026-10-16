@@ -10,7 +10,9 @@ use vitarchy_core::AppState;
 
 use super::load;
 use crate::{
-    analysis::activity::{DayBound, Heatmap, Totals, Trend, WeekStart, day_bounds, heatmap, totals, trend},
+    analysis::activity::{
+        DayBound, Heatmap, Totals, Trend, WeekStart, day_bounds, heatmap, totals, trend,
+    },
     error::{ProblemBody, TimeError},
     routes::analysis::params::PeriodQuery,
 };

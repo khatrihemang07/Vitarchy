@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ChartLegend, ChartTooltip, OTHER_COLOR, SERIES_COUNT } from "@/design";
+import { ChartLegend, ChartTooltip, OTHER_COLOR } from "@/design";
 import { ChartTable } from "./ChartTable";
 import { type Clock, formatHourOfDay, formatInstant } from "./timeOfDay";
-import { colorLabels, placeSegments, segmentSeconds, TICK_HOURS, type TimelineSegment } from "./timelineLayout";
+import { colorLabels, groupOf, placeSegments, segmentSeconds, TICK_HOURS, type TimelineSegment } from "./timelineLayout";
 
 interface DayTimelineProps {
   /** The Day's first instant (inclusive) and last (exclusive), ISO. */
@@ -26,8 +26,8 @@ export function DayTimeline({ dayStart, dayEnd, tz, clock, segments, subject, fo
   const placed = placeSegments(segments, dayStart, dayEnd);
   const legend = colorLabels(segments);
   const colors = new Map(legend.map((entry) => [entry.label, entry.color]));
-  const named = legend.slice(0, SERIES_COUNT);
-  const hasOther = legend.length > SERIES_COUNT;
+  const named = legend.filter((entry) => entry.color !== OTHER_COLOR);
+  const hasOther = legend.length > named.length;
   const active = hovered === null ? undefined : placed[hovered];
   const range = (segment: TimelineSegment) => `${formatInstant(segment.start, tz, clock)} – ${formatInstant(segment.end, tz, clock)}`;
   return (
@@ -47,7 +47,7 @@ export function DayTimeline({ dayStart, dayEnd, tz, clock, segments, subject, fo
               y={0}
               width={`${String(Math.max(width, MIN_WIDTH))}%`}
               height="100%"
-              fill={colors.get(segment.label) ?? OTHER_COLOR}
+              fill={colors.get(groupOf(segment)) ?? OTHER_COLOR}
               opacity={hovered === null || hovered === index ? 1 : 0.55}
               onMouseEnter={() => { setHovered(index); }}
             />
@@ -69,8 +69,8 @@ export function DayTimeline({ dayStart, dayEnd, tz, clock, segments, subject, fo
             <ChartTooltip
               title={active.segment.label}
               rows={[
-                ...(active.segment.detail ? [{ label: "In", color: colors.get(active.segment.label) ?? OTHER_COLOR, value: active.segment.detail }] : []),
-                { label: range(active.segment), color: colors.get(active.segment.label) ?? OTHER_COLOR, value: formatSeconds(segmentSeconds(active.segment)) },
+                ...(active.segment.detail ? [{ label: "In", color: colors.get(groupOf(active.segment)) ?? OTHER_COLOR, value: active.segment.detail }] : []),
+                { label: range(active.segment), color: colors.get(groupOf(active.segment)) ?? OTHER_COLOR, value: formatSeconds(segmentSeconds(active.segment)) },
               ]}
             />
           </div>

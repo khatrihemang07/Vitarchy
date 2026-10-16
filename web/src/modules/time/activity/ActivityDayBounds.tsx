@@ -2,11 +2,11 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, type Tool
 import type { ActivityPeriod } from "@/api/time";
 import { useCoreSettings } from "@/app/module-manifest";
 import { axisProps, ChartLegend, gridProps, seriesColor, tooltipProps } from "@/design";
-import { ActivityPanel } from "./ActivityPanel";
+import { ChartPanel } from "../shared/ChartPanel";
 import { BoundsTooltip } from "./BoundsTooltip";
 import { boundsPoints } from "./chartModels";
 import { ChartTable } from "../shared/ChartTable";
-import { formatDayShort } from "./dayLabel";
+import { formatDayShort } from "../shared/dayLabel";
 import { formatMinuteOfDay } from "../shared/timeOfDay";
 import { useActivityPart } from "./useActivityPart";
 
@@ -24,7 +24,7 @@ export function ActivityDayBounds({ period }: { period: ActivityPeriod }) {
   const query = useActivityPart(period, (overview) => overview.bounds);
   const { clock } = useCoreSettings();
   return (
-    <ActivityPanel
+    <ChartPanel
       title="First and last activity of each day"
       description="When the computer was first and last used, by time of day."
       query={query}
@@ -76,6 +76,6 @@ export function ActivityDayBounds({ period }: { period: ActivityPeriod }) {
           </>
         );
       }}
-    </ActivityPanel>
+    </ChartPanel>
   );
 }

@@ -1,11 +1,11 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, type TooltipContentProps, XAxis, YAxis } from "recharts";
 import type { ActivityPeriod } from "@/api/time";
 import { axisProps, ChartLegend, gridProps, SEGMENT_GAP, tooltipProps } from "@/design";
-import { ActivityPanel } from "./ActivityPanel";
+import { ChartPanel } from "../shared/ChartPanel";
 import { secondsKey, trendChart } from "./chartModels";
 import { ChartTable } from "../shared/ChartTable";
-import { formatDayShort } from "./dayLabel";
-import { formatSpan } from "./duration";
+import { formatDayShort } from "../shared/dayLabel";
+import { formatSpan } from "../shared/duration";
 import { TrendTooltip } from "./TrendTooltip";
 import { useActivityPart } from "./useActivityPart";
 
@@ -15,7 +15,7 @@ const MAX_BAR = 24;
 export function ActivityTrend({ period }: { period: ActivityPeriod }) {
   const query = useActivityPart(period, (overview) => overview.trend);
   return (
-    <ActivityPanel
+    <ChartPanel
       title="Week by week"
       description="Hours per week for your five busiest apps. The first and last week may be partial."
       query={query}
@@ -48,6 +48,6 @@ export function ActivityTrend({ period }: { period: ActivityPeriod }) {
           </>
         );
       }}
-    </ActivityPanel>
+    </ChartPanel>
   );
 }

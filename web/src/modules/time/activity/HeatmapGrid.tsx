@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChartTooltip, cn } from "@/design";
 import { formatHourOfDay, type Clock } from "../shared/timeOfDay";
-import { formatSpan } from "./duration";
+import { formatSpan } from "../shared/duration";
 import { type HeatmapRow, intensity, maxCell } from "./heatmapModel";
 
 const HOURS = 24;

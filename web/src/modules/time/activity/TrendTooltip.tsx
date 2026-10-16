@@ -1,8 +1,8 @@
 import type { TooltipContentProps } from "recharts";
 import { ChartTooltip } from "@/design";
 import { secondsKey, type TrendRow, type TrendSeriesInfo } from "./chartModels";
-import { formatDayShort } from "./dayLabel";
-import { formatSpan } from "./duration";
+import { formatDayShort } from "../shared/dayLabel";
+import { formatSpan } from "../shared/duration";
 
 /** Hover card of the weekly trend: each series' exact time that week. */
 export function TrendTooltip({ active, payload, series }: TooltipContentProps & { series: readonly TrendSeriesInfo[] }) {

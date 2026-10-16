@@ -5,30 +5,16 @@ use axum::{
     extract::{Query, State},
 };
 use chrono::{DateTime, NaiveDate, Utc};
-use serde::{Deserialize, Serialize};
-use utoipa::{IntoParams, ToSchema};
+use serde::Serialize;
+use utoipa::ToSchema;
 use vitarchy_core::AppState;
 
 use super::load;
 use crate::{
-    analysis::{
-        Period,
-        activity::{Span, timeline},
-    },
+    analysis::activity::{Span, timeline},
     error::{ProblemBody, TimeError},
+    routes::analysis::params::DayQuery,
 };
-
-/// One Day, asked for by the browser.
-#[derive(Deserialize, IntoParams)]
-#[into_params(parameter_in = Query)]
-pub struct DayQuery {
-    /// The local date, `YYYY-MM-DD`.
-    #[serde(default)]
-    pub day: String,
-    /// IANA time zone the Day is measured in.
-    #[serde(default)]
-    pub tz: String,
-}
 
 /// One Day's lane of spans.
 #[derive(Serialize, ToSchema)]
@@ -60,7 +46,7 @@ pub async fn get_timeline(
     State(state): State<AppState>,
     Query(query): Query<DayQuery>,
 ) -> Result<Json<DayTimeline>, TimeError> {
-    let period = Period::parse(&query.day, &query.day, &query.tz)?;
+    let period = query.period()?;
     let spans = timeline(&period, &load(&state.pool, &period).await?);
     let day = period.days()[0];
     Ok(Json(DayTimeline {

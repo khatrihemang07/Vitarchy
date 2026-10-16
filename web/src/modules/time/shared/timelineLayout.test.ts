@@ -1,4 +1,4 @@
-import { colorLabels, placeSegments, segmentSeconds, type TimelineSegment } from "./timelineLayout";
+import { colorLabels, groupOf, placeSegments, segmentSeconds, type TimelineSegment } from "./timelineLayout";
 
 const DAY = ["2026-05-01T00:00:00Z", "2026-05-02T00:00:00Z"] as const;
 const segment = (start: string, end: string, label = "A"): TimelineSegment => ({ start, end, label });
@@ -49,5 +49,37 @@ describe("colorLabels", () => {
     expect(new Set(colors.slice(0, 8)).size).toBe(8);
     expect(colors[8]).toBe("var(--chart-other)");
     expect(colors[9]).toBe("var(--chart-other)");
+  });
+});
+
+describe("grouped segments", () => {
+  const grouped = (start: string, end: string, label: string, group: string, color?: string): TimelineSegment => ({
+    start,
+    end,
+    label,
+    group,
+    ...(color ? { color } : {}),
+  });
+
+  it("colours and totals by group rather than by label", () => {
+    const entries = colorLabels([
+      grouped("2026-05-01T01:00:00Z", "2026-05-01T02:00:00Z", "job", "office"),
+      grouped("2026-05-01T03:00:00Z", "2026-05-01T04:00:00Z", "travel", "office"),
+      grouped("2026-05-01T05:00:00Z", "2026-05-01T05:30:00Z", "workout", "body"),
+    ]);
+    expect(entries.map((e) => [e.label, e.seconds])).toEqual([["office", 7200], ["body", 1800]]);
+  });
+
+  it("keeps an explicit colour and spends no palette colour on it", () => {
+    const entries = colorLabels([
+      grouped("2026-05-01T01:00:00Z", "2026-05-01T03:00:00Z", "job", "office", "#2a78d6"),
+      grouped("2026-05-01T05:00:00Z", "2026-05-01T05:30:00Z", "workout", "body"),
+    ]);
+    expect(entries.map((e) => e.color)).toEqual(["#2a78d6", "var(--chart-1)"]);
+  });
+
+  it("names a segment's group, which is its label when it has none", () => {
+    expect(groupOf(segment("2026-05-01T01:00:00Z", "2026-05-01T02:00:00Z", "A"))).toBe("A");
+    expect(groupOf(grouped("2026-05-01T01:00:00Z", "2026-05-01T02:00:00Z", "A", "G"))).toBe("G");
   });
 });

@@ -1,6 +1,6 @@
 import type { ActivityContextTotal } from "@/api/time";
-import { BarRow } from "./BarRow";
-import { formatShare, formatSpan, fractionOf } from "./duration";
+import { BarRow } from "../shared/BarRow";
+import { formatShare, formatSpan, fractionOf } from "../shared/duration";
 
 interface TitleRowsProps {
   context: ActivityContextTotal;

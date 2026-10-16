@@ -4,6 +4,7 @@ pub mod activity;
 pub mod context;
 mod context_rules;
 pub mod day_split;
+pub mod lifelog;
 pub mod period;
 
 pub use day_split::{DayPortion, split_by_day};

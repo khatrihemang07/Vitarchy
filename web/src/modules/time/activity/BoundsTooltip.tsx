@@ -1,7 +1,7 @@
 import type { TooltipContentProps } from "recharts";
 import { ChartTooltip } from "@/design";
 import type { BoundsPoint } from "./chartModels";
-import { formatDayShort } from "./dayLabel";
+import { formatDayShort } from "../shared/dayLabel";
 import { type Clock, formatMinuteOfDay } from "../shared/timeOfDay";
 
 /** Hover card of the first and last Activity chart; `first` and `last` name the line colours. */

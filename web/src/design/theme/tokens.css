@@ -72,6 +72,8 @@
   --chart-7: #9085e9;
   --chart-8: #e66767;
   --chart-other: #6b6a7c;
+  /* Time nobody logged: a quiet fill, named in the legend rather than coloured as a series */
+  --chart-unlogged: #2c2c3a;
 
   /* Shape and depth */
   --radius: 1.375rem;
@@ -152,6 +154,7 @@
   --chart-7: #6250d6;
   --chart-8: #e34948;
   --chart-other: #8b8799;
+  --chart-unlogged: #ddd8ca;
 
   --shadow-key-color: #d5ccb6;
   --highlight: rgb(255 255 255 / 0.9);

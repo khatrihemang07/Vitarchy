@@ -12,7 +12,7 @@ interface PanelQuery<T> {
   data: T | undefined;
 }
 
-interface ActivityPanelProps<T> {
+interface ChartPanelProps<T> {
   title: string;
   description?: string;
   query: PanelQuery<T>;
@@ -25,7 +25,7 @@ interface ActivityPanelProps<T> {
 }
 
 /** A card that shows a chart's loading, failure and empty states, and the chart once there is data. */
-export function ActivityPanel<T>({ title, description, query, isEmpty, emptyMessage, actions, children }: ActivityPanelProps<T>) {
+export function ChartPanel<T>({ title, description, query, isEmpty, emptyMessage, actions, children }: ChartPanelProps<T>) {
   const { data } = query;
   return (
     <Card>

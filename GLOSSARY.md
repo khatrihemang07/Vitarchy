@@ -66,6 +66,10 @@ _Avoid_: Date, 24 hours
 The stretch of Days the person is looking at: one Day, a week, a month, or a custom range. Weeks start on the Core week-start Setting.
 _Avoid_: Range, timeframe, window
 
+**Unlogged**:
+The part of a Day that no Time Entry covers. Overlapping entries are not counted twice, and the part of today that has not happened yet is not Unlogged.
+_Avoid_: Idle, free time, gap
+
 **Context**:
 What a piece of Activity was spent on within an app: the code project in an editor, the site in a browser, otherwise the app itself.
 _Avoid_: Category, tag, project

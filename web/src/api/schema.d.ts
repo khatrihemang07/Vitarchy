@@ -123,6 +123,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/analysis/lifelog/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily split, totals and description habits for a Period. */
+        get: operations["get_lifelog_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/analysis/lifelog/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Day's Time Entries with their project colour and description. */
+        get: operations["get_lifelog_timeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time/analysis/period": {
         parameters: {
             query?: never;
@@ -254,6 +288,27 @@ export interface components {
          * @enum {string}
          */
         Clock: "system" | "h12" | "h24";
+        /**
+         * @description Median and interquartile range of a time of day, as local minutes after midnight (0 to 1439).
+         *     `p25_minute` may be later than `p75_minute` when the range crosses midnight.
+         */
+        ClockSpread: {
+            /**
+             * Format: int32
+             * @description The middle time.
+             */
+            median_minute: number;
+            /**
+             * Format: int32
+             * @description The first quartile, going round the clock from the cut.
+             */
+            p25_minute: number;
+            /**
+             * Format: int32
+             * @description The third quartile.
+             */
+            p75_minute: number;
+        };
         /** @description Body of `PUT /api/time/connection`. */
         ConnectRequest: {
             /** @description The person's Toggl API token. Stored server-side, never returned. */
@@ -353,6 +408,26 @@ export interface components {
              */
             start: string;
         };
+        /** @description One Day's division. */
+        DaySplit: {
+            /** @description Time per project, longest first. */
+            by_project: components["schemas"]["ProjectSeconds"][];
+            /**
+             * Format: date
+             * @description Local date.
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description How much of the Day has happened: its length, less any part still in the future.
+             */
+            elapsed_seconds: number;
+            /**
+             * Format: int64
+             * @description Elapsed time covered by no entry.
+             */
+            unlogged_seconds: number;
+        };
         /** @description One Day's lane of spans. */
         DayTimeline: {
             /**
@@ -378,6 +453,65 @@ export interface components {
          * @enum {string}
          */
         DbStatus: "ok" | "down";
+        /** @description The usual start, end and length of one description. */
+        DescriptionStat: {
+            /**
+             * Format: int64
+             * @description Days on which an occurrence started.
+             */
+            days: number;
+            /** @description The description. */
+            description: string;
+            /** @description How long it usually lasts. */
+            duration: components["schemas"]["DurationSpread"];
+            /** @description When it usually ends, local time. */
+            end: components["schemas"]["ClockSpread"];
+            /**
+             * Format: int64
+             * @description Occurrences (a Day may have several).
+             */
+            entries: number;
+            /** @description When it usually starts, local time. */
+            start: components["schemas"]["ClockSpread"];
+        };
+        /** @description Time on one description. */
+        DescriptionTotal: {
+            /**
+             * Format: int64
+             * @description Days with at least one such entry.
+             */
+            days: number;
+            /** @description The description, or "No description". */
+            description: string;
+            /**
+             * Format: int64
+             * @description Entries that touch the Period.
+             */
+            entries: number;
+            /**
+             * Format: int64
+             * @description Seconds.
+             */
+            seconds: number;
+        };
+        /** @description Median and interquartile range of a length of time. */
+        DurationSpread: {
+            /**
+             * Format: int64
+             * @description Seconds, the middle value.
+             */
+            median_seconds: number;
+            /**
+             * Format: int64
+             * @description Seconds, the first quartile.
+             */
+            p25_seconds: number;
+            /**
+             * Format: int64
+             * @description Seconds, the third quartile.
+             */
+            p75_seconds: number;
+        };
         /** @description Body of `GET /api/health`. */
         Health: {
             /** @description Database status. */
@@ -417,6 +551,66 @@ export interface components {
              * @description Activity already stored whose fields changed (e.g. a later end).
              */
             updated: number;
+        };
+        /** @description What the Life log tab draws for a Period, all computed from the same entries. */
+        LifeLogOverview: {
+            /** @description Habits of descriptions seen on at least five Days. */
+            description_stats: components["schemas"]["DescriptionStat"][];
+            /** @description One division per Day of the Period, earliest first. */
+            split: components["schemas"]["DaySplit"][];
+            /** @description Logged time by project and by description. */
+            totals: components["schemas"]["LifeLogTotals"];
+        };
+        /** @description One entry's part of the Day. */
+        LifeLogSpan: {
+            /** @description The project's Toggl colour (`#rrggbb`), when it has one. */
+            color?: string | null;
+            /** @description The description, or "No description". */
+            description: string;
+            /**
+             * Format: date-time
+             * @description End (exclusive), clipped to the Day.
+             */
+            end: string;
+            /** @description The project's name, or "No project". */
+            project: string;
+            /**
+             * Format: date-time
+             * @description Start (inclusive), clipped to the Day.
+             */
+            start: string;
+        };
+        /** @description One Day's lane of Time Entries. */
+        LifeLogTimeline: {
+            /**
+             * Format: date
+             * @description Local date.
+             */
+            date: string;
+            /**
+             * Format: date-time
+             * @description Local midnight that ends the Day.
+             */
+            day_end: string;
+            /**
+             * Format: date-time
+             * @description Local midnight that begins the Day.
+             */
+            day_start: string;
+            /** @description Entries in time order, clipped to the Day. */
+            spans: components["schemas"]["LifeLogSpan"][];
+        };
+        /** @description Logged time over a Period. */
+        LifeLogTotals: {
+            /** @description Descriptions across all projects, longest first. */
+            by_description: components["schemas"]["DescriptionTotal"][];
+            /** @description Projects, longest first. */
+            by_project: components["schemas"]["ProjectTotal"][];
+            /**
+             * Format: int64
+             * @description Seconds across all projects (each entry's own time).
+             */
+            logged_seconds: number;
         };
         /**
          * @description Motion setting: follow the system or force reduced or full.
@@ -483,6 +677,40 @@ export interface components {
             title: string;
             /** @description Always `about:blank`; the status and code say it all. */
             type: string;
+        };
+        /** @description Seconds one project took on one Day. */
+        ProjectSeconds: {
+            /** @description The project's name. */
+            project: string;
+            /**
+             * Format: int64
+             * @description Seconds, counting each entry's own time.
+             */
+            seconds: number;
+        };
+        /** @description Time on one project. */
+        ProjectTotal: {
+            /** @description The project's Toggl colour (`#rrggbb`), when it has one. */
+            color?: string | null;
+            /**
+             * Format: int64
+             * @description Days with at least one such entry.
+             */
+            days: number;
+            /** @description Its descriptions, longest first. */
+            descriptions: components["schemas"]["DescriptionTotal"][];
+            /**
+             * Format: int64
+             * @description Entries that touch the Period.
+             */
+            entries: number;
+            /** @description The project's name, or "No project". */
+            name: string;
+            /**
+             * Format: int64
+             * @description Seconds.
+             */
+            seconds: number;
         };
         /** @description A Sync or Import attempt. */
         RunInfo: {
@@ -888,6 +1116,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DayTimeline"];
+                };
+            };
+            /** @description Bad zone or date */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_lifelog_overview: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every Period-wide Life log analysis */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifeLogOverview"];
+                };
+            };
+            /** @description Bad zone, date or length */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_lifelog_timeline: {
+        parameters: {
+            query?: {
+                /** @description The local date, `YYYY-MM-DD`. */
+                day?: string;
+                /** @description IANA time zone the Day is measured in. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Day's entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifeLogTimeline"];
                 };
             };
             /** @description Bad zone or date */

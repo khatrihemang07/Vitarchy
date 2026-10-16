@@ -1,5 +1,5 @@
 import type { ActivityPeriod } from "@/api/time";
-import { ActivityPanel } from "./ActivityPanel";
+import { ChartPanel } from "../shared/ChartPanel";
 import { TotalsList } from "./TotalsList";
 import { useActivityPart } from "./useActivityPart";
 
@@ -7,7 +7,7 @@ import { useActivityPart } from "./useActivityPart";
 export function ActivityTotals({ period }: { period: ActivityPeriod }) {
   const query = useActivityPart(period, (overview) => overview.totals);
   return (
-    <ActivityPanel
+    <ChartPanel
       title="Where your screen time goes"
       description="Every app, counted as recorded. Open one to see what was in it."
       query={query}
@@ -15,6 +15,6 @@ export function ActivityTotals({ period }: { period: ActivityPeriod }) {
       emptyMessage="No Activity in this Period."
     >
       {(totals) => <TotalsList totals={totals} />}
-    </ActivityPanel>
+    </ChartPanel>
   );
 }

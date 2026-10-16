@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ActivityTotals } from "@/api/time";
 import { Button, OTHER_COLOR, SERIES_COUNT, seriesColor } from "@/design";
 import { AppRow } from "./AppRow";
-import { formatSpan } from "./duration";
+import { formatSpan } from "../shared/duration";
 
 const APPS_SHOWN = 10;
 

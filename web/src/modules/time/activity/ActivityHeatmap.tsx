@@ -1,8 +1,8 @@
 import type { ActivityPeriod } from "@/api/time";
 import { useCoreSettings } from "@/app/module-manifest";
-import { ActivityPanel } from "./ActivityPanel";
+import { ChartPanel } from "../shared/ChartPanel";
 import { ChartTable } from "../shared/ChartTable";
-import { formatSpan } from "./duration";
+import { formatSpan } from "../shared/duration";
 import { cellBackground, HeatmapGrid } from "./HeatmapGrid";
 import { maxCell, orderRows, peakCell } from "./heatmapModel";
 import { formatHourOfDay } from "../shared/timeOfDay";
@@ -15,7 +15,7 @@ export function ActivityHeatmap({ period }: { period: ActivityPeriod }) {
   const query = useActivityPart(period, (overview) => overview.heatmap);
   const { week_start: weekStart, clock } = useCoreSettings();
   return (
-    <ActivityPanel
+    <ChartPanel
       title="When you are on the computer"
       description="Time of day by weekday, added up over the Period. Darker is more."
       query={query}
@@ -52,6 +52,6 @@ export function ActivityHeatmap({ period }: { period: ActivityPeriod }) {
           </>
         );
       }}
-    </ActivityPanel>
+    </ChartPanel>
   );
 }

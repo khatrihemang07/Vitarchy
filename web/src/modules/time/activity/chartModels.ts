@@ -1,8 +1,8 @@
 /** Shaping the server's Activity series into rows for the Recharts charts. Pure. */
 import { OTHER_COLOR, seriesColor } from "@/design";
 import type { ActivityDayBound, ActivityTrend } from "@/api/time";
-import { eachDate } from "./dates";
-import { toHours } from "./duration";
+import { eachDate } from "../shared/dates";
+import { toHours } from "../shared/duration";
 
 /** One Day on the first and last Activity chart; `null` where the Day has none. */
 export interface BoundsPoint {

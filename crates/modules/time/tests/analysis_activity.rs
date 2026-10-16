@@ -29,7 +29,11 @@ async fn get(app: &Router, uri: &str) -> (u16, Value) {
 
 /// One part (`totals`, `heatmap`, `bounds` or `trend`) of the overview for a query string.
 async fn part(app: &Router, query: &str, name: &str) -> Value {
-    let (status, body) = get(app, &format!("/api/time/analysis/activity/overview?{query}")).await;
+    let (status, body) = get(
+        app,
+        &format!("/api/time/analysis/activity/overview?{query}"),
+    )
+    .await;
     assert_eq!(status, 200, "{body}");
     body[name].clone()
 }
@@ -130,7 +134,12 @@ async fn totals_rank_apps_contexts_and_titles_and_split_at_midnight() {
 async fn totals_follow_the_requested_time_zone() {
     let (db, app) = seeded("act_tz").await;
     // 22:00Z on the 5th is 03:30 on the 6th in Kolkata, so the whole row is on the 6th there.
-    let body = part(&app, "from=2026-05-06&to=2026-05-06&tz=Asia/Kolkata", "totals").await;
+    let body = part(
+        &app,
+        "from=2026-05-06&to=2026-05-06&tz=Asia/Kolkata",
+        "totals",
+    )
+    .await;
     let apps = body["apps"].as_array().unwrap();
     assert_eq!(seconds_of(find(apps, "WhatsApp")), 3 * 3600);
     let body = part(&app, "from=2026-05-06&to=2026-05-06&tz=UTC", "totals").await;
@@ -285,10 +294,24 @@ async fn a_row_that_began_days_before_the_period_still_counts_in_it() {
     let db = time_db("act_long_row").await;
     // Many short rows long before the Period, so a lower bound has real work to do.
     for day in 1..=5 {
-        store(&db, "Code", "x — a", &format!("2026-04-0{day}T09:00:00Z"), &format!("2026-04-0{day}T09:10:00Z")).await;
+        store(
+            &db,
+            "Code",
+            "x — a",
+            &format!("2026-04-0{day}T09:00:00Z"),
+            &format!("2026-04-0{day}T09:10:00Z"),
+        )
+        .await;
     }
     // Began the 20th, ended the 26th: 6 days before the Period starts.
-    store(&db, "Spotify", "", "2026-04-20T00:00:00Z", "2026-04-26T00:00:00Z").await;
+    store(
+        &db,
+        "Spotify",
+        "",
+        "2026-04-20T00:00:00Z",
+        "2026-04-26T00:00:00Z",
+    )
+    .await;
     let app = time_app(&db, &FakeToggl::new());
     let totals = part(&app, "from=2026-04-24&to=2026-04-25&tz=UTC", "totals").await;
     let apps = totals["apps"].as_array().unwrap();

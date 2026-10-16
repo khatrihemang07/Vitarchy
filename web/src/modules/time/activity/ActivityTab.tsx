@@ -3,7 +3,7 @@ import { ActivityDayTimeline } from "./ActivityDayTimeline";
 import { ActivityHeatmap } from "./ActivityHeatmap";
 import { ActivityTotals } from "./ActivityTotals";
 import { ActivityTrend } from "./ActivityTrend";
-import { browserTimeZone } from "./browserTimeZone";
+import { browserTimeZone } from "../shared/browserTimeZone";
 import type { PeriodBodyProps } from "../tabBodies";
 
 /** The Activity tab: where screen time goes, when it happens, and how it changes. */

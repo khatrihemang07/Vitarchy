@@ -30,6 +30,28 @@ impl PeriodQuery {
     }
 }
 
+/// One Day, asked for by the browser.
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct DayQuery {
+    /// The local date, `YYYY-MM-DD`.
+    #[serde(default)]
+    pub day: String,
+    /// IANA time zone the Day is measured in.
+    #[serde(default)]
+    pub tz: String,
+}
+
+impl DayQuery {
+    /// The one-Day Period this names.
+    ///
+    /// # Errors
+    /// [`TimeError::Period`] (a 400 with a `code`) for a bad zone or date.
+    pub fn period(&self) -> Result<Period, TimeError> {
+        Ok(Period::parse(&self.day, &self.day, &self.tz)?)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

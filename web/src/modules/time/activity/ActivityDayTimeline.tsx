@@ -2,11 +2,11 @@ import { useState } from "react";
 import { type ActivityPeriod, useActivityTimeline } from "@/api/time";
 import { useCoreSettings } from "@/app/module-manifest";
 import { DayTimeline } from "../shared/DayTimeline";
-import { ActivityPanel } from "./ActivityPanel";
-import { pickDay } from "./dates";
-import { DayPicker } from "./DayPicker";
-import { formatDayLong } from "./dayLabel";
-import { formatSpan } from "./duration";
+import { ChartPanel } from "../shared/ChartPanel";
+import { pickDay } from "../shared/dates";
+import { DayPicker } from "../shared/DayPicker";
+import { formatDayLong } from "../shared/dayLabel";
+import { formatSpan } from "../shared/duration";
 import { useActivityPart } from "./useActivityPart";
 
 /** One Day of Activity as a lane of Contexts. Starts on the last Day with Activity in the Period. */
@@ -21,13 +21,13 @@ export function ActivityDayTimeline({ period }: { period: ActivityPeriod }) {
   if (!day) {
     // No Day has Activity (or the Days are still loading): the Period's own bounds answer for the panel.
     return (
-      <ActivityPanel title={title} query={bounds} isEmpty={() => true} emptyMessage="No Activity in this Period.">
+      <ChartPanel title={title} query={bounds} isEmpty={() => true} emptyMessage="No Activity in this Period.">
         {() => null}
-      </ActivityPanel>
+      </ChartPanel>
     );
   }
   return (
-    <ActivityPanel
+    <ChartPanel
       title={title}
       description={`${formatDayLong(day)}: what the computer was showing, hour by hour.`}
       actions={<DayPicker day={day} from={period.from} to={period.to} onChange={setChosen} />}
@@ -51,6 +51,6 @@ export function ActivityDayTimeline({ period }: { period: ActivityPeriod }) {
           }))}
         />
       )}
-    </ActivityPanel>
+    </ChartPanel>
   );
 }
