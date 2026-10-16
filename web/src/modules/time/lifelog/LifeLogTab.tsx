@@ -3,9 +3,10 @@ import { browserTimeZone } from "../shared/browserTimeZone";
 import { DaySplitChart } from "./DaySplitChart";
 import { DescriptionStats } from "./DescriptionStats";
 import { LifeLogDayTimeline } from "./LifeLogDayTimeline";
+import { RoutinesSection } from "./routines/RoutinesSection";
 import { TotalsTable } from "./TotalsTable";
 
-/** The Life log tab: how days divide, one day in detail, where logged time goes, and the usual routine. */
+/** The Life log tab: how days divide, one day in detail, where logged time goes, the usual routine and Routines. */
 export default function LifeLogTab({ selection }: PeriodBodyProps) {
   const period = { from: selection.from, to: selection.to, tz: browserTimeZone() };
   return (
@@ -14,6 +15,7 @@ export default function LifeLogTab({ selection }: PeriodBodyProps) {
       <LifeLogDayTimeline period={period} />
       <TotalsTable period={period} />
       <DescriptionStats period={period} />
+      <RoutinesSection period={period} />
     </div>
   );
 }

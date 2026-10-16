@@ -44,7 +44,8 @@ struct Occurrences {
 }
 
 /// Minutes after local midnight of `instant` in `tz`.
-fn minute_of_day(tz: Tz, instant: DateTime<Utc>) -> f64 {
+#[must_use]
+pub fn minute_of_day(tz: Tz, instant: DateTime<Utc>) -> f64 {
     let local = instant.with_timezone(&tz).naive_local();
     f64::from(chrono::Timelike::num_seconds_from_midnight(&local.time())) / 60.0
 }

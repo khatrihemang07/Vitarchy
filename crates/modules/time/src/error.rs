@@ -11,7 +11,11 @@ use serde::Serialize;
 use utoipa::ToSchema;
 use vitarchy_core::ApiError;
 
-use crate::{activity::ActivityError, analysis::PeriodError, toggl::error::TogglError};
+use crate::{
+    activity::ActivityError,
+    analysis::{PeriodError, routines::RoutineError},
+    toggl::error::TogglError,
+};
 
 /// What can go wrong in a Time handler.
 #[derive(Debug, thiserror::Error)]
@@ -34,6 +38,9 @@ pub enum TimeError {
     /// The `from`, `to` or `tz` of an analysis request is not usable.
     #[error(transparent)]
     Period(#[from] PeriodError),
+    /// A Routine could not be saved or found.
+    #[error(transparent)]
+    Routine(#[from] RoutineError),
 }
 
 impl From<sqlx::Error> for TimeError {
@@ -50,6 +57,7 @@ impl TimeError {
             Self::Toggl(error) => error.code(),
             Self::Activity(error) => error.code(),
             Self::Period(error) => error.code(),
+            Self::Routine(error) => error.code(),
             Self::SyncInProgress => "sync_in_progress",
             Self::ConnectionChanged => "connection_changed",
             Self::Api(ApiError::Database(_)) => "database",
@@ -72,7 +80,10 @@ pub struct ProblemBody {
     pub detail: String,
     /// `invalid_token`, `rate_limited`, `unreachable`, `unexpected`, `malformed`,
     /// `sync_in_progress`, `connection_changed`, `no_snapshot`, `snapshot_unreadable`,
-    /// `unknown_time_zone`, `invalid_date`, `period_reversed` or `period_too_long`.
+    /// `unknown_time_zone`, `invalid_date`, `period_reversed`, `period_too_long`, or a Routine's
+    /// `routine_name_empty`, `routine_name_too_long`, `routine_no_steps`, `routine_too_many_steps`,
+    /// `routine_label_empty`, `routine_value_empty`, `routine_step_too_long`, `routine_name_taken`
+    /// or `routine_not_found`.
     pub code: String,
     /// For `rate_limited`: seconds until Toggl accepts requests again.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -137,6 +148,16 @@ impl IntoResponse for TimeError {
             Self::Activity(error) => problem_response(ProblemBody::for_activity(error)),
             Self::Period(error) => problem_response(ProblemBody::new(
                 StatusCode::BAD_REQUEST,
+                &error.to_string(),
+                error.code(),
+                None,
+            )),
+            Self::Routine(error) => problem_response(ProblemBody::new(
+                match error {
+                    RoutineError::NotFound => StatusCode::NOT_FOUND,
+                    RoutineError::NameTaken => StatusCode::CONFLICT,
+                    _ => StatusCode::BAD_REQUEST,
+                },
                 &error.to_string(),
                 error.code(),
                 None,

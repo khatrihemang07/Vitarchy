@@ -195,6 +195,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every saved Routine with its Steps. */
+        get: operations["get_routines"];
+        put?: never;
+        /** Saves a new Routine: confirms a suggestion or creates one from scratch. */
+        post: operations["post_routine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/routines/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sequences of descriptions that recur in order within a Day, over at least five Days. */
+        get: operations["get_suggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/routines/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replaces a Routine's name and Steps. */
+        put: operations["put_routine"];
+        post?: never;
+        /** Deletes a Routine and its Steps. Time Entries are untouched. */
+        delete: operations["delete_routine"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/routines/{id}/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Routine's Occurrences, complete and incomplete, with statistics. */
+        get: operations["get_occurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time/status": {
         parameters: {
             query?: never;
@@ -613,10 +683,37 @@ export interface components {
             logged_seconds: number;
         };
         /**
+         * @description What a Step is matched against.
+         * @enum {string}
+         */
+        MatchKind: "description" | "project";
+        /**
          * @description Motion setting: follow the system or force reduced or full.
          * @enum {string}
          */
         Motion: "system" | "reduced" | "full";
+        /** @description One Day on which a Routine happened. */
+        Occurrence: {
+            /** @description True when every Step happened. */
+            complete: boolean;
+            /**
+             * Format: date
+             * @description Local date.
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description First Step's start to last Step's end; only for a complete Occurrence.
+             */
+            door_to_door_seconds?: number | null;
+            /**
+             * @description Seconds between each Step's end and the next Step's start (one fewer than Steps);
+             *     `null` when either Step is missing. Never negative.
+             */
+            gaps: (number | null)[];
+            /** @description One per Step in order; `null` for a Step that did not happen. */
+            steps: (components["schemas"]["StepSpan"] | null)[];
+        };
         /** @description What the Activity tab draws for a Period, all computed from the same rows. */
         Overview: {
             /** @description First and last Activity of each Day that has any, earliest first. */
@@ -658,7 +755,10 @@ export interface components {
             /**
              * @description `invalid_token`, `rate_limited`, `unreachable`, `unexpected`, `malformed`,
              *     `sync_in_progress`, `connection_changed`, `no_snapshot`, `snapshot_unreadable`,
-             *     `unknown_time_zone`, `invalid_date`, `period_reversed` or `period_too_long`.
+             *     `unknown_time_zone`, `invalid_date`, `period_reversed`, `period_too_long`, or a Routine's
+             *     `routine_name_empty`, `routine_name_too_long`, `routine_no_steps`, `routine_too_many_steps`,
+             *     `routine_label_empty`, `routine_value_empty`, `routine_step_too_long`, `routine_name_taken`
+             *     or `routine_not_found`.
              */
             code: string;
             /** @description Explanation fit to show the person; never holds the token. */
@@ -712,6 +812,69 @@ export interface components {
              */
             seconds: number;
         };
+        /** @description A Routine the person confirmed or created. */
+        Routine: {
+            /**
+             * Format: date-time
+             * @description When it was saved.
+             */
+            created_at: string;
+            /**
+             * Format: int64
+             * @description Identifier, stable across edits.
+             */
+            id: number;
+            /** @description What the person calls it. */
+            name: string;
+            /** @description The Steps in order. */
+            steps: components["schemas"]["Step"][];
+            /**
+             * Format: date-time
+             * @description When it was last changed.
+             */
+            updated_at: string;
+        };
+        /** @description The saved Routines. */
+        RoutineList: {
+            /** @description By name. */
+            routines: components["schemas"]["Routine"][];
+        };
+        /** @description How a Routine went over a Period. */
+        RoutineOccurrences: {
+            /** @description Each Day it happened, earliest first. */
+            occurrences: components["schemas"]["Occurrence"][];
+            /** @description The Routine. */
+            routine: components["schemas"]["Routine"];
+            /** @description The usual times and lengths. */
+            stats: components["schemas"]["RoutineStats"];
+        };
+        /** @description Body of `POST /routines` and `PUT /routines/{id}`. */
+        RoutineRequest: {
+            /** @description What to call the Routine; at most 80 characters, unique ignoring case. */
+            name: string;
+            /** @description 1 to 8 Steps in order. */
+            steps: components["schemas"]["Step"][];
+        };
+        /** @description Statistics of a Routine over a Period. */
+        RoutineStats: {
+            /**
+             * Format: int64
+             * @description Occurrences with every Step.
+             */
+            complete_days: number;
+            door_to_door?: components["schemas"]["DurationSpread"] | null;
+            /** @description Waits between Steps (one fewer than Steps), over Days where both Steps happened. */
+            gaps: (components["schemas"]["DurationSpread"] | null)[];
+            /**
+             * Format: int64
+             * @description Occurrences with a Step missing.
+             */
+            incomplete_days: number;
+            /** @description One per Step in order. */
+            steps: components["schemas"]["StepStat"][];
+            /** @description Weekdays that have complete Occurrences, Monday first. */
+            weekdays: components["schemas"]["WeekdayStat"][];
+        };
         /** @description A Sync or Import attempt. */
         RunInfo: {
             /** @description What it did, e.g. `{"inserted": 3}`; empty when it failed. */
@@ -755,6 +918,59 @@ export interface components {
          * @enum {string}
          */
         Status: "ok" | "degraded";
+        /** @description One part of a Routine. */
+        Step: {
+            /** @description Whether `value` is a description or a project name. */
+            kind: components["schemas"]["MatchKind"];
+            /** @description What the person calls this Step. */
+            label: string;
+            /** @description The description or project name to match: exact after trimming, ignoring case. */
+            value: string;
+        };
+        /** @description When one Step happened on a Day. */
+        StepSpan: {
+            /**
+             * Format: date-time
+             * @description End of the last consecutive matching entry.
+             */
+            end: string;
+            /**
+             * Format: int64
+             * @description Seconds from `start` to `end`.
+             */
+            seconds: number;
+            /**
+             * Format: date-time
+             * @description Start of the first matching entry.
+             */
+            start: string;
+        };
+        /** @description The usual start, end and length of one Step. */
+        StepStat: {
+            /**
+             * Format: int64
+             * @description Days the Step happened.
+             */
+            days: number;
+            duration?: components["schemas"]["DurationSpread"] | null;
+            end?: components["schemas"]["ClockSpread"] | null;
+            start?: components["schemas"]["ClockSpread"] | null;
+        };
+        /** @description A recurring sequence of descriptions, offered to become a Routine. */
+        Suggestion: {
+            /**
+             * Format: int64
+             * @description Days on which the whole sequence happened.
+             */
+            days: number;
+            /** @description The descriptions in order. */
+            steps: string[];
+        };
+        /** @description Recurring sequences the person has not saved as Routines. */
+        Suggestions: {
+            /** @description Best first. */
+            suggestions: components["schemas"]["Suggestion"][];
+        };
         /** @description Result of one Sync. */
         SyncCounts: {
             /**
@@ -882,6 +1098,26 @@ export interface components {
          * @enum {string}
          */
         WeekStart: "monday" | "sunday";
+        /** @description How a Routine goes on one weekday, over complete Occurrences. */
+        WeekdayStat: {
+            /**
+             * Format: int64
+             * @description Complete Occurrences on this weekday.
+             */
+            days: number;
+            /**
+             * Format: int64
+             * @description Median door-to-door seconds.
+             */
+            door_to_door_median_seconds: number;
+            /** @description Median seconds of each Step, in Step order. */
+            step_median_seconds: (number | null)[];
+            /**
+             * Format: int32
+             * @description 0 for Monday to 6 for Sunday.
+             */
+            weekday: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -1310,6 +1546,245 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_routines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The saved Routines */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineList"];
+                };
+            };
+        };
+    };
+    post_routine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineRequest"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Routine"];
+                };
+            };
+            /** @description Invalid name or Steps (`routine_*` codes) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Another Routine has this name (`routine_name_taken`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description The body is not a Routine */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_suggestions: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Suggested Routines */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suggestions"];
+                };
+            };
+            /** @description Bad zone, date or length */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    put_routine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The Routine's id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineRequest"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Routine"];
+                };
+            };
+            /** @description Invalid name or Steps (`routine_*` codes) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description No such Routine (`routine_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Another Routine has this name (`routine_name_taken`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    delete_routine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The Routine's id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such Routine (`routine_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_occurrences: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The Routine's id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Occurrences and statistics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineOccurrences"];
+                };
+            };
+            /** @description Bad zone, date or length */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description No such Routine (`routine_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
             };
         };
     };

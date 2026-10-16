@@ -6,3 +6,6 @@ export const activityKey = (analysis: string, query: object) => ["time", "analys
 
 /** Query key of one Life log analysis for a Period, so a Period change refetches it. */
 export const lifeLogKey = (analysis: string, query: object) => ["time", "analysis", "lifelog", analysis, query] as const;
+
+/** Query key of anything about Routines; invalidating this prefix refreshes every Routine query. */
+export const routinesKey = (...parts: readonly unknown[]) => ["time", "routines", ...parts] as const;

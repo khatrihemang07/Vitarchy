@@ -5,6 +5,7 @@ pub mod catalog;
 pub mod connection;
 pub mod entries;
 pub mod mirror_owner;
+pub mod routines;
 pub mod runs;
 pub mod sync_lock;
 pub mod written;

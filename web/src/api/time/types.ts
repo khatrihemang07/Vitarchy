@@ -50,3 +50,22 @@ export type LifeLogDescriptionStat = components["schemas"]["DescriptionStat"];
 export type LifeLogTimeline = components["schemas"]["LifeLogTimeline"];
 /** One Time Entry's part of a Day. */
 export type LifeLogSpan = components["schemas"]["LifeLogSpan"];
+
+/** A saved Routine: ordered Steps matched to Time Entries. */
+export type Routine = components["schemas"]["Routine"];
+/** One Step of a Routine, as saved. */
+export type RoutineStep = components["schemas"]["Step"];
+/** Whether a Step matches a description or a project. */
+export type RoutineMatchKind = components["schemas"]["MatchKind"];
+/** What `POST` and `PUT` take: a name and Steps. */
+export type RoutineDraft = components["schemas"]["RoutineRequest"];
+/** A recurring sequence of descriptions offered as a Routine. */
+export type RoutineSuggestion = components["schemas"]["Suggestion"];
+/** One Day on which a Routine happened. */
+export type RoutineOccurrence = components["schemas"]["Occurrence"];
+/** When one Step happened on a Day. */
+export type RoutineStepSpan = components["schemas"]["StepSpan"];
+/** A Routine's Occurrences over a Period, with statistics. */
+export type RoutineOccurrences = components["schemas"]["RoutineOccurrences"];
+/** The usual times and lengths of a Routine. */
+export type RoutineStats = components["schemas"]["RoutineStats"];

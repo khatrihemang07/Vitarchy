@@ -1,4 +1,4 @@
-//! `/api/time`: connect Toggl, see the status, run a Sync, Import Activity.
+//! `/api/time`: connect Toggl, see the status, run a Sync, Import Activity, analyse, save Routines.
 //!
 //! **Injecting Toggl.** `AppState` (core) holds only the pool and must stay
 //! domain-free, so the Toggl client reaches handlers as an axum `Extension`
@@ -9,6 +9,7 @@ mod activity_status;
 mod analysis;
 mod connection;
 mod import;
+mod routines;
 mod run_info;
 mod status;
 mod sync;
@@ -50,6 +51,16 @@ pub fn router_with(factory: TogglFactory, snapshot: SnapshotFile) -> OpenApiRout
         .routes(utoipa_axum::routes!(
             analysis::lifelog::timeline::get_lifelog_timeline
         ))
+        .routes(utoipa_axum::routes!(
+            routines::list::get_routines,
+            routines::save::post_routine
+        ))
+        .routes(utoipa_axum::routes!(routines::suggestions::get_suggestions))
+        .routes(utoipa_axum::routes!(
+            routines::save::put_routine,
+            routines::delete::delete_routine
+        ))
+        .routes(utoipa_axum::routes!(routines::occurrences::get_occurrences))
         .layer(Extension(factory))
         .layer(Extension(snapshot))
 }
