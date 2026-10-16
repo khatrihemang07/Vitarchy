@@ -16,6 +16,7 @@ export function useTimeView(): TimeView & {
   weekStart: WeekStart;
   setTab: (tab: TimeTabId) => void;
   setSelection: (selection: PeriodSelection) => void;
+  open: (tab: TimeTabId, selection: PeriodSelection) => void;
 } {
   // Parsed again: the router merges unvalidated parent params back in, so bad ones can reappear.
   const search = parseTimeSearch(route.useSearch());
@@ -30,5 +31,6 @@ export function useTimeView(): TimeView & {
     weekStart,
     setTab: (tab) => void navigate({ search: asSearch(toSearch(tab, view.selection)) }),
     setSelection: (selection) => void navigate({ search: asSearch(toSearch(view.tab, selection)) }),
+    open: (tab, selection) => void navigate({ search: asSearch(toSearch(tab, selection)) }),
   };
 }

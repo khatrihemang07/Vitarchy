@@ -1,4 +1,5 @@
 export { useActivityOverview, useActivityTimeline, type ActivityPeriod } from "./activityAnalysis";
+export { useInsights } from "./insights";
 export { useLifeLogOverview, useLifeLogTimeline } from "./lifeLogAnalysis";
 export { useDeleteRoutine, useRoutineOccurrences, useRoutineSuggestions, useSaveRoutine } from "./routines";
 export { useImportActivity } from "./activityImport";
@@ -18,6 +19,9 @@ export type {
   ActivityTotals,
   ActivityTrend,
   ImportCounts,
+  Insight,
+  InsightKind,
+  InsightSubjectKind,
   LifeLogDaySplit,
   LifeLogDescriptionStat,
   LifeLogDescriptionTotal,

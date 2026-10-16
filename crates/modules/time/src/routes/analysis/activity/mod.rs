@@ -12,7 +12,7 @@ use crate::{
 };
 
 /// The Activity that touches the Period, prepared for analysis.
-async fn load(pool: &PgPool, period: &Period) -> Result<Vec<ActivityRow>, TimeError> {
+pub(crate) async fn load(pool: &PgPool, period: &Period) -> Result<Vec<ActivityRow>, TimeError> {
     let stored = activities::overlapping(pool, period.start(), period.end()).await?;
     tracing::debug!(
         rows = stored.len(),

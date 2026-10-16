@@ -123,6 +123,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/analysis/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Typical times and durations, weekday differences, changes and outliers, computed from one
+         *     load of Time Entries, Activity and Routines. Changes always compare the last four weeks ending
+         *     on the Period's last Day with the four before, however short the Period is.
+         */
+        get: operations["get_insights"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time/analysis/lifelog/overview": {
         parameters: {
             query?: never;
@@ -630,6 +651,34 @@ export interface components {
              */
             updated: number;
         };
+        /** @description One plain statement found in the person's own data. */
+        Insight: {
+            /** @description Days it refers to (the outlying Day), earliest first. */
+            days: string[];
+            /** @description The kind of statement. */
+            kind: components["schemas"]["InsightKind"];
+            /** @description Which quantity of the subject. */
+            measure: components["schemas"]["Measure"];
+            /** @description The figures. */
+            numbers: components["schemas"]["Numbers"];
+            /**
+             * Format: double
+             * @description How notable it is (see `score.rs`); higher is more notable, and the list is ranked by it.
+             */
+            score: number;
+            /** @description What it is about. */
+            subject: components["schemas"]["Subject"];
+        };
+        /**
+         * @description The kind of statement an Insight makes.
+         * @enum {string}
+         */
+        InsightKind: "typical_time" | "typical_duration" | "weekday_difference" | "change" | "outlier";
+        /** @description The most notable Insights for a Period. */
+        Insights: {
+            /** @description Most notable first. */
+            insights: components["schemas"]["Insight"][];
+        };
         /** @description What the Life log tab draws for a Period, all computed from the same entries. */
         LifeLogOverview: {
             /** @description Habits of descriptions seen on at least five Days. */
@@ -696,10 +745,57 @@ export interface components {
          */
         MatchKind: "description" | "project";
         /**
+         * @description Which quantity of the subject the Insight measures.
+         * @enum {string}
+         */
+        Measure: "start" | "end" | "length";
+        /**
          * @description Motion setting: follow the system or force reduced or full.
          * @enum {string}
          */
         Motion: "system" | "reduced" | "full";
+        /**
+         * @description The figures a sentence is built from. Every figure is in whole minutes; a time of day is
+         *     minutes after local midnight.
+         */
+        Numbers: {
+            /**
+             * Format: int64
+             * @description `value` minus `reference`, going the short way round the clock for a time of day.
+             */
+            delta?: number | null;
+            /**
+             * Format: int64
+             * @description First quartile (typical times only).
+             */
+            p25?: number | null;
+            /**
+             * Format: int64
+             * @description Third quartile (typical times only).
+             */
+            p75?: number | null;
+            /**
+             * Format: int64
+             * @description What `value` is compared with: all Days, the four weeks before, or the usual.
+             */
+            reference?: number | null;
+            /**
+             * Format: int64
+             * @description Days measured.
+             */
+            samples: number;
+            /**
+             * Format: int64
+             * @description The figure the sentence is about: the usual value, one weekday's usual value, the
+             *     last four weeks' usual value, or the outlying Day's value.
+             */
+            value: number;
+            /**
+             * Format: int32
+             * @description Weekday, 0 for Monday to 6 for Sunday (weekday differences only).
+             */
+            weekday?: number | null;
+        };
         /** @description One Day on which a Routine happened. */
         Occurrence: {
             /** @description True when every Step happened. */
@@ -964,6 +1060,18 @@ export interface components {
             end?: components["schemas"]["ClockSpread"] | null;
             start?: components["schemas"]["ClockSpread"] | null;
         };
+        /** @description The thing an Insight is about. */
+        Subject: {
+            /** @description What sort of thing it is. */
+            kind: components["schemas"]["SubjectKind"];
+            /** @description Its name as the person knows it. */
+            name: string;
+        };
+        /**
+         * @description What an Insight is about.
+         * @enum {string}
+         */
+        SubjectKind: "routine_step" | "routine_total" | "description" | "app" | "context";
         /** @description A recurring sequence of descriptions, offered to become a Routine. */
         Suggestion: {
             /**
@@ -1363,6 +1471,42 @@ export interface operations {
                 };
             };
             /** @description Bad zone or date */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_insights: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Insights, most notable first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insights"];
+                };
+            };
+            /** @description Bad zone, date or length */
             400: {
                 headers: {
                     [name: string]: unknown;

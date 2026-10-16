@@ -27,10 +27,10 @@ async function renderAt(path: string) {
 describe("TimePage", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("opens on the Overview with a neutral note, and the Sources cards stay out of the way", async () => {
+  it("opens on the Overview with its Insights, and the Sources cards stay out of the way", async () => {
     await renderAt("/time");
     expect(screen.getByRole("tab", { name: "Overview", selected: true })).toBeInTheDocument();
-    expect(screen.getByText(/once there is data for this Period/)).toBeInTheDocument();
+    expect(await screen.findByText("Insights")).toBeInTheDocument();
     expect(screen.queryByText("Toggl connection")).not.toBeInTheDocument();
   });
 

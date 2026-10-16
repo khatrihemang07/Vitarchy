@@ -41,8 +41,9 @@ pub struct ClockSpread {
     pub p75_minute: u32,
 }
 
-/// The `q`th quantile (0 to 1) of sorted values, interpolating between neighbours.
-fn quantile(sorted: &[f64], q: f64) -> f64 {
+/// The `q`th quantile (0 to 1) of non-empty sorted values, interpolating between neighbours.
+#[must_use]
+pub fn quantile(sorted: &[f64], q: f64) -> f64 {
     let at = q * (sorted.len() - 1) as f64;
     let (low, high) = (at.floor() as usize, at.ceil() as usize);
     sorted[low] + (sorted[high] - sorted[low]) * (at - low as f64)

@@ -69,3 +69,10 @@ export type RoutineStepSpan = components["schemas"]["StepSpan"];
 export type RoutineOccurrences = components["schemas"]["RoutineOccurrences"];
 /** The usual times and lengths of a Routine. */
 export type RoutineStats = components["schemas"]["RoutineStats"];
+
+/** One plain statement found in the person's own data, ranked by notability. */
+export type Insight = components["schemas"]["Insight"];
+/** What kind of statement an Insight makes. */
+export type InsightKind = components["schemas"]["InsightKind"];
+/** What an Insight is about: a Routine Step, a Routine, a description, an app or a Context. */
+export type InsightSubjectKind = components["schemas"]["SubjectKind"];

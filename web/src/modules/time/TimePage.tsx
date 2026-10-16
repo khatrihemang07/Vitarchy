@@ -35,7 +35,7 @@ export function TimePage() {
             <TabsContent key={tab.id} value={tab.id}>
               {Body ? (
                 <Suspense fallback={<LoadingNotice>Loading…</LoadingNotice>}>
-                  <Body selection={view.selection} />
+                  <Body selection={view.selection} open={view.open} />
                 </Suspense>
               ) : "empty" in tab ? (
                 <PeriodEmpty message={tab.empty} />

@@ -4,6 +4,7 @@ pub mod activity;
 pub mod context;
 mod context_rules;
 pub mod day_split;
+pub mod insights;
 pub mod lifelog;
 pub mod period;
 pub mod routines;
