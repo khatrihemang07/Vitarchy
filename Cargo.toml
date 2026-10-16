@@ -32,6 +32,8 @@ url = "2"
 chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 async-trait = "0.1"
+# IANA time zones: a Day is local to the person (ADR 0010).
+chrono-tz = "0.10"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

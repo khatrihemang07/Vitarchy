@@ -14,7 +14,7 @@ START_ADDR := $(shell . scripts/lib/db-url.sh; a=$$(env_value "$(LIVE_ENV)" STAR
 endif
 
 .PHONY: help setup start dev stage web-build db db-stop stage-db stage-db-stop \
-	test smoke check gen-api backup restore backup-stage restore-stage \
+	test smoke seed-stage check gen-api backup restore backup-stage restore-stage \
 	signing-setup helper-install helper-uninstall helper-run
 
 help: ## List targets (addresses and ports are in .env and .env.stage)
@@ -79,6 +79,9 @@ test: stage-db ## [stage] Run Rust and web tests against stage
 
 smoke: stage-db ## [stage] Start a stage server, check health and a settings save, stop it
 	scripts/smoke.sh
+
+seed-stage: stage-db ## [stage] Fill stage with ~60 days of synthetic life-log Time Entries (run `make stage` once first)
+	scripts/seed-stage-lifelog.sh
 
 backup-stage: stage-db ## [stage] Back up the stage database (for testing the backup scripts)
 	scripts/backup.sh stage

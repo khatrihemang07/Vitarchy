@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/analysis/period": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Resolves `from`, `to` and `tz` into local Days (also validates them). */
+        get: operations["get_period"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time/connection": {
         parameters: {
             query?: never;
@@ -242,6 +259,24 @@ export interface components {
          * @enum {string}
          */
         DateFormat: "system" | "day_month_year" | "month_day_year" | "iso";
+        /** @description One local Day and where it begins and ends. */
+        DayBounds: {
+            /**
+             * Format: date
+             * @description Local date.
+             */
+            date: string;
+            /**
+             * Format: date-time
+             * @description End of the Day (exclusive).
+             */
+            end: string;
+            /**
+             * Format: date-time
+             * @description Start of the Day (inclusive).
+             */
+            start: string;
+        };
         /**
          * @description Whether Postgres answered the ping.
          * @enum {string}
@@ -287,6 +322,13 @@ export interface components {
          * @enum {string}
          */
         Motion: "system" | "reduced" | "full";
+        /** @description The Days of a Period. */
+        PeriodDays: {
+            /** @description Days, earliest first. */
+            days: components["schemas"]["DayBounds"][];
+            /** @description The IANA zone used. */
+            tz: string;
+        };
         /** @description JSON body of every error response (`application/problem+json`). */
         Problem: {
             /**
@@ -309,7 +351,8 @@ export interface components {
         ProblemBody: {
             /**
              * @description `invalid_token`, `rate_limited`, `unreachable`, `unexpected`, `malformed`,
-             *     `sync_in_progress`, `connection_changed`, `no_snapshot` or `snapshot_unreadable`.
+             *     `sync_in_progress`, `connection_changed`, `no_snapshot`, `snapshot_unreadable`,
+             *     `unknown_time_zone`, `invalid_date`, `period_reversed` or `period_too_long`.
              */
             code: string;
             /** @description Explanation fit to show the person; never holds the token. */
@@ -599,6 +642,42 @@ export interface operations {
             };
             /** @description The Snapshot could not be read (`snapshot_unreadable`) */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_period: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Days of the Period */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodDays"];
+                };
+            };
+            /** @description Bad zone, date or length (`unknown_time_zone`, `invalid_date`, `period_reversed`, `period_too_long`) */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

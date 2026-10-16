@@ -11,7 +11,7 @@ use serde::Serialize;
 use utoipa::ToSchema;
 use vitarchy_core::ApiError;
 
-use crate::{activity::ActivityError, toggl::error::TogglError};
+use crate::{activity::ActivityError, analysis::PeriodError, toggl::error::TogglError};
 
 /// What can go wrong in a Time handler.
 #[derive(Debug, thiserror::Error)]
@@ -31,6 +31,9 @@ pub enum TimeError {
     /// The Activity Snapshot is missing or unreadable.
     #[error(transparent)]
     Activity(#[from] ActivityError),
+    /// The `from`, `to` or `tz` of an analysis request is not usable.
+    #[error(transparent)]
+    Period(#[from] PeriodError),
 }
 
 impl From<sqlx::Error> for TimeError {
@@ -46,6 +49,7 @@ impl TimeError {
         match self {
             Self::Toggl(error) => error.code(),
             Self::Activity(error) => error.code(),
+            Self::Period(error) => error.code(),
             Self::SyncInProgress => "sync_in_progress",
             Self::ConnectionChanged => "connection_changed",
             Self::Api(ApiError::Database(_)) => "database",
@@ -67,7 +71,8 @@ pub struct ProblemBody {
     /// Explanation fit to show the person; never holds the token.
     pub detail: String,
     /// `invalid_token`, `rate_limited`, `unreachable`, `unexpected`, `malformed`,
-    /// `sync_in_progress`, `connection_changed`, `no_snapshot` or `snapshot_unreadable`.
+    /// `sync_in_progress`, `connection_changed`, `no_snapshot`, `snapshot_unreadable`,
+    /// `unknown_time_zone`, `invalid_date`, `period_reversed` or `period_too_long`.
     pub code: String,
     /// For `rate_limited`: seconds until Toggl accepts requests again.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -130,6 +135,12 @@ impl IntoResponse for TimeError {
             Self::Api(error) => error.into_response(),
             Self::Toggl(error) => problem_response(ProblemBody::for_toggl(&error)),
             Self::Activity(error) => problem_response(ProblemBody::for_activity(error)),
+            Self::Period(error) => problem_response(ProblemBody::new(
+                StatusCode::BAD_REQUEST,
+                &error.to_string(),
+                error.code(),
+                None,
+            )),
             Self::SyncInProgress => problem_response(ProblemBody::new(
                 StatusCode::CONFLICT,
                 "A Sync is already running. Wait for it to finish.",

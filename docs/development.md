@@ -86,7 +86,7 @@ settings: {
 - **Storage:** values are saved under the Module's id.
 - **Defaults and bad values:** missing or invalid values fall back to the declared defaults.
 
-**Reading your settings.** Call `useModuleSettings` from the manifest file (the only `app/` file a Module may import):
+**Reading your settings.** Call `useModuleSettings` from the manifest file (the only `app/` file a Module may import). The same file exports `useCoreSettings()` for reading Core settings such as `week_start`:
 
 ```ts
 import { useModuleSettings } from "@/app/module-manifest";
@@ -137,6 +137,14 @@ Time keeps two things apart: **Time Entries** (what you record in Toggl, brought
   - Snapshot looks old: it is at most 8 hours old by design. `make helper-run` takes one now.
   - Server logs: `activity import finished` carries `read`, `inserted`, `updated`, `unchanged`, `skipped`, `duration_ms` and the request id. Titles and app names are never logged.
 
+## Time analysis
+
+Analysis runs on the server ([ADR 0010](adr/0010-analysis-computed-on-the-server.md)); the web draws ready-made series with Recharts, themed by `@/design` (`axisProps`, `gridProps`, `tooltipProps`, `seriesColor(i)`; series colours are the `--chart-N` tokens, validated in both themes; a ninth series folds into `OTHER_COLOR`).
+
+- **Period and Days:** `crates/modules/time/src/analysis/period.rs` turns `from`, `to` (`YYYY-MM-DD`) and `tz` (IANA) into local Days with exact UTC bounds, at most 400. `day_split.rs` cuts any `[start, end)` span into per-Day portions. Both are pure and DST-safe. Every analysis route takes `PeriodQuery` (`routes/analysis/params.rs`), and bad input is a 400 problem with a `code`.
+- **Web:** the Time page keeps its tab and Period in the URL (`?tab=activity&period=week&from=2026-10-12`). `modules/time/period.ts` and `timeSearch.ts` are the pure logic.
+- **Synthetic data for checks:** `make seed-stage` fills stage with about 60 days of invented life-log Time Entries (office commute, sleep, workout, dinner, bath). It refuses anything but stage, needs the stage server to have run once so the schema exists, and is safe to repeat. `SEED_TZ` sets the zone the days are lived in (default `Asia/Kolkata`).
+
 ## Activity snapshot helper
 
 Toggl Track's Activity lives in a macOS-protected folder. `crates/helpers/activity-snapshot` is a small signed binary, run by launchd, that copies it into `~/Library/Application Support/Vitarchy/activity/latest.sqlite` (the Snapshot). It has its own Full Disk Access grant, so the terminal and editor need none. Why: [ADR 0009](adr/0009-activity-via-signed-snapshot-helper.md).
@@ -160,6 +168,7 @@ design/controls  Vitarchy controls built on ui (SegmentedControl)
 design/effects   copied-in Magic UI effects (NumberTicker, BorderBeam, MagicCard)
 design/motion    spring presets, MotionProvider, MotionButton, Pressable
 design/quest     XpBar, LevelBadge, StreakFlame, AchievementBadge, StatCard, QuestList
+design/charts    chart theme from tokens (series colours, axis/grid/tooltip props, ChartTooltip, ChartLegend)
 design/brand     LogoMark (same artwork as public/favicon.svg)
 ```
 

@@ -6,6 +6,7 @@
 //! call [`router_with`] to layer a fake. Nothing in core or the server changes.
 
 mod activity_status;
+mod analysis;
 mod connection;
 mod import;
 mod run_info;
@@ -36,6 +37,7 @@ pub fn router_with(factory: TogglFactory, snapshot: SnapshotFile) -> OpenApiRout
         .routes(utoipa_axum::routes!(status::get_status))
         .routes(utoipa_axum::routes!(sync::post_sync))
         .routes(utoipa_axum::routes!(import::post_import))
+        .routes(utoipa_axum::routes!(analysis::period::get_period))
         .layer(Extension(factory))
         .layer(Extension(snapshot))
 }
