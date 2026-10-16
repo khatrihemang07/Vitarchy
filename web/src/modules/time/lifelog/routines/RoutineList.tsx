@@ -1,5 +1,5 @@
 import type { ActivityPeriod, Routine } from "@/api/time";
-import { toTimeFailure, useRoutines } from "@/api/time";
+import { toTimeFailure, useRoutineOccurrences } from "@/api/time";
 import { FailureNotice } from "../../FailureNotice";
 import { LoadingNotice } from "../../LoadingNotice";
 import { RoutineView } from "./RoutineView";
@@ -9,9 +9,9 @@ interface RoutineListProps {
   onEdit: (routine: Routine) => void;
 }
 
-/** Every saved Routine, each with its own view. Says so when there are none yet. */
+/** Every saved Routine, each with its own view, from one request. Says so when there are none yet. */
 export function RoutineList({ period, onEdit }: RoutineListProps) {
-  const { data, isPending, isError, error } = useRoutines();
+  const { data, isPending, isError, error } = useRoutineOccurrences(period);
   if (isPending) return <LoadingNotice>Loading Routines…</LoadingNotice>;
   if (isError) return <FailureNotice failure={toTimeFailure(error)} />;
   if (data.length === 0) {
@@ -19,8 +19,8 @@ export function RoutineList({ period, onEdit }: RoutineListProps) {
   }
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      {data.map((routine) => (
-        <RoutineView key={routine.id} routine={routine} period={period} onEdit={() => { onEdit(routine); }} />
+      {data.map((entry) => (
+        <RoutineView key={entry.routine.id} entry={entry} onEdit={() => { onEdit(entry.routine); }} />
       ))}
     </div>
   );

@@ -1,6 +1,6 @@
 /** Test helper: routes and bodies of the Routines API. */
 export const SUGGESTIONS = "GET /api/time/routines/suggestions";
-export const ROUTINES = "GET /api/time/routines";
+export const OCCURRENCES = "GET /api/time/routines/occurrences";
 export const CREATE = "POST /api/time/routines";
 
 export const period = { from: "2026-05-01", to: "2026-05-31", tz: "UTC" };
@@ -40,4 +40,16 @@ export const occurrencesBody = {
     gaps: [spread],
     weekdays: [],
   },
+};
+
+/** The batch response: the saved Routine, and a second one that never happened. */
+export const allOccurrencesBody = {
+  routines: [
+    occurrencesBody,
+    {
+      routine: { ...savedRoutine, id: 4, name: "Evening", steps: [{ label: "Dinner", kind: "description", value: "dinner" }] },
+      occurrences: [],
+      stats: { complete_days: 0, incomplete_days: 0, door_to_door: null, steps: [{ days: 0, start: null, end: null, duration: null }], gaps: [], weekdays: [] },
+    },
+  ],
 };

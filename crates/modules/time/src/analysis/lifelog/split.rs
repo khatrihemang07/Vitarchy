@@ -12,7 +12,7 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 use super::LifeEntry;
-use super::entry::{millis, seconds};
+use super::entry::seconds;
 use crate::analysis::{Period, split_by_day};
 
 /// Seconds one project took on one Day.
@@ -52,7 +52,7 @@ pub fn day_splits(period: &Period, entries: &[LifeEntry], now: DateTime<Utc>) ->
         for portion in split_by_day(period, entry.start, entry.end) {
             let day = work.entry(portion.date).or_default();
             day.spans.push((portion.start, portion.end));
-            *day.per_project.entry(entry.project.clone()).or_default() += millis(&portion);
+            *day.per_project.entry(entry.project.clone()).or_default() += portion.millis();
         }
     }
     period

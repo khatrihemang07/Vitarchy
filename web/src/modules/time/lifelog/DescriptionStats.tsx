@@ -1,13 +1,12 @@
-import type { ActivityPeriod } from "@/api/time";
+import { type ActivityPeriod, useLifeLogOverview } from "@/api/time";
 import { useCoreSettings } from "@/app/module-manifest";
 import { ChartPanel } from "../shared/ChartPanel";
 import { HabitCard } from "./HabitCard";
-import { useLifeLogPart } from "./useLifeLogPart";
 
 /** Habits: the usual start, end and length of each description that keeps coming back. */
 export function DescriptionStats({ period }: { period: ActivityPeriod }) {
   const { clock } = useCoreSettings();
-  const query = useLifeLogPart(period, (overview) => overview.description_stats);
+  const query = useLifeLogOverview(period, (overview) => overview.description_stats);
   return (
     <ChartPanel
       title="Your usual routine"

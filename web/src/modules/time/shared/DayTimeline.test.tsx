@@ -47,4 +47,20 @@ describe("DayTimeline", () => {
     expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["office"]);
     expect(document.querySelector("rect")).toHaveAttribute("fill", "#2a78d6");
   });
+
+  it("renders two stretches that start together and share a label without a duplicate key", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    render(
+      <DayTimeline
+        {...props}
+        segments={[
+          { start: "2026-05-01T09:00:00Z", end: "2026-05-01T17:00:00Z", label: "job", group: "office" },
+          { start: "2026-05-01T09:00:00Z", end: "2026-05-01T09:30:00Z", label: "job", group: "work" },
+        ]}
+      />,
+    );
+    expect(document.querySelectorAll("rect")).toHaveLength(2);
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
 });

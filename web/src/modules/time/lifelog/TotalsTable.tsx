@@ -1,10 +1,10 @@
 import { useState } from "react";
-import type { ActivityPeriod } from "@/api/time";
-import { SegmentedControl } from "@/design";
+import { type ActivityPeriod, useLifeLogOverview } from "@/api/time";
+import { OTHER_COLOR, SegmentedControl } from "@/design";
 import { ChartPanel } from "../shared/ChartPanel";
 import { DescriptionRow } from "./DescriptionRow";
 import { ProjectRow } from "./ProjectRow";
-import { useLifeLogPart, useProjectColors } from "./useLifeLogPart";
+import { useProjectColors } from "./useProjectColors";
 
 const VIEWS = [
   { value: "project", label: "By project" },
@@ -13,7 +13,7 @@ const VIEWS = [
 
 /** Logged time by project (open one for its descriptions) or by description across projects. */
 export function TotalsTable({ period }: { period: ActivityPeriod }) {
-  const query = useLifeLogPart(period, (overview) => overview.totals);
+  const query = useLifeLogOverview(period, (overview) => overview.totals);
   const colors = useProjectColors(period);
   const [view, setView] = useState<string>(VIEWS[0].value);
   return (
@@ -48,7 +48,7 @@ export function TotalsTable({ period }: { period: ActivityPeriod }) {
             <tbody>
               {view === "project"
                 ? totals.by_project.map((project) => (
-                    <ProjectRow key={project.name} project={project} color={colors?.get(project.name) ?? "var(--chart-other)"} loggedSeconds={totals.logged_seconds} />
+                    <ProjectRow key={project.name} project={project} color={colors?.get(project.name) ?? OTHER_COLOR} loggedSeconds={totals.logged_seconds} />
                   ))
                 : totals.by_description.map((total) => <DescriptionRow key={total.description} total={total} loggedSeconds={totals.logged_seconds} />)}
             </tbody>

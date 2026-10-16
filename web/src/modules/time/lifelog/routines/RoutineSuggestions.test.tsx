@@ -33,6 +33,23 @@ describe("RoutineSuggestions", () => {
     });
   });
 
+  it("can confirm a suggestion whose descriptions are long, labelling each Step within the limit", async () => {
+    let sent: { steps: { label: string; value: string }[] } | undefined;
+    const long = "a very long description ".repeat(6).trim();
+    stubApi({
+      [SUGGESTIONS]: () => jsonResponse(200, { suggestions: [{ steps: [long, "b"], days: 6 }] }),
+      [CREATE]: async (request) => {
+        sent = (await request.json()) as typeof sent;
+        return jsonResponse(201, savedRoutine);
+      },
+    });
+    renderWithClient(<RoutineSuggestions period={period} />);
+    await userEvent.click(await screen.findByRole("button", { name: "Confirm" }));
+    await waitFor(() => { expect(sent).toBeDefined(); });
+    expect(Array.from(sent?.steps[0]?.label ?? "").length).toBeLessThanOrEqual(80);
+    expect(sent?.steps[0]?.value).toBe(long);
+  });
+
   it("hides a dismissed suggestion", async () => {
     stubApi({ [SUGGESTIONS]: () => jsonResponse(200, { suggestions: [OFFICE_SUGGESTION] }) });
     renderWithClient(<RoutineSuggestions period={period} />);

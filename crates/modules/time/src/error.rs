@@ -82,8 +82,8 @@ pub struct ProblemBody {
     /// `sync_in_progress`, `connection_changed`, `no_snapshot`, `snapshot_unreadable`,
     /// `unknown_time_zone`, `invalid_date`, `period_reversed`, `period_too_long`, or a Routine's
     /// `routine_name_empty`, `routine_name_too_long`, `routine_no_steps`, `routine_too_many_steps`,
-    /// `routine_label_empty`, `routine_value_empty`, `routine_step_too_long`, `routine_name_taken`
-    /// or `routine_not_found`.
+    /// `routine_label_empty`, `routine_value_empty`, `routine_step_too_long`, `routine_name_taken`,
+    /// `routine_not_found` or `routine_unreadable`.
     pub code: String,
     /// For `rate_limited`: seconds until Toggl accepts requests again.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -156,6 +156,7 @@ impl IntoResponse for TimeError {
                 match error {
                     RoutineError::NotFound => StatusCode::NOT_FOUND,
                     RoutineError::NameTaken => StatusCode::CONFLICT,
+                    RoutineError::Unreadable => StatusCode::INTERNAL_SERVER_ERROR,
                     _ => StatusCode::BAD_REQUEST,
                 },
                 &error.to_string(),

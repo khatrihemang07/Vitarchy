@@ -1,20 +1,21 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, type TooltipContentProps, XAxis, YAxis } from "recharts";
-import type { ActivityPeriod } from "@/api/time";
+import { type ActivityPeriod, useLifeLogOverview } from "@/api/time";
 import { axisProps, ChartLegend, gridProps, SEGMENT_GAP, tooltipProps } from "@/design";
 import { ChartPanel } from "../shared/ChartPanel";
 import { ChartTable } from "../shared/ChartTable";
 import { formatDayShort } from "../shared/dayLabel";
 import { formatSpan } from "../shared/duration";
-import { assignProjectColors } from "./projectColors";
 import { SplitTooltip } from "./SplitTooltip";
 import { hoursAxis, splitChart } from "./splitModel";
-import { useLifeLogPart } from "./useLifeLogPart";
+import { useProjectColors } from "./useProjectColors";
 
 const MAX_BAR = 24;
+const NO_COLORS: ReadonlyMap<string, string> = new Map();
 
 /** How each Day divides between projects and what nobody logged, as stacked bars of hours. */
 export function DaySplitChart({ period }: { period: ActivityPeriod }) {
-  const query = useLifeLogPart(period, (overview) => overview);
+  const query = useLifeLogOverview(period, (overview) => overview);
+  const colors = useProjectColors(period) ?? NO_COLORS;
   return (
     <ChartPanel
       title="How your days divide"
@@ -25,7 +26,7 @@ export function DaySplitChart({ period }: { period: ActivityPeriod }) {
     >
       {(overview) => {
         const projects = overview.totals.by_project;
-        const { rows, series } = splitChart(overview.split, projects, assignProjectColors(projects));
+        const { rows, series } = splitChart(overview.split, projects, colors);
         const axis = hoursAxis(rows);
         return (
           <>

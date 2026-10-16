@@ -4,8 +4,10 @@
 //! **starts** in (never its per-Day portions): a night's sleep from 23:00 is one entry of the
 //! Day it began, and its second half never starts a sequence on the next Day.
 
+mod chains;
 mod draft;
 mod occurrence;
+mod redundancy;
 mod routine;
 mod stats;
 mod step;
@@ -15,8 +17,8 @@ pub use draft::{RoutineDraft, RoutineError};
 pub use occurrence::{Occurrence, StepSpan, occurrences};
 pub use routine::Routine;
 pub use stats::{RoutineStats, StepStat, WeekdayStat, routine_stats};
-pub use step::{MatchKind, Step};
-pub use suggest::{MAX_STEPS, MAX_SUGGESTIONS, Suggestion, suggest};
+pub use step::{MatchKind, Step, StepMatcher};
+pub use suggest::{MAX_SUGGESTED_STEPS, MAX_SUGGESTIONS, Suggestion, suggest};
 
 /// Test helper: an entry in UTC with a project and description.
 #[cfg(test)]

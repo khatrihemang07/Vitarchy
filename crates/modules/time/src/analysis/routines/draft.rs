@@ -43,6 +43,9 @@ pub enum RoutineError {
     /// No Routine has the id.
     #[error("there is no such Routine")]
     NotFound,
+    /// A stored Routine could not be read back (an unknown match kind).
+    #[error("a saved Routine could not be read")]
+    Unreadable,
 }
 
 impl RoutineError {
@@ -59,6 +62,7 @@ impl RoutineError {
             Self::StepTooLong => "routine_step_too_long",
             Self::NameTaken => "routine_name_taken",
             Self::NotFound => "routine_not_found",
+            Self::Unreadable => "routine_unreadable",
         }
     }
 }
@@ -182,6 +186,7 @@ mod tests {
             RoutineError::StepTooLong,
             RoutineError::NameTaken,
             RoutineError::NotFound,
+            RoutineError::Unreadable,
         ];
         let codes: std::collections::HashSet<_> = all.iter().map(|e| e.code()).collect();
         assert_eq!(codes.len(), all.len());

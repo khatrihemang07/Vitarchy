@@ -39,9 +39,9 @@ pub async fn get_suggestions(
     Query(query): Query<PeriodQuery>,
 ) -> Result<Json<Suggestions>, TimeError> {
     let period = query.period()?;
-    let entries = load(&state.pool, &period).await?;
-    let saved: Vec<Vec<String>> = routines::list(&state.pool)
-        .await?
+    let (listed, entries) =
+        tokio::try_join!(routines::list(&state.pool), load(&state.pool, &period))?;
+    let saved: Vec<Vec<String>> = listed
         .into_iter()
         .map(|routine| {
             routine

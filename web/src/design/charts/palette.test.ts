@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { OTHER_COLOR, SERIES_COUNT, seriesColor } from "./palette";
+import { OTHER_COLOR, SERIES_COUNT, SERIES_HEX, seriesColor } from "./palette";
 
 const tokens = readFileSync(join(import.meta.dirname, "../theme/tokens.css"), "utf8");
 const darkBlock = tokens.slice(0, tokens.indexOf('[data-theme="light"] {'));
@@ -26,5 +26,13 @@ describe("chart tokens", () => {
       expect(darkBlock).toContain(`${name}:`);
       expect(lightBlock).toContain(`${name}:`);
     }
+  });
+});
+
+describe("SERIES_HEX", () => {
+  it("are the series colours of both themes, so a colour can be compared with the palette without drifting from the tokens", () => {
+    const valueOf = (block: string, index: number) => new RegExp(`--chart-${String(index + 1)}:\\s*(#[0-9a-f]{6})`, "i").exec(block)?.[1];
+    const fromTokens = Array.from({ length: SERIES_COUNT }, (_, i) => ({ light: valueOf(lightBlock, i), dark: valueOf(darkBlock, i) }));
+    expect(SERIES_HEX).toEqual(fromTokens);
   });
 });

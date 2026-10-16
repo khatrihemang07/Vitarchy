@@ -22,7 +22,7 @@ pub struct LifeLogSpan {
     pub description: String,
 }
 
-/// The spans inside the Period's first Day, earliest first.
+/// The spans inside the Period's first Day, earliest first, and longest first among equal starts.
 #[must_use]
 pub fn timeline(period: &Period, entries: &[LifeEntry]) -> Vec<LifeLogSpan> {
     let mut spans: Vec<LifeLogSpan> = entries
@@ -39,7 +39,8 @@ pub fn timeline(period: &Period, entries: &[LifeEntry]) -> Vec<LifeLogSpan> {
                 })
         })
         .collect();
-    spans.sort_by_key(|span| (span.start, span.end));
+    // Of entries starting together the longer is painted first, so the shorter stays visible on top.
+    spans.sort_by_key(|span| (span.start, std::cmp::Reverse(span.end)));
     spans
 }
 
@@ -150,6 +151,20 @@ mod tests {
             ],
         );
         assert_eq!(spans.len(), 2);
+    }
+
+    #[test]
+    fn of_two_entries_starting_together_the_longer_comes_first_so_the_shorter_paints_on_top() {
+        let spans = lane(
+            "UTC",
+            "2026-05-01",
+            &[
+                ("short", "a", "2026-05-01T09:00:00Z", "2026-05-01T09:30:00Z"),
+                ("long", "b", "2026-05-01T09:00:00Z", "2026-05-01T17:00:00Z"),
+            ],
+        );
+        let order: Vec<&str> = spans.iter().map(|s| s.1.as_str()).collect();
+        assert_eq!(order, ["long", "short"]);
     }
 
     #[test]

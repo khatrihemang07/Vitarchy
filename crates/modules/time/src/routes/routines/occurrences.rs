@@ -1,23 +1,21 @@
-//! `GET /api/time/routines/{id}/occurrences`.
+//! `GET /api/time/routines/occurrences`: every saved Routine over a Period, from one load.
 
 use axum::{
     Json,
-    extract::{Path, Query, State},
+    extract::{Query, State},
 };
 use serde::Serialize;
 use utoipa::ToSchema;
 use vitarchy_core::AppState;
 
 use crate::{
-    analysis::routines::{
-        Occurrence, Routine, RoutineError, RoutineStats, occurrences, routine_stats,
-    },
+    analysis::routines::{Occurrence, Routine, RoutineStats, occurrences, routine_stats},
     error::{ProblemBody, TimeError},
     repo::routines,
     routes::analysis::{lifelog::load, params::PeriodQuery},
 };
 
-/// How a Routine went over a Period.
+/// How one Routine went over a Period.
 #[derive(Serialize, ToSchema)]
 pub struct RoutineOccurrences {
     /// The Routine.
@@ -28,39 +26,45 @@ pub struct RoutineOccurrences {
     pub stats: RoutineStats,
 }
 
-/// A Routine's Occurrences, complete and incomplete, with statistics.
+/// Every saved Routine over a Period.
+#[derive(Serialize, ToSchema)]
+pub struct AllRoutineOccurrences {
+    /// By Routine name.
+    pub routines: Vec<RoutineOccurrences>,
+}
+
+/// Every Routine's Occurrences, complete and incomplete, with statistics. The Time Entries are
+/// loaded once however many Routines there are.
 #[utoipa::path(
     get,
-    path = "/routines/{id}/occurrences",
+    path = "/routines/occurrences",
     tag = "time",
-    params(("id" = i64, Path, description = "The Routine's id"), PeriodQuery),
+    params(PeriodQuery),
     responses(
-        (status = 200, description = "Occurrences and statistics", body = RoutineOccurrences),
+        (status = 200, description = "Each Routine with its Occurrences and statistics", body = AllRoutineOccurrences),
         (status = 400, description = "Bad zone, date or length", body = ProblemBody),
-        (status = 404, description = "No such Routine (`routine_not_found`)", body = ProblemBody),
     )
 )]
 #[tracing::instrument(skip_all)]
 pub async fn get_occurrences(
     State(state): State<AppState>,
-    Path(id): Path<i64>,
     Query(query): Query<PeriodQuery>,
-) -> Result<Json<RoutineOccurrences>, TimeError> {
+) -> Result<Json<AllRoutineOccurrences>, TimeError> {
     let period = query.period()?;
-    let routine = routines::get(&state.pool, id)
-        .await?
-        .ok_or(RoutineError::NotFound)?;
-    let entries = load(&state.pool, &period).await?;
-    let found = occurrences(&period, &routine.steps, &entries);
-    let figures = routine_stats(period.tz(), routine.steps.len(), &found);
-    tracing::debug!(
-        routine_id = id,
-        occurrences = found.len(),
-        "routine occurrences found"
-    );
-    Ok(Json(RoutineOccurrences {
-        routine,
-        occurrences: found,
-        stats: figures,
-    }))
+    let (saved, entries) =
+        tokio::try_join!(routines::list(&state.pool), load(&state.pool, &period))?;
+    let found: Vec<RoutineOccurrences> = saved
+        .into_iter()
+        .map(|routine| {
+            let days = occurrences(&period, &routine.steps, &entries);
+            let figures = routine_stats(period.tz(), routine.steps.len(), &days);
+            RoutineOccurrences {
+                routine,
+                occurrences: days,
+                stats: figures,
+            }
+        })
+        .collect();
+    tracing::debug!(routines = found.len(), "routine occurrences found");
+    Ok(Json(AllRoutineOccurrences { routines: found }))
 }

@@ -18,22 +18,12 @@ export function useRoutineSuggestions(period: ActivityPeriod) {
   });
 }
 
-/** The saved Routines. */
-export function useRoutines() {
+/** Every saved Routine with how it went over the Period, from one request. */
+export function useRoutineOccurrences(period: ActivityPeriod) {
   return useQuery({
-    queryKey: routinesKey("list"),
-    queryFn: () => callApi(() => api.GET("/api/time/routines")),
+    queryKey: routinesKey("occurrences", period),
+    queryFn: () => callApi(() => api.GET("/api/time/routines/occurrences", { params: { query: period } })),
     select: (body) => body.routines,
-    retry: false,
-  });
-}
-
-/** How one Routine went over the Period. */
-export function useRoutineOccurrences(id: number, period: ActivityPeriod) {
-  return useQuery({
-    queryKey: routinesKey("occurrences", id, period),
-    queryFn: () =>
-      callApi(() => api.GET("/api/time/routines/{id}/occurrences", { params: { path: { id }, query: period } })),
     retry: false,
   });
 }

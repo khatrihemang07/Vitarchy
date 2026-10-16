@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use super::{ActivityRow, row::millis, seconds};
-use crate::analysis::{Period, split_by_day};
+use super::{ActivityRow, seconds};
+use crate::analysis::{DayPortion, Period, split_by_day};
 
 /// Titles kept per Context.
 pub const TOP_TITLES: usize = 8;
@@ -80,7 +80,7 @@ pub fn totals(period: &Period, rows: &[ActivityRow]) -> Totals {
     for row in rows {
         let spent: i64 = split_by_day(period, row.start, row.end)
             .iter()
-            .map(millis)
+            .map(DayPortion::millis)
             .sum();
         if spent == 0 {
             continue;

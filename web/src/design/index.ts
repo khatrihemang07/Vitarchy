@@ -24,8 +24,8 @@ export * from "./ui/tooltip";
 export { ChartLegend, type LegendItem } from "./charts/ChartLegend";
 export { ChartTooltip, type TooltipRow } from "./charts/ChartTooltip";
 export { axisProps, BAR_RADIUS, gridProps, SEGMENT_GAP, tooltipProps } from "./charts/chartTheme";
-export { usableSeriesColor } from "./charts/contrast";
-export { OTHER_COLOR, SERIES_COUNT, seriesColor } from "./charts/palette";
+export { isDistinct, usableSeriesColor } from "./charts/contrast";
+export { OTHER_COLOR, SERIES_COUNT, SERIES_HEX, seriesColor } from "./charts/palette";
 
 export { SegmentedControl, type SegmentedOption } from "./controls/SegmentedControl";
 

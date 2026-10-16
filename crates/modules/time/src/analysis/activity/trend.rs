@@ -6,7 +6,7 @@ use chrono::{Datelike, Days, NaiveDate};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use super::{ActivityRow, row::millis, seconds, totals::slot};
+use super::{ActivityRow, seconds, totals::slot};
 use crate::analysis::{Period, split_by_day};
 
 /// Apps drawn on their own; the rest fold into `other`.
@@ -88,7 +88,7 @@ pub fn trend(period: &Period, rows: &[ActivityRow], week_start: WeekStart) -> Tr
                 .unwrap_or(0);
             let cells = slot(&mut per_app, &row.app);
             cells.resize(weeks.len(), 0);
-            cells[index] += millis(&portion);
+            cells[index] += portion.millis();
         }
     }
     let mut ranked: Vec<(String, Vec<i64>)> = per_app.into_iter().collect();

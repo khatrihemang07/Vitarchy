@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::analysis::lifelog::LifeEntry;
+use crate::analysis::lifelog::{LifeEntry, fold};
 
 /// What a Step is matched against.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
@@ -47,19 +47,34 @@ pub struct Step {
     pub value: String,
 }
 
-/// Equality for matching: trimmed and case-insensitive.
-fn same(a: &str, b: &str) -> bool {
-    a.trim().to_lowercase() == b.trim().to_lowercase()
+impl Step {
+    /// This Step ready to test many entries: its value is folded once, not per entry.
+    #[must_use]
+    pub fn matcher(&self) -> StepMatcher {
+        StepMatcher {
+            kind: self.kind,
+            key: fold(&self.value),
+        }
+    }
 }
 
-impl Step {
-    /// Whether `entry` belongs to this Step. A project is matched by name (Toggl projects have
-    /// no other stable handle in the analysis rows; renaming one in Toggl ends the match).
+/// A [`Step`] prepared for matching. A project is matched by name (Toggl projects have no other
+/// stable handle in the analysis rows; renaming one in Toggl ends the match). A description is
+/// matched as shown, so "No description" matches the entries that have none, just as
+/// "No project" matches the entries without a project.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StepMatcher {
+    kind: MatchKind,
+    key: String,
+}
+
+impl StepMatcher {
+    /// Whether `entry` belongs to the Step. Allocation-free: entries carry their folded names.
     #[must_use]
     pub fn matches(&self, entry: &LifeEntry) -> bool {
         match self.kind {
-            MatchKind::Description => same(&entry.description, &self.value),
-            MatchKind::Project => same(&entry.project, &self.value),
+            MatchKind::Description => entry.description_key == self.key,
+            MatchKind::Project => entry.project_key == self.key,
         }
     }
 }
@@ -68,6 +83,7 @@ impl Step {
 mod tests {
     use super::super::entry;
     use super::*;
+    use crate::analysis::lifelog::NO_DESCRIPTION;
 
     fn step(kind: MatchKind, value: &str) -> Step {
         Step {
@@ -85,9 +101,22 @@ mod tests {
             "2026-05-01T09:00:00Z",
             "2026-05-01T10:00:00Z",
         );
-        assert!(step(MatchKind::Description, "inside_office ").matches(&e));
-        assert!(!step(MatchKind::Description, "inside").matches(&e));
-        assert!(!step(MatchKind::Description, "office").matches(&e));
+        assert!(
+            step(MatchKind::Description, "inside_office ")
+                .matcher()
+                .matches(&e)
+        );
+        assert!(!step(MatchKind::Description, "inside").matcher().matches(&e));
+        assert!(!step(MatchKind::Description, "office").matcher().matches(&e));
+    }
+
+    #[test]
+    fn no_description_matches_entries_that_have_none() {
+        let blank = entry("p", "  ", "2026-05-01T09:00:00Z", "2026-05-01T10:00:00Z");
+        let worded = entry("p", "x", "2026-05-01T09:00:00Z", "2026-05-01T10:00:00Z");
+        let matcher = step(MatchKind::Description, NO_DESCRIPTION).matcher();
+        assert!(matcher.matches(&blank));
+        assert!(!matcher.matches(&worded));
     }
 
     #[test]
@@ -98,9 +127,13 @@ mod tests {
             "2026-05-01T09:00:00Z",
             "2026-05-01T10:00:00Z",
         );
-        assert!(step(MatchKind::Project, "office").matches(&e));
+        assert!(step(MatchKind::Project, "office").matcher().matches(&e));
         let none = entry("-", "x", "2026-05-01T09:00:00Z", "2026-05-01T10:00:00Z");
-        assert!(step(MatchKind::Project, "No project").matches(&none));
+        assert!(
+            step(MatchKind::Project, "No project")
+                .matcher()
+                .matches(&none)
+        );
     }
 
     #[test]

@@ -2,6 +2,7 @@ import { useId } from "react";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { RoutineMatchKind, RoutineStep } from "@/api/time";
 import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/design";
+import { MAX_LABEL_CHARS, MAX_VALUE_CHARS } from "./routineLimits";
 import { type MatchChoices, withCurrent } from "./routineModel";
 
 interface StepFieldsProps {
@@ -44,7 +45,7 @@ export function StepFields({ position, step, choices, canMoveUp, canMoveDown, on
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`${id}-label`}>Label</Label>
-          <Input id={`${id}-label`} value={step.label} onChange={(event) => { onChange({ ...step, label: event.target.value }); }} />
+          <Input id={`${id}-label`} value={step.label} maxLength={MAX_LABEL_CHARS} onChange={(event) => { onChange({ ...step, label: event.target.value }); }} />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`${id}-kind`}>Matches a</Label>
@@ -73,7 +74,7 @@ export function StepFields({ position, step, choices, canMoveUp, canMoveDown, on
               </SelectContent>
             </Select>
           ) : (
-            <Input id={`${id}-value`} value={step.value} placeholder="Type it exactly" onChange={(event) => { onChange({ ...step, value: event.target.value }); }} />
+            <Input id={`${id}-value`} value={step.value} maxLength={MAX_VALUE_CHARS} placeholder="Type it exactly" onChange={(event) => { onChange({ ...step, value: event.target.value }); }} />
           )}
         </div>
       </div>

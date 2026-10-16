@@ -3,7 +3,6 @@
 use chrono::{DateTime, Utc};
 
 use crate::analysis::context::{clean_app, derive_context, trim_invisible};
-use crate::analysis::day_split::DayPortion;
 
 /// An Activity row with its app cleaned and its Context derived once.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,11 +32,6 @@ impl ActivityRow {
             end,
         }
     }
-}
-
-/// Length of a portion in milliseconds.
-pub(super) fn millis(portion: &DayPortion) -> i64 {
-    (portion.end - portion.start).num_milliseconds()
 }
 
 /// Test helper: a row from `HH:MM` clock times on 2026-05-01 UTC.

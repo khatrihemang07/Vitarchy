@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { jsonResponse, renderWithClient, stubApi } from "../test-utils";
 import { LifeLogDayTimeline } from "./LifeLogDayTimeline";
@@ -22,6 +22,24 @@ describe("LifeLogDayTimeline", () => {
     expect(screen.getByRole("cell", { name: "inside_office (office)", hidden: true })).toBeInTheDocument();
     const asked = fetchMock.mock.calls.map((c) => new URL(c[0].url)).find((u) => u.pathname.endsWith("/timeline"));
     expect(asked?.searchParams.get("day")).toBe("2026-05-05");
+  });
+
+  it("draws nothing until the project colours are known, then draws the same colours as the other panels", async () => {
+    let release: () => void = () => undefined;
+    const overviewReady = new Promise<void>((resolve) => { release = resolve; });
+    stubApi({
+      [LIFELOG_OVERVIEW]: async () => {
+        await overviewReady;
+        return jsonResponse(200, LOGGED);
+      },
+      [LIFELOG_TIMELINE]: (request) => jsonResponse(200, lane(new URL(request.url).searchParams.get("day") ?? "", [span("2026-05-05")])),
+    });
+    renderWithClient(<LifeLogDayTimeline period={period} />);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(document.querySelector("rect")).toBeNull();
+    release();
+    await waitFor(() => { expect(document.querySelector("rect")).not.toBeNull(); });
+    expect(document.querySelector("rect")).toHaveAttribute("fill", "#2a78d6");
   });
 
   it("moves to the previous Day, and an empty Day says so while keeping the picker", async () => {

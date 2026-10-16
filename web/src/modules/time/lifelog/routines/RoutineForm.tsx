@@ -3,7 +3,8 @@ import { Plus } from "lucide-react";
 import { type ActivityPeriod, type Routine, toTimeFailure, useLifeLogOverview, useSaveRoutine } from "@/api/time";
 import { Button, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label } from "@/design";
 import { FailureNotice } from "../../FailureNotice";
-import { emptyStep, isDraftReady, matchChoices, MAX_NAME_CHARS, MAX_STEPS, moveStep } from "./routineModel";
+import { MAX_NAME_CHARS, MAX_STEPS_PER_ROUTINE } from "./routineLimits";
+import { emptyStep, isDraftReady, matchChoices, moveStep } from "./routineModel";
 import { StepFields } from "./StepFields";
 
 interface RoutineFormProps {
@@ -69,7 +70,7 @@ export function RoutineForm({ routine, period, onDone }: RoutineFormProps) {
         variant="outline"
         size="sm"
         className="self-start"
-        disabled={rows.length >= MAX_STEPS}
+        disabled={rows.length >= MAX_STEPS_PER_ROUTINE}
         onClick={() => {
           setRows((current) => [...current, { key: nextKey, step: emptyStep() }]);
           setNextKey((key) => key + 1);

@@ -17,6 +17,12 @@ pub struct DayPortion {
 }
 
 impl DayPortion {
+    /// Length in milliseconds; analyses sum these and round to seconds once.
+    #[must_use]
+    pub fn millis(&self) -> i64 {
+        (self.end - self.start).num_milliseconds()
+    }
+
     /// Length in seconds.
     #[must_use]
     pub fn seconds(&self) -> i64 {
@@ -61,6 +67,17 @@ mod tests {
     }
 
     const HOUR: i64 = 3600;
+
+    #[test]
+    fn a_portion_knows_its_length_in_milliseconds() {
+        let period = Period::parse("2026-05-01", "2026-05-01", "UTC").unwrap();
+        let portion = split_by_day(
+            &period,
+            utc("2026-05-01T10:00:00.250Z"),
+            utc("2026-05-01T10:00:01Z"),
+        )[0];
+        assert_eq!((portion.millis(), portion.seconds()), (750, 0));
+    }
 
     #[test]
     fn a_span_inside_one_day_is_one_portion() {

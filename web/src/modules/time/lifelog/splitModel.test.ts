@@ -1,4 +1,4 @@
-import { hoursAxis, splitChart } from "./splitModel";
+import { hoursAxis, splitChart, UNLOGGED_COLOR } from "./splitModel";
 
 const colors = new Map([["office", "#2a78d6"], ["sleep", "var(--chart-1)"]]);
 const split = [
@@ -18,6 +18,21 @@ describe("splitChart", () => {
     const [office, sleep, unlogged] = series;
     expect(rows[0]).toMatchObject({ date: "2026-05-04", [office?.key ?? ""]: 8, [sleep?.key ?? ""]: 4, [unlogged?.key ?? ""]: 12 });
     expect(rows[0]?.seconds[office?.key ?? ""]).toBe(28800);
+  });
+
+  it("keeps a project that is itself named Unlogged apart from the unlogged remainder", () => {
+    const named = [{ date: "2026-05-04", elapsed_seconds: 86400, unlogged_seconds: 500, by_project: [{ project: "Unlogged", seconds: 100 }] }];
+    const { rows, series } = splitChart(named, [{ name: "Unlogged" }], new Map());
+    const [project, remainder] = series;
+    expect(project?.key).not.toBe(remainder?.key);
+    expect(rows[0]?.seconds[project?.key ?? ""]).toBe(100);
+    expect(rows[0]?.seconds[remainder?.key ?? ""]).toBe(500);
+  });
+
+  it("colours a project with no assigned colour in the neutral colour, never the unlogged one", () => {
+    const { series } = splitChart(split, projects, new Map());
+    expect(series[0]?.color).toBe("var(--chart-other)");
+    expect(series[0]?.color).not.toBe(UNLOGGED_COLOR);
   });
 
   it("leaves a project that took no time on a Day at zero, and a Day yet to come empty", () => {

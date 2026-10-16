@@ -56,11 +56,11 @@ pub fn router_with(factory: TogglFactory, snapshot: SnapshotFile) -> OpenApiRout
             routines::save::post_routine
         ))
         .routes(utoipa_axum::routes!(routines::suggestions::get_suggestions))
+        .routes(utoipa_axum::routes!(routines::occurrences::get_occurrences))
         .routes(utoipa_axum::routes!(
             routines::save::put_routine,
             routines::delete::delete_routine
         ))
-        .routes(utoipa_axum::routes!(routines::occurrences::get_occurrences))
         .layer(Extension(factory))
         .layer(Extension(snapshot))
 }

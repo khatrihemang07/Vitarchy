@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
-import { type ActivityPeriod, type Routine, toTimeFailure, useDeleteRoutine, useRoutineOccurrences } from "@/api/time";
+import { type RoutineOccurrences, toTimeFailure, useDeleteRoutine } from "@/api/time";
 import { Button } from "@/design";
 import { FailureNotice } from "../../FailureNotice";
 import { ChartPanel } from "../../shared/ChartPanel";
@@ -9,20 +9,20 @@ import { RoutineHeadline } from "./RoutineHeadline";
 import { StepDurationChart } from "./StepDurationChart";
 
 interface RoutineViewProps {
-  routine: Routine;
-  period: ActivityPeriod;
+  /** The Routine with its Occurrences and statistics; its Steps are the only source of labels. */
+  entry: RoutineOccurrences;
   onEdit: () => void;
 }
 
 /** One saved Routine over the Period: headline times, a chart per Day, and the incomplete Days. */
-export function RoutineView({ routine, period, onEdit }: RoutineViewProps) {
-  const query = useRoutineOccurrences(routine.id, period);
+export function RoutineView({ entry, onEdit }: RoutineViewProps) {
+  const { routine } = entry;
   const remove = useDeleteRoutine();
   const [confirming, setConfirming] = useState(false);
   return (
     <ChartPanel
       title={routine.name}
-      query={query}
+      query={{ isPending: false, isError: false, error: null, data: entry }}
       isEmpty={(data) => data.occurrences.length === 0}
       emptyMessage="This Routine did not happen in this Period."
       actions={

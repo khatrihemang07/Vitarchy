@@ -14,9 +14,9 @@ use crate::analysis::routines::{RoutineDraft, RoutineError, Step};
 /// Body of `POST /routines` and `PUT /routines/{id}`.
 #[derive(Deserialize, ToSchema)]
 pub struct RoutineRequest {
-    /// What to call the Routine; at most 80 characters, unique ignoring case.
+    /// What to call the Routine; unique ignoring case (length limits: see `RoutineDraft`).
     pub name: String,
-    /// 1 to 8 Steps in order.
+    /// The Steps in order; at least one.
     pub steps: Vec<Step>,
 }
 

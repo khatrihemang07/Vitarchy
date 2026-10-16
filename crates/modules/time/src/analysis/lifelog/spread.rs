@@ -91,7 +91,7 @@ pub fn clock_spread(minutes: &[f64]) -> Option<ClockSpread> {
 
 /// Where to cut the clock circle: opposite the circular mean, so a cluster is never split.
 /// With no direction to speak of (times spread evenly round the clock) the cut is midnight.
-fn cut_point(minutes: &[f64]) -> f64 {
+pub(super) fn cut_point(minutes: &[f64]) -> f64 {
     let angle = |m: &f64| m / MINUTES_PER_DAY * std::f64::consts::TAU;
     let (sin, cos) = minutes.iter().fold((0.0, 0.0), |(s, c), m| {
         (s + angle(m).sin(), c + angle(m).cos())

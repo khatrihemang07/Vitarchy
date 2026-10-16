@@ -1,5 +1,6 @@
 /** Shaping the server's daily split into rows for the stacked Recharts bars. Pure. */
 import type { LifeLogDaySplit } from "@/api/time";
+import { OTHER_COLOR } from "@/design";
 import { toHours } from "../shared/duration";
 
 /** One stacked series: a project, or the unlogged remainder. */
@@ -12,6 +13,8 @@ export interface SplitSeries {
 /** One Day's row: hours under each series key (for the bars) and exact seconds (for the words). */
 export type SplitRow = { date: string; seconds: Record<string, number> } & Record<string, number | string | Record<string, number>>;
 
+const UNLOGGED_KEY = "unlogged";
+
 /** Colour of the unlogged remainder. */
 export const UNLOGGED_COLOR = "var(--chart-unlogged)";
 
@@ -21,18 +24,17 @@ export function splitChart(
   projects: readonly { name: string }[],
   colors: ReadonlyMap<string, string>,
 ): { rows: SplitRow[]; series: SplitSeries[] } {
-  const series: SplitSeries[] = [
-    ...projects.map((p, index) => ({ key: `p${String(index)}`, label: p.name, color: colors.get(p.name) ?? UNLOGGED_COLOR })),
-    { key: "unlogged", label: "Unlogged", color: UNLOGGED_COLOR },
-  ];
-  const keyOf = new Map(series.map((s) => [s.label, s.key]));
+  const projectSeries: SplitSeries[] = projects.map((p, index) => ({ key: `p${String(index)}`, label: p.name, color: colors.get(p.name) ?? OTHER_COLOR }));
+  const series: SplitSeries[] = [...projectSeries, { key: UNLOGGED_KEY, label: "Unlogged", color: UNLOGGED_COLOR }];
+  // Only projects are looked up by name: a project called "Unlogged" must not claim the remainder's key.
+  const keyOf = new Map(projectSeries.map((s) => [s.label, s.key]));
   const rows = split.map((day) => {
     const seconds: Record<string, number> = Object.fromEntries(series.map((s) => [s.key, 0]));
     for (const part of day.by_project) {
       const key = keyOf.get(part.project);
       if (key) seconds[key] = part.seconds;
     }
-    seconds.unlogged = day.unlogged_seconds;
+    seconds[UNLOGGED_KEY] = day.unlogged_seconds;
     const row: SplitRow = { date: day.date, seconds };
     for (const s of series) row[s.key] = toHours(seconds[s.key] ?? 0);
     return row;

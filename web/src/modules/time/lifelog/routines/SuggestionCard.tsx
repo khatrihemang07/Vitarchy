@@ -2,7 +2,8 @@ import { useId, useState } from "react";
 import { type RoutineSuggestion, toTimeFailure, useSaveRoutine } from "@/api/time";
 import { Button, Input, Label } from "@/design";
 import { FailureNotice } from "../../FailureNotice";
-import { MAX_NAME_CHARS, stepsOfSuggestion, suggestedName } from "./routineModel";
+import { MAX_NAME_CHARS } from "./routineLimits";
+import { isDraftReady, stepsOfSuggestion, suggestedName } from "./routineModel";
 import { StepChain } from "./StepChain";
 
 interface SuggestionCardProps {
@@ -15,8 +16,9 @@ export function SuggestionCard({ suggestion, onDismiss }: SuggestionCardProps) {
   const nameId = useId();
   const [name, setName] = useState(() => suggestedName(suggestion));
   const save = useSaveRoutine();
+  const steps = stepsOfSuggestion(suggestion);
   const confirm = () => {
-    save.mutate({ draft: { name, steps: stepsOfSuggestion(suggestion) } });
+    save.mutate({ draft: { name, steps } });
   };
   return (
     <li className="flex min-w-0 flex-col gap-3 rounded-lg border bg-background/40 p-3">
@@ -28,7 +30,7 @@ export function SuggestionCard({ suggestion, onDismiss }: SuggestionCardProps) {
       </div>
       {save.isError ? <FailureNotice failure={toTimeFailure(save.error)} /> : null}
       <div className="flex gap-2">
-        <Button size="sm" onClick={confirm} disabled={save.isPending || name.trim() === ""}>
+        <Button size="sm" onClick={confirm} disabled={save.isPending || !isDraftReady(name, steps)}>
           {save.isPending ? "Saving…" : "Confirm"}
         </Button>
         <Button size="sm" variant="ghost" onClick={onDismiss} disabled={save.isPending}>

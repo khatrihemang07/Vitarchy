@@ -1,5 +1,7 @@
 //! `time.routines` and `time.routine_steps`: the person's saved Routines.
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use sqlx::{PgPool, Postgres, Transaction};
 
@@ -23,7 +25,10 @@ struct StepRow {
 }
 
 /// Every Routine with its Steps, by name.
-pub async fn list(pool: &PgPool) -> Result<Vec<Routine>, sqlx::Error> {
+///
+/// # Errors
+/// A database error, or [`RoutineError::Unreadable`] when a stored Step has an unknown match kind.
+pub async fn list(pool: &PgPool) -> Result<Vec<Routine>, TimeError> {
     let rows: Vec<RoutineRow> = sqlx::query_as(
         "SELECT id, name, created_at, updated_at FROM time.routines ORDER BY lower(name), id",
     )
@@ -35,11 +40,14 @@ pub async fn list(pool: &PgPool) -> Result<Vec<Routine>, sqlx::Error> {
     )
     .fetch_all(pool)
     .await?;
-    Ok(rows.into_iter().map(|row| assemble(row, &steps)).collect())
+    assemble_all(rows, steps)
 }
 
 /// One Routine, or `None` when the id is unknown.
-pub async fn get(pool: &PgPool, id: i64) -> Result<Option<Routine>, sqlx::Error> {
+///
+/// # Errors
+/// A database error, or [`RoutineError::Unreadable`] when a stored Step has an unknown match kind.
+pub async fn get(pool: &PgPool, id: i64) -> Result<Option<Routine>, TimeError> {
     let row: Option<RoutineRow> =
         sqlx::query_as("SELECT id, name, created_at, updated_at FROM time.routines WHERE id = $1")
             .bind(id)
@@ -53,7 +61,7 @@ pub async fn get(pool: &PgPool, id: i64) -> Result<Option<Routine>, sqlx::Error>
     .bind(id)
     .fetch_all(pool)
     .await?;
-    Ok(Some(assemble(row, &steps)))
+    Ok(assemble_all(vec![row], steps)?.pop())
 }
 
 /// Stores a new Routine.
@@ -136,22 +144,74 @@ fn name_taken(error: sqlx::Error) -> TimeError {
     }
 }
 
-fn assemble(row: RoutineRow, steps: &[StepRow]) -> Routine {
-    Routine {
-        id: row.id,
-        name: row.name,
-        steps: steps
-            .iter()
-            .filter(|s| s.routine_id == row.id)
-            .filter_map(|s| {
-                Some(Step {
-                    label: s.label.clone(),
-                    kind: MatchKind::parse(&s.match_kind)?,
-                    value: s.match_value.clone(),
-                })
-            })
-            .collect(),
-        created_at: row.created_at,
-        updated_at: row.updated_at,
+/// The Routines with their Steps (already in position order), grouped once by Routine.
+fn assemble_all(rows: Vec<RoutineRow>, steps: Vec<StepRow>) -> Result<Vec<Routine>, TimeError> {
+    let mut by_routine: HashMap<i64, Vec<Step>> = HashMap::new();
+    for step in steps {
+        let Some(kind) = MatchKind::parse(&step.match_kind) else {
+            tracing::error!(
+                routine_id = step.routine_id,
+                "stored routine step has an unknown match kind"
+            );
+            return Err(RoutineError::Unreadable.into());
+        };
+        by_routine.entry(step.routine_id).or_default().push(Step {
+            label: step.label,
+            kind,
+            value: step.match_value,
+        });
+    }
+    Ok(rows
+        .into_iter()
+        .map(|row| Routine {
+            steps: by_routine.remove(&row.id).unwrap_or_default(),
+            id: row.id,
+            name: row.name,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        })
+        .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn row(id: i64) -> RoutineRow {
+        RoutineRow {
+            id,
+            name: format!("r{id}"),
+            created_at: DateTime::UNIX_EPOCH,
+            updated_at: DateTime::UNIX_EPOCH,
+        }
+    }
+
+    fn step(routine_id: i64, label: &str, kind: &str) -> StepRow {
+        StepRow {
+            routine_id,
+            label: label.into(),
+            match_kind: kind.into(),
+            match_value: "v".into(),
+        }
+    }
+
+    #[test]
+    fn steps_go_to_their_routine_in_the_order_given() {
+        let steps = vec![
+            step(1, "a", "description"),
+            step(2, "x", "project"),
+            step(1, "b", "project"),
+        ];
+        let routines = assemble_all(vec![row(1), row(2), row(3)], steps).unwrap();
+        let labels = |r: &Routine| r.steps.iter().map(|s| s.label.clone()).collect::<Vec<_>>();
+        assert_eq!(labels(&routines[0]), ["a", "b"]);
+        assert_eq!(labels(&routines[1]), ["x"]);
+        assert!(routines[2].steps.is_empty());
+    }
+
+    #[test]
+    fn a_stored_step_with_an_unknown_kind_is_an_error_not_a_dropped_step() {
+        let error = assemble_all(vec![row(1)], vec![step(1, "a", "tag")]).unwrap_err();
+        assert_eq!(error.code(), "routine_unreadable");
     }
 }

@@ -11,17 +11,23 @@ function read(): Set<string> {
   }
 }
 
+function write(keys: ReadonlySet<string>) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...keys]));
+  } catch {
+    // Blocked storage: the hiding lasts until this panel unmounts.
+  }
+}
+
 /** Suggestions hidden for this browser session only (they come back in a new session). Falls back to memory when storage is blocked. */
 export function useDismissedSuggestions(): { dismissed: ReadonlySet<string>; dismiss: (key: string) => void } {
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(read);
   const dismiss = (key: string) => {
-    const next = new Set(dismissed).add(key);
-    setDismissed(next);
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...next]));
-    } catch {
-      // Blocked storage: the hiding lasts until this panel unmounts.
-    }
+    setDismissed((current) => {
+      const next = new Set(current).add(key);
+      write(next);
+      return next;
+    });
   };
   return { dismissed, dismiss };
 }

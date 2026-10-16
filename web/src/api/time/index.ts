@@ -1,6 +1,6 @@
 export { useActivityOverview, useActivityTimeline, type ActivityPeriod } from "./activityAnalysis";
 export { useLifeLogOverview, useLifeLogTimeline } from "./lifeLogAnalysis";
-export { useDeleteRoutine, useRoutineOccurrences, useRoutines, useRoutineSuggestions, useSaveRoutine } from "./routines";
+export { useDeleteRoutine, useRoutineOccurrences, useRoutineSuggestions, useSaveRoutine } from "./routines";
 export { useImportActivity } from "./activityImport";
 export { useDisconnect, useSetConnection } from "./connection";
 export { failureFromCode, toTimeFailure, type TimeFailure } from "./failure";

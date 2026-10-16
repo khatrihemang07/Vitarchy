@@ -2,10 +2,7 @@
 import type { LifeLogTotals, RoutineOccurrence, RoutineStep, RoutineSuggestion } from "@/api/time";
 import { toHours } from "../../shared/duration";
 
-/** The most Steps a Routine may have (the server enforces it too). */
-export const MAX_STEPS = 8;
-/** The longest Routine name (the server enforces it too). */
-export const MAX_NAME_CHARS = 80;
+import { charCount, MAX_LABEL_CHARS, MAX_NAME_CHARS, MAX_STEPS_PER_ROUTINE, MAX_VALUE_CHARS, truncateChars } from "./routineLimits";
 
 const ARROW = " → ";
 
@@ -14,12 +11,12 @@ export function suggestedName(suggestion: RoutineSuggestion): string {
   const first = suggestion.steps[0] ?? "";
   const last = suggestion.steps.at(-1) ?? "";
   const name = suggestion.steps.length > 2 ? `${first}${ARROW}${last}` : suggestion.steps.join(ARROW);
-  return name.length > MAX_NAME_CHARS ? `${name.slice(0, MAX_NAME_CHARS - 1)}…` : name;
+  return truncateChars(name, MAX_NAME_CHARS);
 }
 
-/** The Steps a confirmed suggestion becomes: each description is its own label. */
+/** The Steps a confirmed suggestion becomes: each description is its own match, and its label when that fits. */
 export function stepsOfSuggestion(suggestion: RoutineSuggestion): RoutineStep[] {
-  return suggestion.steps.map((description) => ({ label: description, kind: "description", value: description }));
+  return suggestion.steps.map((description) => ({ label: truncateChars(description, MAX_LABEL_CHARS), kind: "description", value: description }));
 }
 
 /** Identity of a suggestion, for hiding it. */
@@ -43,14 +40,19 @@ export function moveStep<T>(steps: readonly T[], index: number, delta: -1 | 1): 
   return next;
 }
 
+function isStepReady({ label, value }: RoutineStep): boolean {
+  const [shownLabel, matched] = [label.trim(), value.trim()];
+  return shownLabel !== "" && matched !== "" && charCount(shownLabel) <= MAX_LABEL_CHARS && charCount(matched) <= MAX_VALUE_CHARS;
+}
+
 /** Whether a name and Steps are worth sending: the same rules the server checks, so the button can wait. */
 export function isDraftReady(name: string, steps: readonly RoutineStep[]): boolean {
   return (
     name.trim() !== "" &&
-    name.trim().length <= MAX_NAME_CHARS &&
+    charCount(name.trim()) <= MAX_NAME_CHARS &&
     steps.length >= 1 &&
-    steps.length <= MAX_STEPS &&
-    steps.every((step) => step.label.trim() !== "" && step.value.trim() !== "")
+    steps.length <= MAX_STEPS_PER_ROUTINE &&
+    steps.every((step) => isStepReady(step))
   );
 }
 

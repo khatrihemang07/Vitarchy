@@ -213,6 +213,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/routines/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every Routine's Occurrences, complete and incomplete, with statistics. The Time Entries are
+         *     loaded once however many Routines there are.
+         */
+        get: operations["get_occurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time/routines/suggestions": {
         parameters: {
             query?: never;
@@ -243,23 +263,6 @@ export interface paths {
         post?: never;
         /** Deletes a Routine and its Steps. Time Entries are untouched. */
         delete: operations["delete_routine"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/time/routines/{id}/occurrences": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A Routine's Occurrences, complete and incomplete, with statistics. */
-        get: operations["get_occurrences"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -331,6 +334,11 @@ export interface components {
              * @description When the Snapshot was taken; `null` when there is no Snapshot.
              */
             snapshot_taken_at?: string | null;
+        };
+        /** @description Every saved Routine over a Period. */
+        AllRoutineOccurrences: {
+            /** @description By Routine name. */
+            routines: components["schemas"]["RoutineOccurrences"][];
         };
         /** @description Body of `GET /api/settings`. */
         AllSettings: {
@@ -527,7 +535,7 @@ export interface components {
         DescriptionStat: {
             /**
              * Format: int64
-             * @description Days on which an occurrence started.
+             * @description Days (or, for a habit that starts around midnight, nights) with an occurrence.
              */
             days: number;
             /** @description The description. */
@@ -757,8 +765,8 @@ export interface components {
              *     `sync_in_progress`, `connection_changed`, `no_snapshot`, `snapshot_unreadable`,
              *     `unknown_time_zone`, `invalid_date`, `period_reversed`, `period_too_long`, or a Routine's
              *     `routine_name_empty`, `routine_name_too_long`, `routine_no_steps`, `routine_too_many_steps`,
-             *     `routine_label_empty`, `routine_value_empty`, `routine_step_too_long`, `routine_name_taken`
-             *     or `routine_not_found`.
+             *     `routine_label_empty`, `routine_value_empty`, `routine_step_too_long`, `routine_name_taken`,
+             *     `routine_not_found` or `routine_unreadable`.
              */
             code: string;
             /** @description Explanation fit to show the person; never holds the token. */
@@ -839,7 +847,7 @@ export interface components {
             /** @description By name. */
             routines: components["schemas"]["Routine"][];
         };
-        /** @description How a Routine went over a Period. */
+        /** @description How one Routine went over a Period. */
         RoutineOccurrences: {
             /** @description Each Day it happened, earliest first. */
             occurrences: components["schemas"]["Occurrence"][];
@@ -850,9 +858,9 @@ export interface components {
         };
         /** @description Body of `POST /routines` and `PUT /routines/{id}`. */
         RoutineRequest: {
-            /** @description What to call the Routine; at most 80 characters, unique ignoring case. */
+            /** @description What to call the Routine; unique ignoring case (length limits: see `RoutineDraft`). */
             name: string;
-            /** @description 1 to 8 Steps in order. */
+            /** @description The Steps in order; at least one. */
             steps: components["schemas"]["Step"][];
         };
         /** @description Statistics of a Routine over a Period. */
@@ -1620,6 +1628,42 @@ export interface operations {
             };
         };
     };
+    get_occurrences: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Each Routine with its Occurrences and statistics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllRoutineOccurrences"];
+                };
+            };
+            /** @description Bad zone, date or length */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
     get_suggestions: {
         parameters: {
             query?: {
@@ -1728,54 +1772,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description No such Routine (`routine_not_found`) */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemBody"];
-                };
-            };
-        };
-    };
-    get_occurrences: {
-        parameters: {
-            query?: {
-                /** @description First local date, `YYYY-MM-DD`. */
-                from?: string;
-                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
-                to?: string;
-                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
-                tz?: string;
-            };
-            header?: never;
-            path: {
-                /** @description The Routine's id */
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Occurrences and statistics */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RoutineOccurrences"];
-                };
-            };
-            /** @description Bad zone, date or length */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemBody"];
-                };
             };
             /** @description No such Routine (`routine_not_found`) */
             404: {

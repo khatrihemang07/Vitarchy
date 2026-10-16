@@ -42,7 +42,7 @@ export function DayTimeline({ dayStart, dayEnd, tz, clock, segments, subject, fo
         >
           {placed.map(({ segment, left, width }, index) => (
             <rect
-              key={`${segment.start}-${segment.label}`}
+              key={`${String(index)}-${segment.start}-${segment.label}`}
               x={`${String(left)}%`}
               y={0}
               width={`${String(Math.max(width, MIN_WIDTH))}%`}

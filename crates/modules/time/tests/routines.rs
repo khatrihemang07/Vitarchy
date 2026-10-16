@@ -70,6 +70,10 @@ fn office_steps() -> Value {
     ])
 }
 
+fn batch_uri() -> String {
+    format!("/api/time/routines/occurrences?{UTC_MONTH}")
+}
+
 async fn app(label: &str) -> (TestDb, Router) {
     let db = time_db(label).await;
     let app = time_app(&db, &FakeToggl::new());
@@ -165,7 +169,7 @@ async fn analysis_routes_reject_a_bad_zone_with_a_code() {
     let (_db, app) = app("routines_bad_zone").await;
     for uri in [
         "/api/time/routines/suggestions?from=2026-05-01&to=2026-05-02&tz=Nowhere",
-        "/api/time/routines/1/occurrences?from=2026-05-01&to=2026-05-02&tz=Nowhere",
+        "/api/time/routines/occurrences?from=2026-05-01&to=2026-05-02&tz=Nowhere",
     ] {
         let (status, body) = request(&app, "GET", uri, None).await;
         assert_eq!(
@@ -310,17 +314,6 @@ async fn names_are_unique_ignoring_case_and_missing_routines_are_404() {
         (status, body["code"].as_str()),
         (404, Some("routine_not_found"))
     );
-    let (status, body) = request(
-        &app,
-        "GET",
-        &format!("/api/time/routines/99999/occurrences?{UTC_MONTH}"),
-        None,
-    )
-    .await;
-    assert_eq!(
-        (status, body["code"].as_str()),
-        (404, Some("routine_not_found"))
-    );
 }
 
 #[tokio::test]
@@ -344,13 +337,10 @@ async fn occurrences_split_complete_and_incomplete_days_with_stats() {
         "2026-05-07T18:00:00Z",
     )
     .await;
-    let (_, created) = create(&app, "Office", office_steps()).await;
-    let uri = format!(
-        "/api/time/routines/{}/occurrences?{UTC_MONTH}",
-        created["id"]
-    );
-    let (status, body) = request(&app, "GET", &uri, None).await;
-    assert_eq!(status, 200, "{body}");
+    create(&app, "Office", office_steps()).await;
+    let (status, all) = request(&app, "GET", &batch_uri(), None).await;
+    assert_eq!(status, 200, "{all}");
+    let body = &all["routines"][0];
     let days = body["occurrences"].as_array().unwrap();
     assert_eq!(days.len(), 4);
     assert_eq!(days[0]["date"], "2026-05-04");
@@ -382,12 +372,9 @@ async fn an_entry_belongs_to_the_day_it_starts_in_across_midnight() {
         {"label": "Dinner", "kind": "description", "value": "Dinner"},
         {"label": "Sleep", "kind": "description", "value": " sleep "},
     ]);
-    let (_, created) = create(&app, "Evening", steps).await;
-    let uri = format!(
-        "/api/time/routines/{}/occurrences?{UTC_MONTH}",
-        created["id"]
-    );
-    let (_, body) = request(&app, "GET", &uri, None).await;
+    create(&app, "Evening", steps).await;
+    let (_, all) = request(&app, "GET", &batch_uri(), None).await;
+    let body = &all["routines"][0];
     let days = body["occurrences"].as_array().unwrap();
     assert_eq!(days.len(), 3);
     assert!(days.iter().all(|d| d["complete"] == true));
@@ -400,13 +387,68 @@ async fn an_entry_belongs_to_the_day_it_starts_in_across_midnight() {
 #[tokio::test]
 async fn a_routine_with_no_matching_days_has_empty_occurrences() {
     let (_db, app) = app("routines_empty").await;
-    let (_, created) = create(&app, "Office", office_steps()).await;
-    let uri = format!(
-        "/api/time/routines/{}/occurrences?{UTC_MONTH}",
-        created["id"]
-    );
-    let (status, body) = request(&app, "GET", &uri, None).await;
+    create(&app, "Office", office_steps()).await;
+    let (status, all) = request(&app, "GET", &batch_uri(), None).await;
     assert_eq!(status, 200);
+    let body = &all["routines"][0];
     assert!(body["occurrences"].as_array().unwrap().is_empty());
     assert!(body["stats"]["door_to_door"].is_null());
+}
+
+#[tokio::test]
+async fn every_routine_comes_back_in_one_request_by_name() {
+    let (db, app) = app("routines_batch").await;
+    office_days(&db, &[4, 5]).await;
+    create(&app, "Office", office_steps()).await;
+    create(
+        &app,
+        "Bath",
+        json!([{"label": "Bath", "kind": "description", "value": "bath"}]),
+    )
+    .await;
+    let (status, all) = request(&app, "GET", &batch_uri(), None).await;
+    assert_eq!(status, 200, "{all}");
+    let routines = all["routines"].as_array().unwrap();
+    let names: Vec<&str> = routines
+        .iter()
+        .map(|r| r["routine"]["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, ["Bath", "Office"]);
+    assert_eq!(routines[0]["occurrences"].as_array().unwrap().len(), 0);
+    assert_eq!(routines[1]["occurrences"].as_array().unwrap().len(), 2);
+    assert_eq!(routines[1]["routine"]["steps"].as_array().unwrap().len(), 3);
+}
+
+#[tokio::test]
+async fn no_routines_is_an_empty_list() {
+    let (_db, app) = app("routines_batch_none").await;
+    let (status, all) = request(&app, "GET", &batch_uri(), None).await;
+    assert_eq!(
+        (status, all["routines"].as_array().map(Vec::len)),
+        (200, Some(0))
+    );
+}
+
+#[tokio::test]
+async fn a_step_can_match_entries_that_have_no_description() {
+    let (db, app) = app("routines_no_description").await;
+    store(
+        &db,
+        None,
+        "",
+        "2026-05-04T09:00:00Z",
+        "2026-05-04T10:00:00Z",
+    )
+    .await;
+    create(
+        &app,
+        "Blank",
+        json!([{"label": "Unnamed", "kind": "description", "value": "No description"}]),
+    )
+    .await;
+    let (_, all) = request(&app, "GET", &batch_uri(), None).await;
+    assert_eq!(
+        all["routines"][0]["occurrences"].as_array().unwrap().len(),
+        1
+    );
 }

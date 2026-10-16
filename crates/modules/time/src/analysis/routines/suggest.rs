@@ -1,29 +1,25 @@
 //! Finds Routines the person has not saved yet: sequences of descriptions that recur in order.
 //!
-//! Within one Day, entries are taken in start order (consecutive entries with the same
-//! description count as one). A sequence links descriptions that follow each other with at most
-//! [`MAX_BETWEEN`] unrelated entries in between and no more than [`MAX_GAP`] of time between one
-//! ending and the next starting. Sequences of 2 to [`MAX_STEPS`] distinct descriptions seen on
-//! at least [`MIN_DAYS`] Days are ranked by Days covered times length, and a sequence that is
-//! part of a better one (or of a saved Routine) is dropped.
+//! Chains come from [`chains`](super::chains): 2 to [`MAX_SUGGESTED_STEPS`] distinct descriptions
+//! seen in order on at least [`MIN_DAYS`] Days. A chain that is a part of a better one (or of a
+//! saved Routine) is dropped, and [`redundancy`](super::redundancy) removes near-duplicates. The
+//! rest are ranked by Days covered times length. Descriptions are matched ignoring case and
+//! spaces; each is shown in the spelling used most often.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::HashMap;
 
-use chrono::{DateTime, Duration, NaiveDate, Utc};
 use serde::Serialize;
 use utoipa::ToSchema;
 
+pub use super::chains::MAX_SUGGESTED_STEPS;
+use super::chains::{Chain, days_per_chain, described_in};
+use super::draft::MAX_VALUE_CHARS;
+use super::redundancy::drop_redundant;
 use crate::analysis::Period;
-use crate::analysis::lifelog::{LifeEntry, MIN_DAYS};
+use crate::analysis::lifelog::{LifeEntry, MIN_DAYS, fold};
 
-/// The most Steps a suggested Routine has.
-pub const MAX_STEPS: usize = 5;
 /// The most suggestions offered at once: past these the list is noise.
 pub const MAX_SUGGESTIONS: usize = 6;
-/// How many unrelated entries may sit between two linked ones.
-const MAX_BETWEEN: usize = 1;
-/// The longest wait between one entry ending and the next starting.
-const MAX_GAP: Duration = Duration::hours(3);
 
 /// A recurring sequence of descriptions, offered to become a Routine.
 #[derive(Debug, Serialize, ToSchema, PartialEq, Eq)]
@@ -34,120 +30,76 @@ pub struct Suggestion {
     pub days: i64,
 }
 
-/// Consecutive entries with one description, merged.
-struct Run<'a> {
-    description: &'a str,
-    start: DateTime<Utc>,
-    end: DateTime<Utc>,
-}
-
 /// Suggestions for the Period, best first, leaving out what `saved` (description sequences of
 /// existing Routines) already covers.
 #[must_use]
 pub fn suggest(period: &Period, entries: &[LifeEntry], saved: &[Vec<String>]) -> Vec<Suggestion> {
-    let mut counts: HashMap<Vec<&str>, usize> = HashMap::new();
-    for runs in runs_by_day(period, entries).values() {
-        for chain in day_chains(runs) {
-            *counts.entry(chain).or_default() += 1;
-        }
-    }
+    let candidates: Vec<(Chain, usize)> = days_per_chain(period, entries)
+        .into_iter()
+        .filter(|(chain, days)| *days >= MIN_DAYS && chain.iter().all(|key| fits_a_step(key)))
+        .collect();
     let saved: Vec<Vec<String>> = saved
         .iter()
-        .map(|steps| steps.iter().map(|s| s.trim().to_lowercase()).collect())
+        .map(|steps| steps.iter().map(|s| fold(s)).collect())
         .collect();
-    let mut ranked: Vec<(Vec<&str>, usize)> = counts
+    let mut ranked: Vec<(Chain, usize)> = drop_redundant(candidates)
         .into_iter()
-        .filter(|(_, days)| *days >= MIN_DAYS)
+        .filter(|(chain, _)| !saved.iter().any(|s| is_part_of(chain, s)))
         .collect();
     ranked.sort_by(|(a, a_days), (b, b_days)| {
         (b_days * b.len())
             .cmp(&(a_days * a.len()))
             .then_with(|| a.cmp(b))
     });
-    let mut kept: Vec<(Vec<&str>, usize)> = vec![];
+    let mut kept: Vec<(Chain, usize)> = vec![];
     for (chain, days) in ranked {
-        let lowered: Vec<String> = chain.iter().map(|s| s.to_lowercase()).collect();
-        let covered = saved.iter().any(|s| is_part_of(&lowered, s))
-            || kept.iter().any(|(better, _)| is_part_of(&chain, better));
-        if !covered {
+        if !kept.iter().any(|(better, _)| is_part_of(&chain, better)) {
             kept.push((chain, days));
         }
     }
+    let spellings = commonest_spellings(period, entries);
     kept.into_iter()
         .take(MAX_SUGGESTIONS)
         .map(|(chain, days)| Suggestion {
-            steps: chain.into_iter().map(str::to_owned).collect(),
+            steps: chain
+                .into_iter()
+                .map(|key| spellings.get(key).copied().unwrap_or(key).to_owned())
+                .collect(),
             days: i64::try_from(days).unwrap_or(i64::MAX),
         })
         .collect()
 }
 
-/// Whether `part` appears in `whole` in the same order (not necessarily next to each other).
-fn is_part_of<T: PartialEq>(part: &[T], whole: &[T]) -> bool {
-    let mut rest = whole.iter();
-    part.iter().all(|p| rest.any(|w| w == p))
+/// Whether a description is short enough to become a Step's match (otherwise it could not be saved).
+fn fits_a_step(description: &str) -> bool {
+    description.chars().count() <= MAX_VALUE_CHARS
 }
 
-/// Each Day's described entries in start order, merged into runs. An entry belongs to the Day it starts in.
-fn runs_by_day<'a>(period: &Period, entries: &'a [LifeEntry]) -> BTreeMap<NaiveDate, Vec<Run<'a>>> {
-    let mut days: BTreeMap<NaiveDate, Vec<&LifeEntry>> = BTreeMap::new();
-    for entry in entries {
-        if entry.description.is_empty()
-            || entry.start < period.start()
-            || entry.start >= period.end()
-        {
-            continue;
-        }
-        let date = entry.start.with_timezone(&period.tz()).date_naive();
-        days.entry(date).or_default().push(entry);
+/// Whether `part` appears in `whole` in the same order (not necessarily next to each other).
+fn is_part_of<A: PartialEq<B>, B>(part: &[A], whole: &[B]) -> bool {
+    let mut rest = whole.iter();
+    part.iter().all(|p| rest.any(|w| p == w))
+}
+
+/// For each folded description, the spelling that most entries used (the first alphabetically on a tie).
+fn commonest_spellings<'a>(period: &Period, entries: &'a [LifeEntry]) -> HashMap<&'a str, &'a str> {
+    let mut counts: HashMap<&str, HashMap<&str, usize>> = HashMap::new();
+    for entry in described_in(period, entries) {
+        *counts
+            .entry(&entry.description_key)
+            .or_default()
+            .entry(&entry.description)
+            .or_default() += 1;
     }
-    days.into_iter()
-        .map(|(date, mut day)| {
-            day.sort_by_key(|e| e.start);
-            let mut runs: Vec<Run> = vec![];
-            for entry in day {
-                match runs.last_mut() {
-                    Some(run) if run.description == entry.description => {
-                        run.end = run.end.max(entry.end);
-                    }
-                    _ => runs.push(Run {
-                        description: &entry.description,
-                        start: entry.start,
-                        end: entry.end,
-                    }),
-                }
-            }
-            (date, runs)
+    counts
+        .into_iter()
+        .filter_map(|(key, spellings)| {
+            let best = spellings
+                .into_iter()
+                .max_by(|(a, a_n), (b, b_n)| a_n.cmp(b_n).then_with(|| b.cmp(a)))?;
+            Some((key, best.0))
         })
         .collect()
-}
-
-/// Every linked sequence of 2 to [`MAX_STEPS`] distinct descriptions in one Day's runs.
-fn day_chains<'a>(runs: &[Run<'a>]) -> HashSet<Vec<&'a str>> {
-    let mut found = HashSet::new();
-    for first in 0..runs.len() {
-        extend(runs, &[first], &mut found);
-    }
-    found
-}
-
-fn extend<'a>(runs: &[Run<'a>], chain: &[usize], found: &mut HashSet<Vec<&'a str>>) {
-    let last = chain[chain.len() - 1];
-    let reach = (last + 1 + MAX_BETWEEN).min(runs.len() - 1);
-    for next in last + 1..=reach {
-        let linked = runs[next].start - runs[last].end <= MAX_GAP
-            && !chain
-                .iter()
-                .any(|i| runs[*i].description == runs[next].description);
-        if !linked {
-            continue;
-        }
-        let longer: Vec<usize> = chain.iter().copied().chain([next]).collect();
-        found.insert(longer.iter().map(|i| runs[*i].description).collect());
-        if longer.len() < MAX_STEPS {
-            extend(runs, &longer, found);
-        }
-    }
 }
 
 #[cfg(test)]
@@ -156,11 +108,14 @@ mod tests {
     use super::*;
 
     fn period() -> Period {
-        Period::parse("2026-05-01", "2026-05-31", "UTC").unwrap()
+        Period::parse("2026-05-01", "2026-07-31", "UTC").unwrap()
     }
 
+    /// `clock` on the `day`th day counting from 2026-05-01 (past 31 it runs into June).
     fn at(day: u32, clock: &str) -> String {
-        format!("2026-05-{day:02}T{clock}:00Z")
+        let date = chrono::NaiveDate::from_ymd_opt(2026, 5, 1).unwrap()
+            + chrono::Duration::days(i64::from(day) - 1);
+        format!("{date}T{clock}:00Z")
     }
 
     /// The commute-office-commute day: `(description, start, end)` per entry.
@@ -328,5 +283,120 @@ mod tests {
         assert_eq!(steps(&found[0]), ["x", "y"]);
         assert_eq!(found[0].days, 10);
         assert_eq!(found.len(), 2);
+    }
+
+    #[test]
+    fn descriptions_that_differ_only_in_case_are_one_and_the_commonest_spelling_is_shown() {
+        let mut entries = vec![];
+        for d in 1..=6 {
+            let (a, b) = if d <= 2 {
+                ("Dinner", "Bath")
+            } else {
+                ("dinner", "bath")
+            };
+            entries.extend(day_of(d, &[(a, "20:00", "20:30"), (b, "21:00", "21:15")]));
+        }
+        let found = suggest(&period(), &entries, &[]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            (steps(&found[0]), found[0].days),
+            (vec!["dinner", "bath"], 6)
+        );
+    }
+
+    #[test]
+    fn a_description_longer_than_a_step_can_match_is_never_suggested() {
+        let long = "x".repeat(201);
+        let entries: Vec<LifeEntry> = (1..=6)
+            .flat_map(|d| {
+                day_of(
+                    d,
+                    &[("a", "08:00", "08:30"), (long.as_str(), "09:00", "09:30")],
+                )
+            })
+            .collect();
+        assert!(suggest(&period(), &entries, &[]).is_empty());
+    }
+
+    /// 48 Days shaped like the seeded data: the office trip on 40 of them (21 with a short wait
+    /// before dinner), workouts on some, dinner, bath and sleep every Day.
+    fn seeded_shape() -> Vec<LifeEntry> {
+        let mut entries = vec![];
+        for d in 1..=48 {
+            let office = d % 6 != 0;
+            if office {
+                let back_ends = if d % 2 == 0 && d % 5 != 0 {
+                    "18:30"
+                } else {
+                    "17:00"
+                };
+                entries.extend(day_of(
+                    d,
+                    &[
+                        ("travel to_office", "08:00", "08:30"),
+                        ("inside_office", "08:40", "16:30"),
+                        ("travel from_office", "16:35", back_ends),
+                    ],
+                ));
+            }
+            if d % 5 < 2 {
+                entries.extend(day_of(d, &[("workout", "19:45", "20:25")]));
+            }
+            entries.extend(day_of(
+                d,
+                &[("dinner", "21:05", "21:40"), ("bath", "22:15", "22:30")],
+            ));
+            entries.push(entry("p", "sleep", &at(d, "23:10"), &at(d + 1, "06:00")));
+        }
+        entries
+    }
+
+    #[test]
+    fn near_duplicate_chains_collapse_to_the_ones_that_say_something_new() {
+        let found = suggest(&period(), &seeded_shape(), &[]);
+        let mut chains: Vec<Vec<&str>> = found.iter().map(steps).collect();
+        chains.sort();
+        assert_eq!(
+            chains,
+            [
+                vec!["dinner", "bath", "sleep"],
+                vec!["travel to_office", "inside_office", "travel from_office"],
+            ]
+        );
+    }
+
+    #[test]
+    fn a_longer_chain_is_kept_when_it_happens_almost_as_often_and_replaces_the_shorter() {
+        // a -> b on 10 Days; a -> b -> c on 9 of them (9 >= 80% of 10).
+        let mut entries = vec![];
+        for d in 1..=10 {
+            let mut parts = vec![("a", "08:00", "08:30"), ("b", "09:00", "09:30")];
+            if d <= 9 {
+                parts.push(("c", "10:00", "10:30"));
+            }
+            entries.extend(day_of(d, &parts));
+        }
+        let found = suggest(&period(), &entries, &[]);
+        assert_eq!(
+            found.iter().map(steps).collect::<Vec<_>>(),
+            [vec!["a", "b", "c"]]
+        );
+    }
+
+    #[test]
+    fn a_longer_chain_that_is_much_rarer_is_dropped_in_favour_of_the_shorter() {
+        // a -> b on 10 Days; a -> b -> c on 6 of them (6 < 80% of 10).
+        let mut entries = vec![];
+        for d in 1..=10 {
+            let mut parts = vec![("a", "08:00", "08:30"), ("b", "09:00", "09:30")];
+            if d <= 6 {
+                parts.push(("c", "10:00", "10:30"));
+            }
+            entries.extend(day_of(d, &parts));
+        }
+        let found = suggest(&period(), &entries, &[]);
+        let chains: Vec<_> = found.iter().map(steps).collect();
+        assert!(chains.contains(&vec!["a", "b"]));
+        assert!(!chains.contains(&vec!["a", "b", "c"]));
     }
 }

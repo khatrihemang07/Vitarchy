@@ -12,7 +12,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use super::Step;
+use super::{Step, StepMatcher};
 use crate::analysis::Period;
 use crate::analysis::lifelog::LifeEntry;
 
@@ -47,6 +47,7 @@ pub struct Occurrence {
 /// The Routine's Occurrences in the Period, earliest Day first.
 #[must_use]
 pub fn occurrences(period: &Period, steps: &[Step], entries: &[LifeEntry]) -> Vec<Occurrence> {
+    let matchers: Vec<StepMatcher> = steps.iter().map(Step::matcher).collect();
     let mut days: BTreeMap<NaiveDate, Vec<&LifeEntry>> = BTreeMap::new();
     for entry in entries {
         if entry.start >= period.start() && entry.start < period.end() {
@@ -57,7 +58,7 @@ pub fn occurrences(period: &Period, steps: &[Step], entries: &[LifeEntry]) -> Ve
     days.into_iter()
         .filter_map(|(date, mut day)| {
             day.sort_by_key(|e| e.start);
-            let spans = match_steps(steps, &day);
+            let spans = match_steps(&matchers, &day);
             spans
                 .iter()
                 .any(Option::is_some)
@@ -67,7 +68,7 @@ pub fn occurrences(period: &Period, steps: &[Step], entries: &[LifeEntry]) -> Ve
 }
 
 /// Each Step's span in one Day's entries (in start order), or `None` when it did not happen.
-fn match_steps(steps: &[Step], day: &[&LifeEntry]) -> Vec<Option<StepSpan>> {
+fn match_steps(steps: &[StepMatcher], day: &[&LifeEntry]) -> Vec<Option<StepSpan>> {
     let mut cursor = 0;
     steps
         .iter()

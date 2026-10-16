@@ -1,4 +1,5 @@
 import type { RoutineOccurrence, RoutineStep } from "@/api/time";
+import { MAX_LABEL_CHARS, MAX_NAME_CHARS, MAX_STEPS_PER_ROUTINE, MAX_VALUE_CHARS } from "./routineLimits";
 import { emptyStep, incompleteDays, isDraftReady, matchChoices, moveStep, stepRows, stepsOfSuggestion, suggestedName, withCurrent } from "./routineModel";
 
 const span = (seconds: number) => ({ start: "2026-05-04T08:00:00Z", end: "2026-05-04T09:00:00Z", seconds });
@@ -24,6 +25,15 @@ describe("routine model", () => {
     ]);
   });
 
+  it("cuts a long description to a label that fits, keeping the whole description as the match", () => {
+    const long = "word ".repeat(30).trim();
+    const [step] = stepsOfSuggestion({ steps: [long, "b"], days: 5 });
+    expect(step?.value).toBe(long);
+    expect(Array.from(step?.label ?? "").length).toBe(MAX_LABEL_CHARS);
+    expect(step?.label.endsWith("…")).toBe(true);
+    expect(isDraftReady("n", stepsOfSuggestion({ steps: [long, "b"], days: 5 }))).toBe(true);
+  });
+
   it("moves a Step one place and stops at the ends", () => {
     expect(moveStep(["a", "b", "c"], 2, -1)).toEqual(["a", "c", "b"]);
     expect(moveStep(["a", "b", "c"], 0, -1)).toEqual(["a", "b", "c"]);
@@ -37,6 +47,17 @@ describe("routine model", () => {
     expect(isDraftReady("n", [])).toBe(false);
     expect(isDraftReady("n", [emptyStep()])).toBe(false);
     expect(isDraftReady("n", Array.from({ length: 9 }, () => ok))).toBe(false);
+  });
+
+  it("refuses what the server would refuse: a name, label or match that is too long, counted in characters", () => {
+    const ok: RoutineStep = { label: "a", kind: "description", value: "b" };
+    expect(isDraftReady("n".repeat(MAX_NAME_CHARS), [ok])).toBe(true);
+    expect(isDraftReady("n".repeat(MAX_NAME_CHARS + 1), [ok])).toBe(false);
+    expect(isDraftReady("n", [{ ...ok, label: "l".repeat(MAX_LABEL_CHARS + 1) }])).toBe(false);
+    expect(isDraftReady("n", [{ ...ok, value: "v".repeat(MAX_VALUE_CHARS + 1) }])).toBe(false);
+    // Emoji are one character to the server but two to a string's length.
+    expect(isDraftReady("😀".repeat(MAX_NAME_CHARS), [ok])).toBe(true);
+    expect(isDraftReady("n", Array.from({ length: MAX_STEPS_PER_ROUTINE }, () => ok))).toBe(true);
   });
 
   it("offers the Period's descriptions and projects, sorted", () => {

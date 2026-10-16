@@ -32,6 +32,11 @@ function distance(a: string, b: string): number {
   return Math.hypot(ca[0] - cb[0], ca[1] - cb[1], ca[2] - cb[2]);
 }
 
+/** Whether `color` (`#rrggbb`) is far enough from every colour in `taken` to tell apart at a glance. */
+export function isDistinct(color: string, taken: readonly string[]): boolean {
+  return taken.every((other) => distance(color, other) >= MIN_DISTANCE);
+}
+
 /**
  * `color` when it is a `#rrggbb` that shows up on both themes' surfaces and is not close to a colour
  * in `taken`; otherwise `undefined`, and the caller falls back to the palette.
@@ -39,6 +44,6 @@ function distance(a: string, b: string): number {
 export function usableSeriesColor(color: string | null | undefined, taken: readonly string[]): string | undefined {
   if (!color || !HEX.test(color)) return undefined;
   if (CHART_SURFACES.some((surface) => contrastRatio(color, surface) < MIN_MARK_CONTRAST)) return undefined;
-  if (taken.some((other) => distance(color, other) < MIN_DISTANCE)) return undefined;
+  if (!isDistinct(color, taken)) return undefined;
   return color;
 }

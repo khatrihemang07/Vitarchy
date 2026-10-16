@@ -10,8 +10,8 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 use super::LifeEntry;
-use super::entry::{millis, seconds};
-use crate::analysis::{Period, split_by_day};
+use super::entry::seconds;
+use crate::analysis::{DayPortion, Period, split_by_day};
 
 /// Time on one description.
 #[derive(Debug, Serialize, ToSchema, PartialEq, Eq)]
@@ -104,7 +104,7 @@ pub fn totals(period: &Period, entries: &[LifeEntry]) -> LifeLogTotals {
         if portions.is_empty() {
             continue;
         }
-        let spent: i64 = portions.iter().map(millis).sum();
+        let spent: i64 = portions.iter().map(DayPortion::millis).sum();
         let dates: Vec<NaiveDate> = portions.iter().map(|p| p.date).collect();
         let project = projects.entry(&entry.project).or_default();
         if project.color.is_none() {

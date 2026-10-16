@@ -3,6 +3,9 @@
 //! An occurrence is a whole entry (not its per-Day portions) that **starts** inside the
 //! Period, so a night's sleep is one 23:30 to 07:00 occurrence of 7.5 h. Entries with no
 //! description are not a habit and are left out. Clock times are local to the Period's zone.
+//!
+//! A habit that usually starts around midnight is counted by night: a start in the small hours
+//! belongs to the evening before, so 23:30 and 00:30 of one night are one Day, not two.
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -12,18 +15,21 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 use super::LifeEntry;
-use super::spread::{ClockSpread, DurationSpread, clock_spread, duration_spread};
+use super::spread::{ClockSpread, DurationSpread, clock_spread, cut_point, duration_spread};
 use crate::analysis::Period;
 
 /// A description must occur on at least this many Days to get statistics.
 pub const MIN_DAYS: usize = 5;
+
+/// Cut points (minutes) between which the starts cluster around midnight, so are counted by night.
+const MIDNIGHT_CLUSTER_CUTS: (f64, f64) = (6.0 * 60.0, 18.0 * 60.0);
 
 /// The usual start, end and length of one description.
 #[derive(Debug, Serialize, ToSchema, PartialEq, Eq)]
 pub struct DescriptionStat {
     /// The description.
     pub description: String,
-    /// Days on which an occurrence started.
+    /// Days (or, for a habit that starts around midnight, nights) with an occurrence.
     pub days: i64,
     /// Occurrences (a Day may have several).
     pub entries: i64,
@@ -37,7 +43,8 @@ pub struct DescriptionStat {
 
 #[derive(Default)]
 struct Occurrences {
-    dates: BTreeSet<NaiveDate>,
+    /// Local date of each start, parallel to `starts`.
+    dates: Vec<NaiveDate>,
     starts: Vec<f64>,
     ends: Vec<f64>,
     seconds: Vec<i64>,
@@ -65,18 +72,21 @@ pub fn description_stats(period: &Period, entries: &[LifeEntry]) -> Vec<Descript
         let found = seen.entry(&entry.description).or_default();
         found
             .dates
-            .insert(entry.start.with_timezone(&tz).date_naive());
+            .push(entry.start.with_timezone(&tz).date_naive());
         found.starts.push(minute_of_day(tz, entry.start));
         found.ends.push(minute_of_day(tz, entry.end));
         found.seconds.push((entry.end - entry.start).num_seconds());
     }
     let mut stats: Vec<DescriptionStat> = seen
         .into_iter()
-        .filter(|(_, found)| found.dates.len() >= MIN_DAYS)
         .filter_map(|(description, found)| {
+            let days = distinct_days(&found.dates, &found.starts);
+            (days >= MIN_DAYS).then_some((description, found, days))
+        })
+        .filter_map(|(description, found, days)| {
             Some(DescriptionStat {
                 description: description.to_owned(),
-                days: i64::try_from(found.dates.len()).unwrap_or(i64::MAX),
+                days: i64::try_from(days).unwrap_or(i64::MAX),
                 entries: i64::try_from(found.seconds.len()).unwrap_or(i64::MAX),
                 start: clock_spread(&found.starts)?,
                 end: clock_spread(&found.ends)?,
@@ -90,6 +100,22 @@ pub fn description_stats(period: &Period, entries: &[LifeEntry]) -> Vec<Descript
             .then_with(|| a.description.cmp(&b.description))
     });
     stats
+}
+
+/// How many Days the occurrences fall on. When the starts cluster around midnight (the
+/// circle is cut between 06:00 and 18:00) a start before the cut belongs to the previous Day.
+fn distinct_days(dates: &[NaiveDate], starts: &[f64]) -> usize {
+    let cut = cut_point(starts);
+    let by_night = (MIDNIGHT_CLUSTER_CUTS.0..=MIDNIGHT_CLUSTER_CUTS.1).contains(&cut);
+    dates
+        .iter()
+        .zip(starts)
+        .map(|(date, minute)| match date.pred_opt() {
+            Some(before) if by_night && *minute < cut => before,
+            _ => *date,
+        })
+        .collect::<BTreeSet<_>>()
+        .len()
 }
 
 #[cfg(test)]
@@ -187,6 +213,39 @@ mod tests {
         assert!(s.start.p25_minute >= 23 * 60, "p25 {}", s.start.p25_minute);
         assert!(s.start.p75_minute <= 60, "p75 {}", s.start.p75_minute);
         assert_eq!(s.end.median_minute, 7 * 60 + 30);
+    }
+
+    #[test]
+    fn nights_that_start_around_midnight_count_once_each_not_once_per_date() {
+        // Five nights, but only three calendar dates start a sleep:
+        // 00:30 on the 2nd (night of the 1st), 23:30 on the 2nd, 00:30 on the 4th (night of the
+        // 3rd), 23:30 on the 4th, 23:30 on the 5th.
+        let sleeps = [
+            ("2026-05-02T00:30:00Z", "2026-05-02T07:30:00Z"),
+            ("2026-05-02T23:30:00Z", "2026-05-03T07:30:00Z"),
+            ("2026-05-04T00:30:00Z", "2026-05-04T07:30:00Z"),
+            ("2026-05-04T23:30:00Z", "2026-05-05T07:30:00Z"),
+            ("2026-05-05T23:30:00Z", "2026-05-06T07:30:00Z"),
+        ];
+        let rows: Vec<LifeEntry> = sleeps
+            .iter()
+            .map(|(start, end)| entry("p", "sleep", start, end))
+            .collect();
+        let found = stats("UTC", &rows);
+        assert_eq!(found.len(), 1);
+        assert_eq!((found[0].days, found[0].entries), (5, 5));
+    }
+
+    #[test]
+    fn two_sleeps_in_one_evening_are_one_night() {
+        let mut rows = daily("sleep", 1, 4, "23:00", "07:00", true);
+        rows.push(entry(
+            "p",
+            "sleep",
+            "2026-05-04T23:40:00Z",
+            "2026-05-05T07:00:00Z",
+        ));
+        assert!(stats("UTC", &rows).is_empty());
     }
 
     #[test]
