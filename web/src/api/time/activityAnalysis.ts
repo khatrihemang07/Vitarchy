@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { callApi } from "../callApi";
 import { api } from "../client";
 import { activityKey } from "./keys";
+import type { ActivityOverview, WeekStart } from "./types";
 
 /** A Period to analyse: local dates `YYYY-MM-DD` and the IANA zone the Days are measured in. */
 export interface ActivityPeriod {
@@ -10,29 +11,16 @@ export interface ActivityPeriod {
   tz: string;
 }
 
-/** Screen time by app, then Context, then top titles. */
-export function useActivityTotals(query: ActivityPeriod) {
+/**
+ * Totals, heatmap, Day bounds and weekly trend for a Period, from one request. Every panel that
+ * calls this with the same Period shares that request; `select` picks the part a panel draws.
+ */
+export function useActivityOverview<T>(query: ActivityPeriod, weekStart: WeekStart, select: (overview: ActivityOverview) => T) {
   return useQuery({
-    queryKey: activityKey("totals", query),
-    queryFn: () => callApi(() => api.GET("/api/time/analysis/activity/totals", { params: { query } })),
-    retry: false,
-  });
-}
-
-/** Seconds of Activity by weekday (Monday first) and local hour. */
-export function useActivityHeatmap(query: ActivityPeriod) {
-  return useQuery({
-    queryKey: activityKey("heatmap", query),
-    queryFn: () => callApi(() => api.GET("/api/time/analysis/activity/heatmap", { params: { query } })),
-    retry: false,
-  });
-}
-
-/** First and last Activity of each Day that has any. */
-export function useActivityBounds(query: ActivityPeriod) {
-  return useQuery({
-    queryKey: activityKey("bounds", query),
-    queryFn: () => callApi(() => api.GET("/api/time/analysis/activity/bounds", { params: { query } })),
+    queryKey: activityKey("overview", { ...query, weekStart }),
+    queryFn: () =>
+      callApi(() => api.GET("/api/time/analysis/activity/overview", { params: { query: { ...query, week_start: weekStart } } })),
+    select,
     retry: false,
   });
 }
@@ -43,16 +31,6 @@ export function useActivityTimeline(day: string | undefined, tz: string) {
     queryKey: activityKey("timeline", { day, tz }),
     queryFn: () => callApi(() => api.GET("/api/time/analysis/activity/timeline", { params: { query: { day: day ?? "", tz } } })),
     enabled: day !== undefined,
-    retry: false,
-  });
-}
-
-/** Weekly totals for the busiest apps; weeks start on `weekStart`. */
-export function useActivityTrend(query: ActivityPeriod, weekStart: "monday" | "sunday") {
-  return useQuery({
-    queryKey: activityKey("trend", { ...query, weekStart }),
-    queryFn: () =>
-      callApi(() => api.GET("/api/time/analysis/activity/trend", { params: { query: { ...query, week_start: weekStart } } })),
     retry: false,
   });
 }

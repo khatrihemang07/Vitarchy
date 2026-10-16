@@ -1,31 +1,19 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, type TooltipContentProps, XAxis, YAxis } from "recharts";
-import { type ActivityPeriod, useActivityTrend } from "@/api/time";
-import { useCoreSettings } from "@/app/module-manifest";
-import { axisProps, ChartLegend, ChartTooltip, gridProps, SEGMENT_GAP, tooltipProps } from "@/design";
+import type { ActivityPeriod } from "@/api/time";
+import { axisProps, ChartLegend, gridProps, SEGMENT_GAP, tooltipProps } from "@/design";
 import { ActivityPanel } from "./ActivityPanel";
-import { type TrendRow, type TrendSeriesInfo, trendChart } from "./chartModels";
+import { secondsKey, trendChart } from "./chartModels";
 import { ChartTable } from "../shared/ChartTable";
 import { formatDayShort } from "./dayLabel";
 import { formatSpan } from "./duration";
+import { TrendTooltip } from "./TrendTooltip";
+import { useActivityPart } from "./useActivityPart";
 
 const MAX_BAR = 24;
 
-function TrendTooltip({ active, payload, series }: TooltipContentProps & { series: readonly TrendSeriesInfo[] }) {
-  const row = payload[0]?.payload as TrendRow | undefined;
-  if (!active || !row) return null;
-  const title = `Week of ${formatDayShort(row.start)}${row.days < 7 ? ` (${String(row.days)} of 7 days)` : ""}`;
-  return (
-    <ChartTooltip
-      title={title}
-      rows={series.map((s) => ({ label: s.label, color: s.color, value: formatSpan(Number(row[s.key] ?? 0) * 3600) }))}
-    />
-  );
-}
-
 /** Screen time week by week for the busiest apps. */
 export function ActivityTrend({ period }: { period: ActivityPeriod }) {
-  const { week_start: weekStart } = useCoreSettings();
-  const query = useActivityTrend(period, weekStart);
+  const query = useActivityPart(period, (overview) => overview.trend);
   return (
     <ActivityPanel
       title="Week by week"
@@ -44,7 +32,7 @@ export function ActivityTrend({ period }: { period: ActivityPeriod }) {
                 <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                   <CartesianGrid {...gridProps} />
                   <XAxis dataKey="start" {...axisProps} tickFormatter={formatDayShort} interval="preserveStartEnd" minTickGap={24} />
-                  <YAxis {...axisProps} width={36} tickFormatter={(h: number) => `${String(h)} h`} />
+                  <YAxis {...axisProps} width={52} tickFormatter={(h: number) => `${String(h)} h`} />
                   <Tooltip {...tooltipProps} content={(props: TooltipContentProps) => <TrendTooltip {...props} series={series} />} />
                   {series.map((s) => (
                     <Bar key={s.key} dataKey={s.key} stackId="week" fill={s.color} stroke="var(--card)" strokeWidth={SEGMENT_GAP / 2} maxBarSize={MAX_BAR} isAnimationActive={false} />
@@ -55,7 +43,7 @@ export function ActivityTrend({ period }: { period: ActivityPeriod }) {
             <ChartTable
               caption="Hours per week by app"
               columns={["Week of", "Days", ...series.map((s) => s.label)]}
-              rows={rows.map((row) => [formatDayShort(row.start), String(row.days), ...series.map((s) => formatSpan(Number(row[s.key] ?? 0) * 3600))])}
+              rows={rows.map((row) => [formatDayShort(row.start), String(row.days), ...series.map((s) => formatSpan(Number(row[secondsKey(s.key)] ?? 0)))])}
             />
           </>
         );

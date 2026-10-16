@@ -1,7 +1,6 @@
 /** Turning the server's weekday-by-hour grid into rows the heatmap draws. Pure. */
 
-/** Which weekday a week starts on (the Core week-start setting). */
-export type WeekStart = "monday" | "sunday";
+import type { WeekStart } from "../period";
 
 const WEEKDAYS_FROM_MONDAY = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const;
 

@@ -20,6 +20,9 @@ export const PERIOD_KINDS: readonly { value: PeriodKind; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
+/** The longest Period the server accepts, in Days. Mirrors `MAX_DAYS` in crates/modules/time/src/analysis/period.rs (scripts/test-guards.sh keeps them equal). */
+export const MAX_PERIOD_DAYS = 400;
+
 const DAY_MS = 86_400_000;
 const FIRST_WEEKDAY: Record<WeekStart, number> = { monday: 1, sunday: 0 };
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -36,6 +39,11 @@ function toIso(ms: number): string {
 /** Whether `text` is a real calendar date written `YYYY-MM-DD`. */
 export function isIsoDate(text: string): boolean {
   return ISO.test(text) && toIso(toMs(text)) === text;
+}
+
+/** How many Days `from..=to` covers, both ends included. */
+export function spanDays(from: string, to: string): number {
+  return (toMs(to) - toMs(from)) / DAY_MS + 1;
 }
 
 /** Today's date in the person's own time zone, as `YYYY-MM-DD`. */
@@ -86,9 +94,10 @@ export function previousPeriod(selection: PeriodSelection): PeriodSelection {
   return shiftPeriod(selection, -1);
 }
 
-/** Whether the next Period has already begun (the picker never moves into the future). */
+/** Whether the next Period may be shown: a day, week or month once it has begun; a custom range only if it ends by today. */
 export function canGoNext(selection: PeriodSelection, today: string): boolean {
-  return shiftPeriod(selection, 1).from <= today;
+  const next = shiftPeriod(selection, 1);
+  return selection.kind === "custom" ? next.to <= today : next.from <= today;
 }
 
 /** A readable name such as "Oct 14, 2026", "October 2026" or "Oct 12 – 18, 2026". */

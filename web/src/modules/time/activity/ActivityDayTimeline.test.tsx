@@ -2,9 +2,10 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { jsonResponse, renderWithClient, stubApi } from "../test-utils";
 import { ActivityDayTimeline } from "./ActivityDayTimeline";
+import { OVERVIEW, overviewBody } from "./overviewFixture";
 
 const period = { from: "2026-05-04", to: "2026-05-06", tz: "UTC" };
-const BOUNDS = "GET /api/time/analysis/activity/bounds";
+const BOUNDS = OVERVIEW;
 const LANE = "GET /api/time/analysis/activity/timeline";
 
 const lane = (date: string, spans: object[]) => ({
@@ -20,7 +21,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("ActivityDayTimeline", () => {
   it("opens on the last Day with Activity and shows its spans in a table", async () => {
     const fetchMock = stubApi({
-      [BOUNDS]: () => jsonResponse(200, { days: [{ date: "2026-05-04", first_minute: 0, last_minute: 60 }, { date: "2026-05-05", first_minute: 0, last_minute: 60 }] }),
+      [BOUNDS]: () => jsonResponse(200, overviewBody({ bounds: [{ date: "2026-05-04", first_minute: 0, last_minute: 60 }, { date: "2026-05-05", first_minute: 0, last_minute: 60 }] })),
       [LANE]: (request) => jsonResponse(200, lane(new URL(request.url).searchParams.get("day") ?? "", [span("2026-05-05")])),
     });
     renderWithClient(<ActivityDayTimeline period={period} />);
@@ -32,7 +33,7 @@ describe("ActivityDayTimeline", () => {
 
   it("moves to the previous Day, and an empty Day says so while keeping the picker", async () => {
     stubApi({
-      [BOUNDS]: () => jsonResponse(200, { days: [{ date: "2026-05-05", first_minute: 0, last_minute: 60 }] }),
+      [BOUNDS]: () => jsonResponse(200, overviewBody({ bounds: [{ date: "2026-05-05", first_minute: 0, last_minute: 60 }] })),
       [LANE]: (request) => {
         const day = new URL(request.url).searchParams.get("day") ?? "";
         return jsonResponse(200, lane(day, day === "2026-05-05" ? [span(day)] : []));
@@ -46,7 +47,7 @@ describe("ActivityDayTimeline", () => {
   });
 
   it("says so when the Period has no Activity at all", async () => {
-    stubApi({ [BOUNDS]: () => jsonResponse(200, { days: [] }) });
+    stubApi({ [BOUNDS]: () => jsonResponse(200, overviewBody({ bounds: [] })) });
     renderWithClient(<ActivityDayTimeline period={period} />);
     expect(await screen.findByText("No Activity in this Period.")).toBeInTheDocument();
     expect(screen.queryByLabelText("Day")).not.toBeInTheDocument();

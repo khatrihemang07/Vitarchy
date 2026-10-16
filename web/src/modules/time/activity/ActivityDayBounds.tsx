@@ -1,12 +1,14 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, type TooltipContentProps, XAxis, YAxis } from "recharts";
-import { type ActivityPeriod, useActivityBounds } from "@/api/time";
+import type { ActivityPeriod } from "@/api/time";
 import { useCoreSettings } from "@/app/module-manifest";
-import { axisProps, ChartLegend, ChartTooltip, gridProps, seriesColor, tooltipProps } from "@/design";
+import { axisProps, ChartLegend, gridProps, seriesColor, tooltipProps } from "@/design";
 import { ActivityPanel } from "./ActivityPanel";
-import { type BoundsPoint, boundsPoints } from "./chartModels";
+import { BoundsTooltip } from "./BoundsTooltip";
+import { boundsPoints } from "./chartModels";
 import { ChartTable } from "../shared/ChartTable";
 import { formatDayShort } from "./dayLabel";
-import { formatMinuteOfDay, type Clock } from "../shared/timeOfDay";
+import { formatMinuteOfDay } from "../shared/timeOfDay";
+import { useActivityPart } from "./useActivityPart";
 
 const FIRST = seriesColor(0);
 const LAST = seriesColor(1);
@@ -17,35 +19,20 @@ const LINES = [
 const TICKS = [0, 360, 720, 1080, 1440];
 const DOTS_UNTIL = 31;
 
-function BoundsTooltip({ active, payload, clock }: TooltipContentProps & { clock: Clock }) {
-  const point = payload[0]?.payload as BoundsPoint | undefined;
-  if (!active || !point) return null;
-  const time = (minute: number | null) => (minute === null ? "No Activity" : formatMinuteOfDay(minute, clock));
-  return (
-    <ChartTooltip
-      title={formatDayShort(point.date)}
-      rows={[
-        { label: "First activity", color: FIRST, value: time(point.first) },
-        { label: "Last activity", color: LAST, value: time(point.last) },
-      ]}
-    />
-  );
-}
-
 /** When each Day's Activity began and ended, read down the page from midnight. */
 export function ActivityDayBounds({ period }: { period: ActivityPeriod }) {
-  const query = useActivityBounds(period);
+  const query = useActivityPart(period, (overview) => overview.bounds);
   const { clock } = useCoreSettings();
   return (
     <ActivityPanel
       title="First and last activity of each day"
       description="When the computer was first and last used, by time of day."
       query={query}
-      isEmpty={(data) => data.days.length === 0}
+      isEmpty={(data) => data.length === 0}
       emptyMessage="No Activity in this Period."
     >
       {(data) => {
-        const points = boundsPoints(period.from, period.to, data.days);
+        const points = boundsPoints(period.from, period.to, data);
         return (
           <>
             <ChartLegend
@@ -60,7 +47,7 @@ export function ActivityDayBounds({ period }: { period: ActivityPeriod }) {
                   <CartesianGrid {...gridProps} />
                   <XAxis dataKey="date" {...axisProps} tickFormatter={formatDayShort} interval="preserveStartEnd" minTickGap={32} />
                   <YAxis {...axisProps} reversed domain={[0, 1440]} ticks={TICKS} width={64} tickFormatter={(m: number) => formatMinuteOfDay(m, clock)} />
-                  <Tooltip {...tooltipProps} content={(props: TooltipContentProps) => <BoundsTooltip {...props} clock={clock} />} />
+                  <Tooltip {...tooltipProps} content={(props: TooltipContentProps) => <BoundsTooltip {...props} clock={clock} first={FIRST} last={LAST} />} />
                   {LINES.map(({ key, color }) => (
                     <Line
                       key={key}
@@ -80,7 +67,7 @@ export function ActivityDayBounds({ period }: { period: ActivityPeriod }) {
             <ChartTable
               caption="First and last Activity of each Day"
               columns={["Day", "First", "Last"]}
-              rows={data.days.map((day) => [
+              rows={data.map((day) => [
                 formatDayShort(day.date),
                 formatMinuteOfDay(day.first_minute, clock),
                 formatMinuteOfDay(day.last_minute, clock),

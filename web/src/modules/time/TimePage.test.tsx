@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRouter, Outlet, RouterProvider } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { timeModule } from "./index";
 import { disconnected, jsonResponse, stubApi } from "./test-utils";
@@ -53,5 +53,17 @@ describe("TimePage", () => {
     await renderAt("/time?tab=nope&period=decade&from=garbage");
     expect(screen.getByRole("tab", { name: "Overview", selected: true })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Week", checked: true })).toBeInTheDocument();
+  });
+
+  it("rolls today over at local midnight while the page stays open", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"], now: new Date(2026, 9, 14, 23, 59, 50) });
+    try {
+      await renderAt("/time?period=custom&from=2026-10-01&to=2026-10-02");
+      expect(screen.getByLabelText("From")).toHaveAttribute("max", "2026-10-14");
+      await act(async () => { await vi.advanceTimersByTimeAsync(31_000); });
+      expect(screen.getByLabelText("From")).toHaveAttribute("max", "2026-10-15");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

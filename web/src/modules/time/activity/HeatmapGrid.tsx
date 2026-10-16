@@ -1,76 +1,67 @@
 import { useState } from "react";
-import { ChartTooltip } from "@/design";
+import { ChartTooltip, cn } from "@/design";
 import { formatHourOfDay, type Clock } from "../shared/timeOfDay";
 import { formatSpan } from "./duration";
 import { type HeatmapRow, intensity, maxCell } from "./heatmapModel";
 
-const CELL = 14;
-const GAP = 2;
-const LABEL_W = 34;
-const TOP = 16;
-const STEP = CELL + GAP;
 const HOURS = 24;
-const WIDTH = LABEL_W + HOURS * STEP;
-const HEIGHT_OF = (rows: number) => TOP + rows * STEP;
-const LABEL_EVERY = 3;
+const LABEL_EVERY = 6;
+const LABEL_STARTS = Array.from({ length: HOURS / LABEL_EVERY }, (_, i) => i * LABEL_EVERY);
 
-/** How a cell is filled: the neutral track when empty, else one hue that deepens with time. */
-export function cellFill(strength: number): { fill: string; fillOpacity: number } {
-  return strength === 0 ? { fill: "var(--muted)", fillOpacity: 1 } : { fill: "var(--chart-1)", fillOpacity: 0.15 + 0.85 * strength };
+/** How a cell is painted: the neutral track when empty, else one hue that deepens with time. */
+export function cellBackground(strength: number): string {
+  return strength === 0 ? "var(--muted)" : `color-mix(in srgb, var(--chart-1) ${String(Math.round((0.15 + 0.85 * strength) * 100))}%, transparent)`;
 }
 
-/** The weekday-by-hour grid as an SVG that scales to its container. Decorative to assistive tech: the table beside it carries the numbers. */
+/** Where a hovered cell's tooltip hangs, kept inside the grid at both ends of the day. */
+const tooltipSide = (hour: number) => (hour < 6 ? "left-0" : hour >= 18 ? "right-0" : "left-1/2 -translate-x-1/2");
+
+/**
+ * The weekday-by-hour grid as a CSS grid. Cells share the width up to a maximum size; labels are
+ * ordinary text, so they keep the token text size at any width. Decorative to assistive tech: the
+ * table beside it carries the numbers.
+ */
 export function HeatmapGrid({ rows, clock }: { rows: readonly HeatmapRow[]; clock: Clock }) {
   const [hovered, setHovered] = useState<{ row: number; hour: number } | null>(null);
   const max = maxCell(rows);
-  const active = hovered ? rows[hovered.row] : undefined;
   return (
-    <div className="relative">
-      <svg
-        viewBox={`0 0 ${String(WIDTH)} ${String(HEIGHT_OF(rows.length))}`}
-        className="block h-auto w-full"
-        aria-hidden
-        onMouseLeave={() => { setHovered(null); }}
-      >
-        {Array.from({ length: HOURS / LABEL_EVERY }, (_, i) => i * LABEL_EVERY).map((hour) => (
-          <text key={hour} x={LABEL_W + hour * STEP} y={10} fontSize={10} fill="var(--muted-foreground)">
-            {formatHourOfDay(hour, clock)}
-          </text>
-        ))}
-        {rows.map((row, r) => (
-          <g key={row.name}>
-            <text x={0} y={TOP + r * STEP + CELL - 3} fontSize={11} fill="var(--muted-foreground)">
-              {row.short}
-            </text>
-            {row.hours.map((seconds, hour) => (
-              <rect
+    <div
+      aria-hidden
+      className="grid max-w-3xl gap-0.5 text-xs text-muted-foreground"
+      style={{ gridTemplateColumns: `2.25rem repeat(${String(HOURS)}, minmax(0, 1fr))` }}
+      onMouseLeave={() => { setHovered(null); }}
+    >
+      <span />
+      {LABEL_STARTS.map((hour) => (
+        <span key={hour} className="whitespace-nowrap" style={{ gridColumn: `span ${String(LABEL_EVERY)}` }}>
+          {formatHourOfDay(hour, clock)}
+        </span>
+      ))}
+      {rows.map((row, r) => (
+        <div key={row.name} className="contents">
+          <span className="flex items-center">{row.short}</span>
+          {row.hours.map((seconds, hour) => {
+            const open = hovered?.row === r && hovered.hour === hour;
+            return (
+              <span
                 key={hour}
-                x={LABEL_W + hour * STEP}
-                y={TOP + r * STEP}
-                width={CELL}
-                height={CELL}
-                rx={3}
-                {...cellFill(intensity(seconds, max))}
+                className="relative h-5 rounded-sm"
+                style={{ background: cellBackground(intensity(seconds, max)) }}
                 onMouseEnter={() => { setHovered({ row: r, hour }); }}
-              />
-            ))}
-          </g>
-        ))}
-      </svg>
-      {hovered && active ? (
-        <div
-          className="pointer-events-none absolute z-10 -translate-x-1/2"
-          style={{
-            left: `${String(((LABEL_W + hovered.hour * STEP + CELL / 2) / WIDTH) * 100)}%`,
-            top: `${String(((TOP + hovered.row * STEP + CELL) / HEIGHT_OF(rows.length)) * 100)}%`,
-          }}
-        >
-          <ChartTooltip
-            title={`${active.name}, ${formatHourOfDay(hovered.hour, clock)}`}
-            rows={[{ label: "Activity", color: "var(--chart-1)", value: formatSpan(active.hours[hovered.hour] ?? 0) }]}
-          />
+              >
+                {open ? (
+                  <span className={cn("pointer-events-none absolute top-full z-10 mt-1", tooltipSide(hour))}>
+                    <ChartTooltip
+                      title={`${row.name}, ${formatHourOfDay(hour, clock)}`}
+                      rows={[{ label: "Activity", color: "var(--chart-1)", value: formatSpan(seconds) }]}
+                    />
+                  </span>
+                ) : null}
+              </span>
+            );
+          })}
         </div>
-      ) : null}
+      ))}
     </div>
   );
 }

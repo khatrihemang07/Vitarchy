@@ -89,32 +89,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/time/analysis/activity/bounds": {
+    "/api/time/analysis/activity/overview": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** When each Day's Activity began and ended, in local minutes. */
-        get: operations["get_bounds"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/time/analysis/activity/heatmap": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Seconds of Activity by weekday (Monday first) and local hour. */
-        get: operations["get_heatmap"];
+        /** Totals, heatmap, Day bounds and weekly trend for a Period. */
+        get: operations["get_overview"];
         put?: never;
         post?: never;
         delete?: never;
@@ -132,40 +115,6 @@ export interface paths {
         };
         /** The Day's Activity as merged spans by Context. */
         get: operations["get_timeline"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/time/analysis/activity/totals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Screen time by app, then Context, then top titles. */
-        get: operations["get_totals"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/time/analysis/activity/trend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Weekly totals for the five busiest apps and the rest. */
-        get: operations["get_trend"];
         put?: never;
         post?: never;
         delete?: never;
@@ -299,11 +248,6 @@ export interface components {
              * @description Seconds.
              */
             seconds: number;
-        };
-        /** @description First and last Activity of each Day that has any. */
-        Bounds: {
-            /** @description Days with Activity, earliest first. */
-            days: components["schemas"]["DayBound"][];
         };
         /**
          * @description 12- or 24-hour clock.
@@ -479,6 +423,17 @@ export interface components {
          * @enum {string}
          */
         Motion: "system" | "reduced" | "full";
+        /** @description What the Activity tab draws for a Period, all computed from the same rows. */
+        Overview: {
+            /** @description First and last Activity of each Day that has any, earliest first. */
+            bounds: components["schemas"]["DayBound"][];
+            /** @description Seconds by weekday and hour. */
+            heatmap: components["schemas"]["Heatmap"];
+            /** @description Screen time by app, Context and title. */
+            totals: components["schemas"]["Totals"];
+            /** @description Weekly seconds for the busiest apps. */
+            trend: components["schemas"]["Trend"];
+        };
         /** @description The Days of a Period. */
         PeriodDays: {
             /** @description Days, earliest first. */
@@ -874,15 +829,17 @@ export interface operations {
             };
         };
     };
-    get_bounds: {
+    get_overview: {
         parameters: {
             query?: {
                 /** @description First local date, `YYYY-MM-DD`. */
                 from?: string;
                 /** @description Last local date, inclusive, `YYYY-MM-DD`. */
                 to?: string;
-                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                /** @description IANA time zone the Days are measured in. */
                 tz?: string;
+                /** @description `monday` (default) or `sunday`. */
+                week_start?: "monday" | "sunday";
             };
             header?: never;
             path?: never;
@@ -890,52 +847,16 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Per-Day first and last Activity */
+            /** @description Every Period-wide Activity analysis */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Bounds"];
+                    "application/json": components["schemas"]["Overview"];
                 };
             };
-            /** @description Bad zone, date or length */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemBody"];
-                };
-            };
-        };
-    };
-    get_heatmap: {
-        parameters: {
-            query?: {
-                /** @description First local date, `YYYY-MM-DD`. */
-                from?: string;
-                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
-                to?: string;
-                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
-                tz?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description A 7 by 24 grid of seconds */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Heatmap"];
-                };
-            };
-            /** @description Bad zone, date or length */
+            /** @description Bad zone, date, length or week start */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -970,80 +891,6 @@ export interface operations {
                 };
             };
             /** @description Bad zone or date */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemBody"];
-                };
-            };
-        };
-    };
-    get_totals: {
-        parameters: {
-            query?: {
-                /** @description First local date, `YYYY-MM-DD`. */
-                from?: string;
-                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
-                to?: string;
-                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
-                tz?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Totals, longest first */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Totals"];
-                };
-            };
-            /** @description Bad zone, date or length */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemBody"];
-                };
-            };
-        };
-    };
-    get_trend: {
-        parameters: {
-            query?: {
-                /** @description First local date, `YYYY-MM-DD`. */
-                from?: string;
-                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
-                to?: string;
-                /** @description IANA time zone the Days are measured in. */
-                tz?: string;
-                /** @description `monday` (default) or `sunday`. */
-                week_start?: "monday" | "sunday";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Weekly seconds per app */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Trend"];
-                };
-            };
-            /** @description Bad zone, date or length */
             400: {
                 headers: {
                     [name: string]: unknown;

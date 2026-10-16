@@ -29,3 +29,7 @@ export type ActivityTimeline = components["schemas"]["DayTimeline"];
 export type ActivitySpan = components["schemas"]["Span"];
 /** Weekly screen time for the busiest apps. */
 export type ActivityTrend = components["schemas"]["Trend"];
+/** Everything the Activity tab draws for a Period, from one response. */
+export type ActivityOverview = components["schemas"]["Overview"];
+/** Which weekday a week starts on. */
+export type WeekStart = components["schemas"]["WeekStart"];

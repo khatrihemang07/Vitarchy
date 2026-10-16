@@ -1,4 +1,4 @@
-//! `/api/time/analysis/activity/...`: the five Activity analyses over stored rows.
+//! `/api/time/analysis/activity/...`: the Activity overview and timeline over stored rows.
 
 mod common;
 
@@ -25,6 +25,13 @@ async fn store(db: &TestDb, app: &str, title: &str, start: &str, end: &str) {
 async fn get(app: &Router, uri: &str) -> (u16, Value) {
     let reply = call(app, "GET", uri, None).await;
     (reply.status, reply.json)
+}
+
+/// One part (`totals`, `heatmap`, `bounds` or `trend`) of the overview for a query string.
+async fn part(app: &Router, query: &str, name: &str) -> Value {
+    let (status, body) = get(app, &format!("/api/time/analysis/activity/overview?{query}")).await;
+    assert_eq!(status, 200, "{body}");
+    body[name].clone()
 }
 
 const UTC_WEEK: &str = "from=2026-05-04&to=2026-05-10&tz=UTC";
@@ -97,12 +104,7 @@ fn find<'a>(apps: &'a [Value], name: &str) -> &'a Value {
 #[tokio::test]
 async fn totals_rank_apps_contexts_and_titles_and_split_at_midnight() {
     let (db, app) = seeded("act_totals").await;
-    let (status, body) = get(
-        &app,
-        &format!("/api/time/analysis/activity/totals?{UTC_WEEK}"),
-    )
-    .await;
-    assert_eq!(status, 200);
+    let body = part(&app, UTC_WEEK, "totals").await;
     let apps = body["apps"].as_array().unwrap();
     // Spotify: 4 h on the 7th, then the 8th, 9th and 10th in full (the Period ends the 10th).
     assert_eq!(apps[0]["app"], "Spotify");
@@ -128,12 +130,10 @@ async fn totals_rank_apps_contexts_and_titles_and_split_at_midnight() {
 async fn totals_follow_the_requested_time_zone() {
     let (db, app) = seeded("act_tz").await;
     // 22:00Z on the 5th is 03:30 on the 6th in Kolkata, so the whole row is on the 6th there.
-    let uri = "/api/time/analysis/activity/totals?from=2026-05-06&to=2026-05-06&tz=Asia/Kolkata";
-    let (_, body) = get(&app, uri).await;
+    let body = part(&app, "from=2026-05-06&to=2026-05-06&tz=Asia/Kolkata", "totals").await;
     let apps = body["apps"].as_array().unwrap();
     assert_eq!(seconds_of(find(apps, "WhatsApp")), 3 * 3600);
-    let utc = "/api/time/analysis/activity/totals?from=2026-05-06&to=2026-05-06&tz=UTC";
-    let (_, body) = get(&app, utc).await;
+    let body = part(&app, "from=2026-05-06&to=2026-05-06&tz=UTC", "totals").await;
     assert_eq!(
         seconds_of(find(body["apps"].as_array().unwrap(), "WhatsApp")),
         3600
@@ -145,32 +145,26 @@ async fn totals_follow_the_requested_time_zone() {
 async fn an_empty_period_is_empty_not_an_error() {
     let (db, app) = seeded("act_empty").await;
     let q = "from=2020-01-01&to=2020-01-07&tz=UTC";
-    let (status, totals) = get(&app, &format!("/api/time/analysis/activity/totals?{q}")).await;
+    let (status, overview) = get(&app, &format!("/api/time/analysis/activity/overview?{q}")).await;
+    let totals = &overview["totals"];
     assert_eq!((status, totals["total_seconds"].as_i64()), (200, Some(0)));
     assert!(totals["apps"].as_array().unwrap().is_empty());
-    let (_, heat) = get(&app, &format!("/api/time/analysis/activity/heatmap?{q}")).await;
-    assert_eq!(heat["seconds"].as_array().unwrap().len(), 7);
-    let (_, bounds) = get(&app, &format!("/api/time/analysis/activity/bounds?{q}")).await;
-    assert!(bounds["days"].as_array().unwrap().is_empty());
+    assert_eq!(overview["heatmap"]["seconds"].as_array().unwrap().len(), 7);
+    assert!(overview["bounds"].as_array().unwrap().is_empty());
     let (_, lane) = get(
         &app,
         "/api/time/analysis/activity/timeline?day=2020-01-01&tz=UTC",
     )
     .await;
     assert!(lane["spans"].as_array().unwrap().is_empty());
-    let (_, trend) = get(&app, &format!("/api/time/analysis/activity/trend?{q}")).await;
-    assert!(trend["series"].as_array().unwrap().is_empty());
+    assert!(overview["trend"]["series"].as_array().unwrap().is_empty());
     db.drop().await;
 }
 
 #[tokio::test]
 async fn the_heatmap_puts_seconds_in_weekday_and_hour_cells() {
     let (db, app) = seeded("act_heat").await;
-    let (_, body) = get(
-        &app,
-        &format!("/api/time/analysis/activity/heatmap?{UTC_WEEK}"),
-    )
-    .await;
+    let body = part(&app, UTC_WEEK, "heatmap").await;
     let grid = &body["seconds"];
     // Monday 4 May: Code 09:00-10:30 (30 s gap between rows is not counted).
     assert_eq!(grid[0][9], 3600);
@@ -190,12 +184,8 @@ async fn the_heatmap_puts_seconds_in_weekday_and_hour_cells() {
 #[tokio::test]
 async fn bounds_give_first_and_last_local_minutes_of_each_active_day() {
     let (db, app) = seeded("act_bounds").await;
-    let (_, body) = get(
-        &app,
-        &format!("/api/time/analysis/activity/bounds?{UTC_WEEK}"),
-    )
-    .await;
-    let days: Vec<(String, i64, i64)> = body["days"]
+    let body = part(&app, UTC_WEEK, "bounds").await;
+    let days: Vec<(String, i64, i64)> = body
         .as_array()
         .unwrap()
         .iter()
@@ -250,25 +240,17 @@ async fn the_timeline_merges_close_rows_and_is_clipped_to_the_day() {
 #[tokio::test]
 async fn the_trend_buckets_by_the_requested_week_start() {
     let (db, app) = seeded("act_trend").await;
-    let (_, monday) = get(
-        &app,
-        &format!("/api/time/analysis/activity/trend?{UTC_WEEK}&week_start=monday"),
-    )
-    .await;
+    let monday = part(&app, &format!("{UTC_WEEK}&week_start=monday"), "trend").await;
     assert_eq!(monday["weeks"].as_array().unwrap().len(), 1);
     assert_eq!(monday["series"][0]["app"], "Spotify");
     assert_eq!(monday["series"][0]["seconds"][0], 76 * 3600);
-    let (_, sunday) = get(
-        &app,
-        &format!("/api/time/analysis/activity/trend?{UTC_WEEK}&week_start=sunday"),
-    )
-    .await;
+    let sunday = part(&app, &format!("{UTC_WEEK}&week_start=sunday"), "trend").await;
     assert_eq!(sunday["weeks"][0]["start"], "2026-05-03");
     assert_eq!(sunday["weeks"][0]["days"], 6);
     assert_eq!(sunday["weeks"][1]["days"], 1);
     let (status, _) = get(
         &app,
-        &format!("/api/time/analysis/activity/trend?{UTC_WEEK}&week_start=friday"),
+        &format!("/api/time/analysis/activity/overview?{UTC_WEEK}&week_start=friday"),
     )
     .await;
     assert_eq!(status, 400);
@@ -278,17 +260,12 @@ async fn the_trend_buckets_by_the_requested_week_start() {
 #[tokio::test]
 async fn bad_parameters_are_coded_400s_on_every_route() {
     let (db, app) = seeded("act_bad").await;
-    for route in ["totals", "heatmap", "bounds", "trend"] {
-        let uri = format!(
-            "/api/time/analysis/activity/{route}?from=2026-05-04&to=2026-05-10&tz=Nowhere/Land"
-        );
-        let reply = call(&app, "GET", &uri, None).await;
-        assert_eq!(
-            (reply.status, reply.json["code"].as_str()),
-            (400, Some("unknown_time_zone")),
-            "{route}"
-        );
-    }
+    let uri = "/api/time/analysis/activity/overview?from=2026-05-04&to=2026-05-10&tz=Nowhere/Land";
+    let reply = call(&app, "GET", uri, None).await;
+    assert_eq!(
+        (reply.status, reply.json["code"].as_str()),
+        (400, Some("unknown_time_zone"))
+    );
     let reply = call(
         &app,
         "GET",
@@ -300,6 +277,23 @@ async fn bad_parameters_are_coded_400s_on_every_route() {
         (reply.status, reply.json["code"].as_str()),
         (400, Some("invalid_date"))
     );
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn a_row_that_began_days_before_the_period_still_counts_in_it() {
+    let db = time_db("act_long_row").await;
+    // Many short rows long before the Period, so a lower bound has real work to do.
+    for day in 1..=5 {
+        store(&db, "Code", "x — a", &format!("2026-04-0{day}T09:00:00Z"), &format!("2026-04-0{day}T09:10:00Z")).await;
+    }
+    // Began the 20th, ended the 26th: 6 days before the Period starts.
+    store(&db, "Spotify", "", "2026-04-20T00:00:00Z", "2026-04-26T00:00:00Z").await;
+    let app = time_app(&db, &FakeToggl::new());
+    let totals = part(&app, "from=2026-04-24&to=2026-04-25&tz=UTC", "totals").await;
+    let apps = totals["apps"].as_array().unwrap();
+    assert_eq!(apps.len(), 1);
+    assert_eq!(seconds_of(find(apps, "Spotify")), 2 * 24 * 3600);
     db.drop().await;
 }
 
@@ -322,13 +316,11 @@ async fn a_400_day_period_of_dense_activity_answers_every_route_quickly() {
     let q = "from=2025-01-01&to=2026-02-04&tz=Europe/London";
     // The 500 ms goal is for the release server; an unoptimised test build is several times slower.
     let budget_ms = if cfg!(debug_assertions) { 2500 } else { 500 };
-    for route in ["totals", "heatmap", "bounds", "trend"] {
-        let started = std::time::Instant::now();
-        let (status, _) = get(&app, &format!("/api/time/analysis/activity/{route}?{q}")).await;
-        let elapsed = started.elapsed();
-        eprintln!("perf {route}: {elapsed:?}");
-        assert_eq!(status, 200, "{route}");
-        assert!(elapsed.as_millis() < budget_ms, "{route} took {elapsed:?}");
-    }
+    let started = std::time::Instant::now();
+    let (status, _) = get(&app, &format!("/api/time/analysis/activity/overview?{q}")).await;
+    let elapsed = started.elapsed();
+    eprintln!("perf overview: {elapsed:?}");
+    assert_eq!(status, 200);
+    assert!(elapsed.as_millis() < budget_ms, "overview took {elapsed:?}");
     db.drop().await;
 }

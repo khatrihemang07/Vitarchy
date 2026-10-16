@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type ActivityPeriod, useActivityBounds, useActivityTimeline } from "@/api/time";
+import { type ActivityPeriod, useActivityTimeline } from "@/api/time";
 import { useCoreSettings } from "@/app/module-manifest";
 import { DayTimeline } from "../shared/DayTimeline";
 import { ActivityPanel } from "./ActivityPanel";
@@ -7,13 +7,14 @@ import { pickDay } from "./dates";
 import { DayPicker } from "./DayPicker";
 import { formatDayLong } from "./dayLabel";
 import { formatSpan } from "./duration";
+import { useActivityPart } from "./useActivityPart";
 
 /** One Day of Activity as a lane of Contexts. Starts on the last Day with Activity in the Period. */
 export function ActivityDayTimeline({ period }: { period: ActivityPeriod }) {
   const { clock } = useCoreSettings();
-  const bounds = useActivityBounds(period);
+  const bounds = useActivityPart(period, (overview) => overview.bounds);
   const [chosen, setChosen] = useState<string>();
-  const activeDays = bounds.data?.days.map((day) => day.date) ?? [];
+  const activeDays = bounds.data?.map((day) => day.date) ?? [];
   const day = pickDay(chosen, period.from, period.to, activeDays);
   const query = useActivityTimeline(day, period.tz);
   const title = "A day in detail";

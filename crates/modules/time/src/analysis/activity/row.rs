@@ -2,7 +2,7 @@
 
 use chrono::{DateTime, Utc};
 
-use crate::analysis::context::{clean_app, derive_context};
+use crate::analysis::context::{clean_app, derive_context, trim_invisible};
 use crate::analysis::day_split::DayPortion;
 
 /// An Activity row with its app cleaned and its Context derived once.
@@ -27,7 +27,7 @@ impl ActivityRow {
         let app = clean_app(app);
         Self {
             context: derive_context(&app, title),
-            title: title.trim().to_owned(),
+            title: trim_invisible(title).to_owned(),
             app,
             start,
             end,
@@ -44,4 +44,21 @@ pub(super) fn millis(portion: &DayPortion) -> i64 {
 #[cfg(test)]
 pub(super) fn at(text: &str) -> DateTime<Utc> {
     text.parse().unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_title_is_trimmed_of_invisible_marks_the_same_way_its_context_is() {
+        let row = ActivityRow::new(
+            "Code",
+            "\u{200E} main.rs — vitarchy\u{200B}",
+            at("2026-05-01T09:00:00Z"),
+            at("2026-05-01T09:05:00Z"),
+        );
+        assert_eq!(row.title, "main.rs — vitarchy");
+        assert_eq!(row.context, "vitarchy");
+    }
 }

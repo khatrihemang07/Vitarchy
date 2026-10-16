@@ -24,6 +24,18 @@ describe("chart building blocks", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
 
+  it("renders two series that share a label without key warnings", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    render(
+      <>
+        <ChartLegend items={[{ label: "Code", color: "var(--chart-1)" }, { label: "Code", color: "var(--chart-2)" }]} />
+        <ChartTooltip rows={[{ label: "Code", color: "var(--chart-1)", value: "1 h" }, { label: "Code", color: "var(--chart-2)", value: "2 h" }]} />
+      </>,
+    );
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
   it("themes a Recharts chart with the shared axis props", () => {
     const { container } = render(
       <BarChart width={240} height={120} data={[{ day: "Mon", hours: 3 }]}>

@@ -38,15 +38,12 @@ pub fn router_with(factory: TogglFactory, snapshot: SnapshotFile) -> OpenApiRout
         .routes(utoipa_axum::routes!(sync::post_sync))
         .routes(utoipa_axum::routes!(import::post_import))
         .routes(utoipa_axum::routes!(analysis::period::get_period))
-        .routes(utoipa_axum::routes!(analysis::activity::totals::get_totals))
         .routes(utoipa_axum::routes!(
-            analysis::activity::heatmap::get_heatmap
+            analysis::activity::overview::get_overview
         ))
-        .routes(utoipa_axum::routes!(analysis::activity::bounds::get_bounds))
         .routes(utoipa_axum::routes!(
             analysis::activity::timeline::get_timeline
         ))
-        .routes(utoipa_axum::routes!(analysis::activity::trend::get_trend))
         .layer(Extension(factory))
         .layer(Extension(snapshot))
 }

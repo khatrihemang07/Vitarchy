@@ -20,6 +20,13 @@ describe("parseTimeSearch", () => {
   });
 });
 
+describe("parseTimeSearch length limit", () => {
+  it("drops an end date that makes the range longer than 400 days", () => {
+    expect(parseTimeSearch({ period: "custom", from: "2025-01-01", to: "2026-10-01" })).not.toHaveProperty("to");
+    expect(parseTimeSearch({ period: "custom", from: "2025-09-01", to: "2026-10-01" })).toHaveProperty("to");
+  });
+});
+
 describe("resolveView", () => {
   it("defaults to the Overview of the current week", () => {
     expect(resolveView({}, "2026-10-14", "monday")).toEqual({

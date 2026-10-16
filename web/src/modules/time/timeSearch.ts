@@ -1,5 +1,5 @@
 /** The Time page's URL search params: the tab and the Period, bookmarkable. Pure. */
-import { isIsoDate, PERIOD_KINDS, selectionFor, type PeriodKind, type PeriodSelection, type WeekStart } from "./period";
+import { isIsoDate, MAX_PERIOD_DAYS, PERIOD_KINDS, selectionFor, spanDays, type PeriodKind, type PeriodSelection, type WeekStart } from "./period";
 import { DEFAULT_TAB, TIME_TABS, type TimeTabId } from "./tabs";
 
 /** What the URL may carry; every part is optional. */
@@ -32,7 +32,7 @@ export function parseTimeSearch(raw: Record<string, unknown>): TimeSearch {
     ...(tab && { tab }),
     ...(period && { period }),
     ...(from && { from }),
-    ...(to && from && to >= from && { to }),
+    ...(to && from && to >= from && spanDays(from, to) <= MAX_PERIOD_DAYS && { to }),
   };
 }
 

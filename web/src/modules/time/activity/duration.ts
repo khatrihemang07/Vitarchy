@@ -21,3 +21,8 @@ export function formatShare(part: number, total: number): string {
 export function toHours(seconds: number): number {
   return Math.round((seconds / 3600) * 10) / 10;
 }
+
+/** How long `part` is against `longest`, 0 to 1; 0 when there is nothing to compare with. */
+export function fractionOf(part: number, longest: number): number {
+  return longest > 0 ? part / longest : 0;
+}

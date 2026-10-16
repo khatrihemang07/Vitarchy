@@ -7,8 +7,9 @@ BEGIN;
 -- Never clobber a connection that someone made by hand on stage.
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM time.connection WHERE workspace_id <> 900001) THEN
-    RAISE EXCEPTION 'stage has a real Toggl connection; not seeding over it';
+  IF EXISTS (SELECT 1 FROM time.connection WHERE workspace_id <> 900001)
+     OR EXISTS (SELECT 1 FROM time.mirror_owner WHERE workspace_id <> 900001 OR toggl_user_id <> 900001) THEN
+    RAISE EXCEPTION 'stage has a real Toggl connection or mirror owner; not seeding over it';
   END IF;
 END $$;
 

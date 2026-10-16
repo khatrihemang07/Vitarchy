@@ -10,17 +10,24 @@ fn is_invisible(c: char) -> bool {
         || matches!(c, '\u{200B}'..='\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2060}'..='\u{2069}' | '\u{FEFF}')
 }
 
+/// Text without surrounding whitespace or invisible marks: the one normaliser
+/// for app names and titles, so a row and its Context always agree.
+#[must_use]
+pub fn trim_invisible(raw: &str) -> &str {
+    raw.trim_matches(is_invisible)
+}
+
 /// The app name without surrounding whitespace or invisible marks.
 #[must_use]
 pub fn clean_app(raw: &str) -> String {
-    raw.trim_matches(is_invisible).to_owned()
+    trim_invisible(raw).to_owned()
 }
 
 /// The Context of `title` seen in `app` (an already cleaned app name). A title
 /// that names nothing, or an app with no rule, gives the app's own name.
 #[must_use]
 pub fn derive_context(app: &str, title: &str) -> String {
-    let title = title.trim_matches(is_invisible);
+    let title = trim_invisible(title);
     if title.is_empty() {
         return app.to_owned();
     }
@@ -56,25 +63,36 @@ pub(super) fn browser_site(title: &str) -> String {
 
 fn matches(matcher: &Matcher, title: &str) -> bool {
     match matcher {
-        Matcher::Suffix(suffix) => {
-            let (title, suffix) = (title.to_lowercase(), suffix.to_lowercase());
-            title.ends_with(&suffix)
-        }
+        Matcher::Suffix(suffix) => ends_with_ignore_ascii_case(title, suffix),
         Matcher::Exact(text) => title.eq_ignore_ascii_case(text),
         Matcher::RepoPath => is_repo_path(title.split(':').next().unwrap_or(title)),
     }
 }
 
-/// `owner/repo`: one slash between two non-empty names of letters, digits, `-`, `_` or `.`.
+/// Whether `text` ends with `suffix`, ignoring ASCII case, without allocating.
+fn ends_with_ignore_ascii_case(text: &str, suffix: &str) -> bool {
+    let (text, suffix) = (text.as_bytes(), suffix.as_bytes());
+    text.len() >= suffix.len() && text[text.len() - suffix.len()..].eq_ignore_ascii_case(suffix)
+}
+
+/// A GitHub-shaped `owner/repo`: an owner of letters, digits and `-`, a repo that may
+/// also hold `_` and `.`, each with a letter, and at least one digit, `_`, `.` or `-`
+/// overall. The last rule keeps plain word pairs (`TCP/IP`, `and/or`) out, at the cost of
+/// missing plain repositories such as `facebook/react`.
 fn is_repo_path(text: &str) -> bool {
-    let name = |part: &str| {
-        !part.is_empty()
+    let name = |part: &str, extra: &[char]| {
+        part.chars().any(|c| c.is_ascii_alphabetic())
             && part
                 .chars()
-                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || extra.contains(&c))
     };
-    text.split_once('/')
-        .is_some_and(|(owner, repo)| name(owner) && name(repo))
+    text.split_once('/').is_some_and(|(owner, repo)| {
+        name(owner, &[])
+            && name(repo, &['_', '.'])
+            && text
+                .chars()
+                .any(|c| c.is_ascii_digit() || matches!(c, '-' | '_' | '.'))
+    })
 }
 
 #[cfg(test)]
@@ -173,9 +191,26 @@ mod tests {
             "GitHub"
         );
         assert_eq!(
-            context("Brave Browser", "owner/repo: a short description"),
+            context(
+                "Brave Browser",
+                "khatrihemang07/LifeTracker_02: a short description"
+            ),
             "GitHub"
         );
+    }
+
+    #[test]
+    fn technical_and_everyday_word_pairs_are_not_repository_paths() {
+        for title in [
+            "TCP/IP",
+            "async/await",
+            "Docs/Guide",
+            "and/or",
+            "input/output",
+            "24/7",
+        ] {
+            assert_eq!(context("Brave Browser", title), OTHER_PAGES, "{title}");
+        }
     }
 
     #[test]
@@ -219,7 +254,11 @@ mod tests {
     #[test]
     fn the_repository_path_check_accepts_only_owner_slash_repo() {
         assert!(is_repo_path("khatrihemang07/meologue_01"));
+        assert!(is_repo_path("khatrihemang07/LifeTracker_02"));
+        assert!(is_repo_path("rust-lang/rust"));
         assert!(is_repo_path("a-b/c.d"));
+        assert!(!is_repo_path("TCP/IP"));
+        assert!(!is_repo_path("input/output"));
         assert!(!is_repo_path("no-slash"));
         assert!(!is_repo_path("/repo"));
         assert!(!is_repo_path("owner/"));

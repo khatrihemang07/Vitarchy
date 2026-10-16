@@ -1,10 +1,7 @@
 //! `/api/time/analysis/activity/...`: where screen time goes and when.
 
-pub mod bounds;
-pub mod heatmap;
+pub mod overview;
 pub mod timeline;
-pub mod totals;
-pub mod trend;
 
 use sqlx::PgPool;
 

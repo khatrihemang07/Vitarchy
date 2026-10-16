@@ -2,9 +2,10 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { jsonResponse, renderWithClient, stubApi } from "../test-utils";
 import { ActivityTotals } from "./ActivityTotals";
+import { OVERVIEW, overviewBody } from "./overviewFixture";
 
 const period = { from: "2026-05-04", to: "2026-05-10", tz: "UTC" };
-const PATH = "GET /api/time/analysis/activity/totals";
+const PATH = OVERVIEW;
 
 const totals = {
   total_seconds: 7200 + 1800,
@@ -25,7 +26,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("ActivityTotals", () => {
   it("lists apps longest first with time and share of the total", async () => {
-    stubApi({ [PATH]: () => jsonResponse(200, totals) });
+    stubApi({ [PATH]: () => jsonResponse(200, overviewBody({ totals })) });
     renderWithClient(<ActivityTotals period={period} />);
     expect(await screen.findByText("Code")).toBeInTheDocument();
     expect(screen.getByText("2 h")).toBeInTheDocument();
@@ -34,7 +35,7 @@ describe("ActivityTotals", () => {
   });
 
   it("opens an app to its Contexts and a Context to its titles", async () => {
-    stubApi({ [PATH]: () => jsonResponse(200, totals) });
+    stubApi({ [PATH]: () => jsonResponse(200, overviewBody({ totals })) });
     renderWithClient(<ActivityTotals period={period} />);
     expect(screen.queryByText("vitarchy")).not.toBeInTheDocument();
     await userEvent.click(await screen.findByRole("button", { name: /Code/ }));
@@ -43,22 +44,22 @@ describe("ActivityTotals", () => {
   });
 
   it("goes straight to titles for an app with one Context", async () => {
-    stubApi({ [PATH]: () => jsonResponse(200, totals) });
+    stubApi({ [PATH]: () => jsonResponse(200, overviewBody({ totals })) });
     renderWithClient(<ActivityTotals period={period} />);
     await userEvent.click(await screen.findByRole("button", { name: /Spotify/ }));
     expect(screen.getByText("Some Song")).toBeInTheDocument();
   });
 
   it("asks for the Period in the browser's zone", async () => {
-    const fetchMock = stubApi({ [PATH]: () => jsonResponse(200, totals) });
+    const fetchMock = stubApi({ [PATH]: () => jsonResponse(200, overviewBody({ totals })) });
     renderWithClient(<ActivityTotals period={period} />);
     await screen.findByText("Code");
-    const asked = new URL((fetchMock.mock.calls[0] as [Request])[0].url);
-    expect(Object.fromEntries(asked.searchParams)).toEqual({ from: "2026-05-04", to: "2026-05-10", tz: "UTC" });
+    const asked = fetchMock.mock.calls.map((c) => new URL(c[0].url)).find((u) => u.pathname.endsWith("/overview"));
+    expect(Object.fromEntries(asked?.searchParams ?? [])).toEqual({ from: "2026-05-04", to: "2026-05-10", tz: "UTC", week_start: "monday" });
   });
 
   it("says so when the Period has no Activity", async () => {
-    stubApi({ [PATH]: () => jsonResponse(200, { total_seconds: 0, apps: [] }) });
+    stubApi({ [PATH]: () => jsonResponse(200, overviewBody()) });
     renderWithClient(<ActivityTotals period={period} />);
     expect(await screen.findByText("No Activity in this Period.")).toBeInTheDocument();
   });

@@ -12,5 +12,5 @@ export type TimeTabId = (typeof TIME_TABS)[number]["id"];
 /** The tab shown when the URL names none. */
 export const DEFAULT_TAB: TimeTabId = "overview";
 
-/** The tab ids that show a Period (Sources does not). */
-export const PERIOD_TABS: readonly TimeTabId[] = ["overview", "activity", "life-log"];
+/** The tab ids that show a Period: those with an empty-Period note (Sources has none). */
+export const PERIOD_TABS: readonly TimeTabId[] = TIME_TABS.filter((tab) => "empty" in tab).map((tab) => tab.id);

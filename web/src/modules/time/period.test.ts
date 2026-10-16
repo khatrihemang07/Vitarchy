@@ -6,6 +6,7 @@ import {
   previousPeriod,
   selectionFor,
   shiftPeriod,
+  spanDays,
   switchKind,
   type PeriodSelection,
 } from "./period";
@@ -78,6 +79,21 @@ describe("canGoNext", () => {
     const current = week("2026-10-12", "2026-10-18");
     expect(canGoNext(current, "2026-10-18")).toBe(false);
     expect(canGoNext(current, "2026-10-19")).toBe(true);
+  });
+});
+
+describe("canGoNext for a custom range", () => {
+  const custom: PeriodSelection = { kind: "custom", from: "2026-10-10", to: "2026-10-12" };
+  it("stops when the next range would end after today", () => {
+    expect(canGoNext(custom, "2026-10-14")).toBe(false);
+    expect(canGoNext(custom, "2026-10-15")).toBe(true);
+  });
+});
+
+describe("spanDays", () => {
+  it("counts both ends", () => {
+    expect(spanDays("2026-10-10", "2026-10-10")).toBe(1);
+    expect(spanDays("2026-10-10", "2026-10-12")).toBe(3);
   });
 });
 

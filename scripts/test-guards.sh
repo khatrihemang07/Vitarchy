@@ -126,5 +126,18 @@ expect_status "a drifted helper path is caught" nonzero \
   snapshot_paths_agree "${helper_files[0]}" "${helper_files[1]}" "$tmp/paths.rs" "${helper_files[3]}"
 expect_out "the drift is named" "helper crate"
 
+# The web's Period limit must equal the server's, since the web cannot import the Rust constant.
+max_days_agree() {
+  local rust web
+  rust=$(sed -n 's/^pub const MAX_DAYS: usize = \([0-9]*\);.*/\1/p' "$1")
+  web=$(sed -n 's/^export const MAX_PERIOD_DAYS = \([0-9]*\);.*/\1/p' "$2")
+  [ -n "$rust" ] && [ "$rust" = "$web" ] || { echo "Period limit differs: server '$rust', web '$web'" >&2; return 1; }
+}
+rust_period="$here/crates/modules/time/src/analysis/period.rs"
+web_period="$here/web/src/modules/time/period.ts"
+expect_status "the Period limit agrees between server and web" 0 max_days_agree "$rust_period" "$web_period"
+sed 's/MAX_PERIOD_DAYS = 400/MAX_PERIOD_DAYS = 365/' "$web_period" >"$tmp/period.ts"
+expect_status "a drifted Period limit is caught" nonzero max_days_agree "$rust_period" "$tmp/period.ts"
+
 echo "guards: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

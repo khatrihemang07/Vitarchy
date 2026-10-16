@@ -27,7 +27,10 @@ export interface TrendSeriesInfo {
   color: string;
 }
 
-/** One week's row: `start`, how many `days` of it are in the Period, and hours under each series key. */
+/** The key under which a row keeps a series' exact seconds, beside its rounded hours. */
+export const secondsKey = (key: string) => `${key}Seconds`;
+
+/** One week's row: `start`, how many `days` of it are in the Period, and hours (for the chart) and seconds (for the words) under each series key. */
 export type TrendRow = { start: string; days: number } & Record<string, number | string>;
 
 /** The weekly rows in hours, and the stacked series (the busiest apps, then Other when there is any). */
@@ -39,8 +42,12 @@ export function trendChart(trend: ActivityTrend): { rows: TrendRow[]; series: Tr
     const row: TrendRow = { start: week.start, days: week.days };
     trend.series.forEach((s, i) => {
       row[`s${String(i)}`] = toHours(s.seconds[index] ?? 0);
+      row[secondsKey(`s${String(i)}`)] = s.seconds[index] ?? 0;
     });
-    if (hasOther) row.other = toHours(trend.other[index] ?? 0);
+    if (hasOther) {
+      row.other = toHours(trend.other[index] ?? 0);
+      row[secondsKey("other")] = trend.other[index] ?? 0;
+    }
     return row;
   });
   return { rows, series };

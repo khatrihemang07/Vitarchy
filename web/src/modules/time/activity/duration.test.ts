@@ -1,4 +1,4 @@
-import { formatShare, formatSpan, toHours } from "./duration";
+import { fractionOf, formatShare, formatSpan, toHours } from "./duration";
 
 describe("formatSpan", () => {
   it.each([
@@ -31,5 +31,15 @@ describe("toHours", () => {
   it("keeps one decimal", () => {
     expect(toHours(5400)).toBe(1.5);
     expect(toHours(3700)).toBe(1);
+  });
+});
+
+describe("fractionOf", () => {
+  it("is the part of the longest, from 0 to 1", () => {
+    expect(fractionOf(30, 120)).toBe(0.25);
+  });
+
+  it("is 0, never NaN, when nothing was recorded", () => {
+    expect(fractionOf(0, 0)).toBe(0);
   });
 });

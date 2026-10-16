@@ -1,17 +1,18 @@
-import { type ActivityPeriod, useActivityHeatmap } from "@/api/time";
+import type { ActivityPeriod } from "@/api/time";
 import { useCoreSettings } from "@/app/module-manifest";
 import { ActivityPanel } from "./ActivityPanel";
 import { ChartTable } from "../shared/ChartTable";
 import { formatSpan } from "./duration";
-import { cellFill, HeatmapGrid } from "./HeatmapGrid";
+import { cellBackground, HeatmapGrid } from "./HeatmapGrid";
 import { maxCell, orderRows, peakCell } from "./heatmapModel";
 import { formatHourOfDay } from "../shared/timeOfDay";
+import { useActivityPart } from "./useActivityPart";
 
 const SCALE = [0, 0.25, 0.5, 0.75, 1];
 
 /** When the computer is in use: seconds of Activity by weekday and hour, summed over the Period. */
 export function ActivityHeatmap({ period }: { period: ActivityPeriod }) {
-  const query = useActivityHeatmap(period);
+  const query = useActivityPart(period, (overview) => overview.heatmap);
   const { week_start: weekStart, clock } = useCoreSettings();
   return (
     <ActivityPanel
@@ -35,7 +36,7 @@ export function ActivityHeatmap({ period }: { period: ActivityPeriod }) {
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               Less
               {SCALE.map((strength) => (
-                <span key={strength} aria-hidden className="size-3 rounded-sm" style={{ background: cellFill(strength).fill, opacity: cellFill(strength).fillOpacity }} />
+                <span key={strength} aria-hidden className="size-3 rounded-sm" style={{ background: cellBackground(strength) }} />
               ))}
               More
               <span className="ml-auto">max {formatSpan(maxCell(rows))} in an hour slot</span>

@@ -12,8 +12,10 @@ describe("formatMinuteOfDay", () => {
     expect(formatMinuteOfDay(15 * 60, "system", "en-GB")).toBe("15:00");
   });
 
-  it("writes the end of the day as midnight", () => {
-    expect(formatMinuteOfDay(24 * 60, "h24", "en-US")).toBe("00:00");
+  it("writes the end of the day as 24:00 on every clock, so it is never mistaken for the start", () => {
+    expect(formatMinuteOfDay(24 * 60, "h24", "en-US")).toBe("24:00");
+    expect(formatMinuteOfDay(24 * 60, "h12", "en-US")).toBe("24:00");
+    expect(formatMinuteOfDay(24 * 60, "system", "en-US")).toBe("24:00");
   });
 });
 
@@ -21,6 +23,11 @@ describe("formatHourOfDay", () => {
   it("writes a whole hour", () => {
     expect(formatHourOfDay(14, "h12", "en-US")).toMatch(/^2\s?PM$/);
     expect(formatHourOfDay(14, "h24", "en-US")).toBe("14");
+  });
+
+  it("writes hour 24 as 24:00 on every clock", () => {
+    expect(formatHourOfDay(24, "h12", "en-US")).toBe("24:00");
+    expect(formatHourOfDay(24, "h24", "en-US")).toBe("24:00");
   });
 });
 

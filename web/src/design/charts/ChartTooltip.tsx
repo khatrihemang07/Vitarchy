@@ -26,8 +26,8 @@ export function ChartTooltip({ title, rows, className }: ChartTooltipProps) {
     >
       {title ? <p className="mb-1 font-medium">{title}</p> : null}
       <ul className="flex flex-col gap-0.5">
-        {rows.map((row) => (
-          <li key={row.label} className="flex items-center gap-2">
+        {rows.map((row, index) => (
+          <li key={`${String(index)}-${row.label}`} className="flex items-center gap-2">
             <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: row.color }} />
             <span className="text-muted-foreground">{row.label}</span>
             <span className="ml-auto pl-3 font-medium tabular-nums">{row.value}</span>

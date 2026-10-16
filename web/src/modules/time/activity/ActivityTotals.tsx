@@ -1,10 +1,11 @@
-import { type ActivityPeriod, useActivityTotals } from "@/api/time";
+import type { ActivityPeriod } from "@/api/time";
 import { ActivityPanel } from "./ActivityPanel";
 import { TotalsList } from "./TotalsList";
+import { useActivityPart } from "./useActivityPart";
 
 /** Where screen time goes: apps, then the project or site inside each, then titles. */
 export function ActivityTotals({ period }: { period: ActivityPeriod }) {
-  const query = useActivityTotals(period);
+  const query = useActivityPart(period, (overview) => overview.totals);
   return (
     <ActivityPanel
       title="Where your screen time goes"
