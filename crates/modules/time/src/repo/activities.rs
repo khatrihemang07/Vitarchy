@@ -71,3 +71,33 @@ pub async fn stats(pool: &PgPool) -> Result<Stats, sqlx::Error> {
     .fetch_one(pool)
     .await
 }
+
+/// A stored row as analysis needs it.
+#[derive(Debug, sqlx::FromRow)]
+pub struct Stored {
+    /// App name as stored.
+    pub app: String,
+    /// Window title as stored.
+    pub title: String,
+    /// When it began.
+    pub start_at: DateTime<Utc>,
+    /// When it ended.
+    pub end_at: DateTime<Utc>,
+}
+
+/// Rows that overlap `[from, to)`, earliest first. Long rows that began before
+/// `from` are included, so a Period's first Day counts them.
+pub async fn overlapping(
+    pool: &PgPool,
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+) -> Result<Vec<Stored>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT app, title, start_at, end_at FROM time.activities
+         WHERE start_at < $2 AND end_at > $1 ORDER BY start_at",
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(pool)
+    .await
+}

@@ -89,6 +89,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/analysis/activity/bounds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** When each Day's Activity began and ended, in local minutes. */
+        get: operations["get_bounds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/analysis/activity/heatmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Seconds of Activity by weekday (Monday first) and local hour. */
+        get: operations["get_heatmap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/analysis/activity/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Day's Activity as merged spans by Context. */
+        get: operations["get_timeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/analysis/activity/totals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Screen time by app, then Context, then top titles. */
+        get: operations["get_totals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/analysis/activity/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Weekly totals for the five busiest apps and the rest. */
+        get: operations["get_trend"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time/analysis/period": {
         parameters: {
             query?: never;
@@ -203,6 +288,23 @@ export interface components {
                 [key: string]: Record<string, never>;
             };
         };
+        /** @description Time in one app. */
+        AppTotal: {
+            /** @description The app name. */
+            app: string;
+            /** @description Contexts, longest first. */
+            contexts: components["schemas"]["ContextTotal"][];
+            /**
+             * Format: int64
+             * @description Seconds.
+             */
+            seconds: number;
+        };
+        /** @description First and last Activity of each Day that has any. */
+        Bounds: {
+            /** @description Days with Activity, earliest first. */
+            days: components["schemas"]["DayBound"][];
+        };
         /**
          * @description 12- or 24-hour clock.
          * @enum {string}
@@ -217,6 +319,18 @@ export interface components {
         ConnectResponse: {
             /** @description Name of the workspace that will be synced. */
             workspace_name: string;
+        };
+        /** @description Time in one Context of an app. */
+        ContextTotal: {
+            /** @description The Context, e.g. a workspace or a site. */
+            name: string;
+            /**
+             * Format: int64
+             * @description Seconds, including untitled time.
+             */
+            seconds: number;
+            /** @description The longest titles, longest first; at most [`TOP_TITLES`]. */
+            titles: components["schemas"]["TitleTotal"][];
         };
         /**
          * @description Settings that apply across all of Vitarchy. Missing keys fall back to their
@@ -259,6 +373,24 @@ export interface components {
          * @enum {string}
          */
         DateFormat: "system" | "day_month_year" | "month_day_year" | "iso";
+        /** @description The first and last Activity of one Day. */
+        DayBound: {
+            /**
+             * Format: date
+             * @description Local date.
+             */
+            date: string;
+            /**
+             * Format: int32
+             * @description Minutes after local midnight when the first Activity began.
+             */
+            first_minute: number;
+            /**
+             * Format: int32
+             * @description Minutes after local midnight when the last Activity ended (at most 1440).
+             */
+            last_minute: number;
+        };
         /** @description One local Day and where it begins and ends. */
         DayBounds: {
             /**
@@ -277,6 +409,26 @@ export interface components {
              */
             start: string;
         };
+        /** @description One Day's lane of spans. */
+        DayTimeline: {
+            /**
+             * Format: date
+             * @description Local date.
+             */
+            date: string;
+            /**
+             * Format: date-time
+             * @description Local midnight that ends the Day.
+             */
+            day_end: string;
+            /**
+             * Format: date-time
+             * @description Local midnight that begins the Day.
+             */
+            day_start: string;
+            /** @description Spans in time order. */
+            spans: components["schemas"]["Span"][];
+        };
         /**
          * @description Whether Postgres answered the ping.
          * @enum {string}
@@ -288,6 +440,11 @@ export interface components {
             db: components["schemas"]["DbStatus"];
             /** @description Overall status. */
             status: components["schemas"]["Status"];
+        };
+        /** @description Seconds of Activity by weekday and hour. */
+        Heatmap: {
+            /** @description `seconds[weekday][hour]`, weekday 0 = Monday, hour 0..=23 local time. */
+            seconds: number[][];
         };
         /** @description Result of one Import. */
         ImportCounts: {
@@ -393,6 +550,23 @@ export interface components {
              */
             started_at: string;
         };
+        /** @description An unbroken stretch in one Context. */
+        Span: {
+            /** @description The app. */
+            app: string;
+            /** @description The Context within the app. */
+            context: string;
+            /**
+             * Format: date-time
+             * @description End (exclusive), clipped to the Day.
+             */
+            end: string;
+            /**
+             * Format: date-time
+             * @description Start (inclusive), clipped to the Day.
+             */
+            start: string;
+        };
         /**
          * @description Overall server health.
          * @enum {string}
@@ -470,6 +644,55 @@ export interface components {
             time_entry_count: number;
             /** @description The synced workspace, when connected. */
             workspace_name?: string | null;
+        };
+        /** @description Time on one window title. */
+        TitleTotal: {
+            /**
+             * Format: int64
+             * @description Seconds.
+             */
+            seconds: number;
+            /** @description The title as stored. */
+            title: string;
+        };
+        /** @description Screen time over a Period. */
+        Totals: {
+            /** @description Apps, longest first. */
+            apps: components["schemas"]["AppTotal"][];
+            /**
+             * Format: int64
+             * @description Seconds across all apps.
+             */
+            total_seconds: number;
+        };
+        /** @description Weekly screen time over a Period. */
+        Trend: {
+            /** @description Seconds per week of every other app. */
+            other: number[];
+            /** @description The longest-used apps, longest first. */
+            series: components["schemas"]["TrendSeries"][];
+            /** @description Weeks from the one holding the Period's first Day to the one holding its last. */
+            weeks: components["schemas"]["TrendWeek"][];
+        };
+        /** @description One app's seconds in each week. */
+        TrendSeries: {
+            /** @description The app. */
+            app: string;
+            /** @description Seconds per week, in the order of `weeks`. */
+            seconds: number[];
+        };
+        /** @description One week of the trend. */
+        TrendWeek: {
+            /**
+             * Format: int32
+             * @description How many of its Days lie inside the Period (under 7 at the ends).
+             */
+            days: number;
+            /**
+             * Format: date
+             * @description Local date the week starts on.
+             */
+            start: string;
         };
         /**
          * @description First day of the week.
@@ -642,6 +865,186 @@ export interface operations {
             };
             /** @description The Snapshot could not be read (`snapshot_unreadable`) */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_bounds: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Per-Day first and last Activity */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Bounds"];
+                };
+            };
+            /** @description Bad zone, date or length */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_heatmap: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A 7 by 24 grid of seconds */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Heatmap"];
+                };
+            };
+            /** @description Bad zone, date or length */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_timeline: {
+        parameters: {
+            query?: {
+                /** @description The local date, `YYYY-MM-DD`. */
+                day?: string;
+                /** @description IANA time zone the Day is measured in. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Day's spans */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DayTimeline"];
+                };
+            };
+            /** @description Bad zone or date */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_totals: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in, e.g. `Europe/London`. */
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Totals, longest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Totals"];
+                };
+            };
+            /** @description Bad zone, date or length */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_trend: {
+        parameters: {
+            query?: {
+                /** @description First local date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Last local date, inclusive, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description IANA time zone the Days are measured in. */
+                tz?: string;
+                /** @description `monday` (default) or `sunday`. */
+                week_start?: "monday" | "sunday";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Weekly seconds per app */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Trend"];
+                };
+            };
+            /** @description Bad zone, date or length */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

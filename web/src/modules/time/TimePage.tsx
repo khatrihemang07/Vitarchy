@@ -1,6 +1,9 @@
+import { Suspense } from "react";
+import { LoadingNotice } from "./LoadingNotice";
 import { PeriodEmpty } from "./PeriodEmpty";
 import { PeriodPicker } from "./PeriodPicker";
 import { SourcesTab } from "./SourcesTab";
+import { LAZY_BODIES } from "./tabBodies";
 import { PERIOD_TABS, TIME_TABS, type TimeTabId } from "./tabs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/design";
 import { useTimeView } from "./useTimeView";
@@ -26,11 +29,22 @@ export function TimePage() {
         {showsPeriod ? (
           <PeriodPicker value={view.selection} weekStart={view.weekStart} today={view.today} onChange={view.setSelection} />
         ) : null}
-        {TIME_TABS.map((tab) => (
-          <TabsContent key={tab.id} value={tab.id}>
-            {"empty" in tab ? <PeriodEmpty message={tab.empty} /> : <SourcesTab />}
-          </TabsContent>
-        ))}
+        {TIME_TABS.map((tab) => {
+          const Body = LAZY_BODIES[tab.id];
+          return (
+            <TabsContent key={tab.id} value={tab.id}>
+              {Body ? (
+                <Suspense fallback={<LoadingNotice>Loading…</LoadingNotice>}>
+                  <Body selection={view.selection} />
+                </Suspense>
+              ) : "empty" in tab ? (
+                <PeriodEmpty message={tab.empty} />
+              ) : (
+                <SourcesTab />
+              )}
+            </TabsContent>
+          );
+        })}
       </Tabs>
     </div>
   );

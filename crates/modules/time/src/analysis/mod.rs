@@ -1,5 +1,8 @@
 //! Analysis of Time Entries and Activity: pure functions over rows (ADR 0010).
 
+pub mod activity;
+pub mod context;
+mod context_rules;
 pub mod day_split;
 pub mod period;
 
