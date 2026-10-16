@@ -72,64 +72,358 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/activity/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Runs an Import now and returns what it did. */
+        post: operations["post_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Checks the token with Toggl and stores it with the default workspace. */
+        put: operations["put_connection"];
+        post?: never;
+        /** Forgets the token. Time Entries already synced are kept. */
+        delete: operations["delete_connection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connection, latest runs and how much has been mirrored. */
+        get: operations["get_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Runs a Sync now and returns what it did. */
+        post: operations["post_sync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Activity figures for the status page. */
+        ActivityStatus: {
+            /**
+             * Format: int64
+             * @description Activity rows stored.
+             */
+            activity_count: number;
+            /**
+             * Format: int64
+             * @description Distinct apps seen.
+             */
+            app_count: number;
+            last_import?: components["schemas"]["RunInfo"] | null;
+            /**
+             * Format: date-time
+             * @description End of the latest stored Activity.
+             */
+            newest?: string | null;
+            /**
+             * Format: date-time
+             * @description Start of the earliest stored Activity.
+             */
+            oldest?: string | null;
+            /**
+             * Format: date-time
+             * @description When the Snapshot was taken; `null` when there is no Snapshot.
+             */
+            snapshot_taken_at?: string | null;
+        };
+        /** @description Body of `GET /api/settings`. */
         AllSettings: {
+            /** @description The Core settings, defaults filled in. */
             core: components["schemas"]["CoreSettings"];
             /** @description Each Module's settings object, keyed by Module id. */
             modules: {
                 [key: string]: Record<string, never>;
             };
         };
-        /** @enum {string} */
+        /**
+         * @description 12- or 24-hour clock.
+         * @enum {string}
+         */
         Clock: "system" | "h12" | "h24";
+        /** @description Body of `PUT /api/time/connection`. */
+        ConnectRequest: {
+            /** @description The person's Toggl API token. Stored server-side, never returned. */
+            api_token: string;
+        };
+        /** @description Answer to a successful connect: what the token reached, never the token. */
+        ConnectResponse: {
+            /** @description Name of the workspace that will be synced. */
+            workspace_name: string;
+        };
         /**
          * @description Settings that apply across all of Vitarchy. Missing keys fall back to their
          *     defaults, so adding a setting later needs no data migration.
          */
         CoreSettings: {
-            /** @default system */
+            /**
+             * @description Clock style.
+             * @default system
+             */
             clock: components["schemas"]["Clock"];
-            /** @default system */
+            /**
+             * @description Date style.
+             * @default system
+             */
             date_format: components["schemas"]["DateFormat"];
             /**
              * @description What Vitarchy calls the user; trimmed, at most 50 characters.
              * @default
              */
             display_name: string;
-            /** @default system */
+            /**
+             * @description Motion setting.
+             * @default system
+             */
             motion: components["schemas"]["Motion"];
-            /** @default system */
+            /**
+             * @description Colour theme.
+             * @default system
+             */
             theme: components["schemas"]["Theme"];
-            /** @default monday */
+            /**
+             * @description First day of the week.
+             * @default monday
+             */
             week_start: components["schemas"]["WeekStart"];
         };
-        /** @enum {string} */
+        /**
+         * @description How dates are written.
+         * @enum {string}
+         */
         DateFormat: "system" | "day_month_year" | "month_day_year" | "iso";
-        /** @enum {string} */
+        /**
+         * @description Whether Postgres answered the ping.
+         * @enum {string}
+         */
         DbStatus: "ok" | "down";
+        /** @description Body of `GET /api/health`. */
         Health: {
+            /** @description Database status. */
             db: components["schemas"]["DbStatus"];
+            /** @description Overall status. */
             status: components["schemas"]["Status"];
         };
-        /** @enum {string} */
+        /** @description Result of one Import. */
+        ImportCounts: {
+            /**
+             * Format: int32
+             * @description Activity stored for the first time.
+             */
+            inserted: number;
+            /**
+             * Format: int32
+             * @description Rows found in the Snapshot.
+             */
+            read: number;
+            /**
+             * Format: int32
+             * @description Rows left out: unreadable id, impossible times, or a repeated id.
+             */
+            skipped: number;
+            /**
+             * Format: int32
+             * @description Activity already stored and identical.
+             */
+            unchanged: number;
+            /**
+             * Format: int32
+             * @description Activity already stored whose fields changed (e.g. a later end).
+             */
+            updated: number;
+        };
+        /**
+         * @description Motion setting: follow the system or force reduced or full.
+         * @enum {string}
+         */
         Motion: "system" | "reduced" | "full";
         /** @description JSON body of every error response (`application/problem+json`). */
         Problem: {
+            /**
+             * @description Explanation for the caller. For 404/400/409 it is the message the handler
+             *     chose (which may quote the rejected input, e.g. a bad enum value); for
+             *     5xx and database failures it is generic, never the internal error.
+             */
             detail: string;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description The HTTP status code, repeated in the body.
+             */
             status: number;
+            /** @description Short, human-readable summary: the status's reason phrase. */
             title: string;
             /** @description URI identifying the problem type; `about:blank` when the status says it all. */
             type: string;
         };
-        /** @enum {string} */
+        /** @description Problem body for a failed Toggl call: core's problem fields plus a `code`. */
+        ProblemBody: {
+            /**
+             * @description `invalid_token`, `rate_limited`, `unreachable`, `unexpected`, `malformed`,
+             *     `no_snapshot` or `snapshot_unreadable`.
+             */
+            code: string;
+            /** @description Explanation fit to show the person; never holds the token. */
+            detail: string;
+            /**
+             * Format: int64
+             * @description For `rate_limited`: seconds until Toggl accepts requests again.
+             */
+            resets_in_secs?: number | null;
+            /**
+             * Format: int32
+             * @description The HTTP status.
+             */
+            status: number;
+            /** @description The status's reason phrase. */
+            title: string;
+            /** @description Always `about:blank`; the status and code say it all. */
+            type: string;
+        };
+        /** @description A Sync or Import attempt. */
+        RunInfo: {
+            /** @description What it did, e.g. `{"inserted": 3}`; empty when it failed. */
+            counts: Record<string, never>;
+            /** @description Why it failed (`invalid_token`, `no_snapshot`, ...). */
+            error_code?: string | null;
+            /**
+             * Format: date-time
+             * @description When it ended.
+             */
+            finished_at: string;
+            /** @description `sync` or `import`. */
+            kind: string;
+            /** @description `success` or `failed`. */
+            outcome: string;
+            /**
+             * Format: date-time
+             * @description When it began.
+             */
+            started_at: string;
+        };
+        /**
+         * @description Overall server health.
+         * @enum {string}
+         */
         Status: "ok" | "degraded";
-        /** @enum {string} */
+        /** @description Result of one Sync. */
+        SyncCounts: {
+            /**
+             * Format: int32
+             * @description Clients in the workspace.
+             */
+            clients: number;
+            /**
+             * Format: int32
+             * @description Time Entries removed because they were deleted in Toggl.
+             */
+            deleted: number;
+            /**
+             * Format: int32
+             * @description Time Entries stored for the first time.
+             */
+            inserted: number;
+            /**
+             * Format: int32
+             * @description Projects in the workspace.
+             */
+            projects: number;
+            /**
+             * Format: int32
+             * @description Running timers left for a later Sync.
+             */
+            skipped_running: number;
+            /**
+             * Format: int32
+             * @description Tags in the workspace.
+             */
+            tags: number;
+            /**
+             * Format: int32
+             * @description Time Entries that were already stored and were written again.
+             */
+            updated: number;
+        };
+        /**
+         * @description Colour theme: follow the system or force one.
+         * @enum {string}
+         */
         Theme: "system" | "light" | "dark";
-        /** @enum {string} */
+        /** @description Body of `GET /api/time/status`. */
+        TimeStatus: {
+            /** @description Imported Activity, the Snapshot and the latest Import. */
+            activity: components["schemas"]["ActivityStatus"];
+            /** @description Whether a Toggl token is stored. */
+            connected: boolean;
+            last_sync?: components["schemas"]["RunInfo"] | null;
+            /**
+             * Format: date-time
+             * @description Start of the latest stored entry.
+             */
+            newest_entry?: string | null;
+            /**
+             * Format: date-time
+             * @description Start of the earliest stored entry.
+             */
+            oldest_entry?: string | null;
+            /**
+             * Format: int64
+             * @description Time Entries stored.
+             */
+            time_entry_count: number;
+            /** @description The synced workspace, when connected. */
+            workspace_name?: string | null;
+        };
+        /**
+         * @description First day of the week.
+         * @enum {string}
+         */
         WeekStart: "monday" | "sunday";
     };
     responses: never;
@@ -264,6 +558,207 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    post_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Import finished */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportCounts"];
+                };
+            };
+            /** @description No Snapshot yet (`no_snapshot`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description The Snapshot could not be read (`snapshot_unreadable`) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    put_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectRequest"];
+            };
+        };
+        responses: {
+            /** @description Connected */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectResponse"];
+                };
+            };
+            /** @description Empty token */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Toggl rejected the token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Toggl request limit reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Toggl unreachable or unreadable */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    delete_connection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Disconnected (also when nothing was connected) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeStatus"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    post_sync: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sync finished */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncCounts"];
+                };
+            };
+            /** @description Toggl rejected the stored token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Toggl is not connected */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Toggl request limit reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Toggl unreachable or unreadable */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
                 };
             };
         };

@@ -14,15 +14,16 @@ START_ADDR := $(shell . scripts/lib/db-url.sh; a=$$(env_value "$(LIVE_ENV)" STAR
 endif
 
 .PHONY: help setup start dev stage web-build db db-stop stage-db stage-db-stop \
-	test smoke check gen-api backup restore backup-stage restore-stage
+	test smoke check gen-api backup restore backup-stage restore-stage \
+	signing-setup helper-install helper-uninstall helper-run
 
 help: ## List targets (addresses and ports are in .env and .env.stage)
 	@echo "LIVE (your real data, .env)"
-	@grep -hE '^[a-z-]+:.*## \[live\]' Makefile | sed -E 's/:.*## \[live\] */|/' | awk -F'|' '{printf "  make %-14s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## \[live\]' Makefile | sed -E 's/:.*## \[live\] */|/' | awk -F'|' '{printf "  make %-17s %s\n", $$1, $$2}'
 	@echo "STAGE (throwaway data, .env.stage: tests and checks)"
-	@grep -hE '^[a-z-]+:.*## \[stage\]' Makefile | sed -E 's/:.*## \[stage\] */|/' | awk -F'|' '{printf "  make %-14s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## \[stage\]' Makefile | sed -E 's/:.*## \[stage\] */|/' | awk -F'|' '{printf "  make %-17s %s\n", $$1, $$2}'
 	@echo "OTHER"
-	@grep -hE '^[a-z-]+:.*## \[other\]' Makefile | sed -E 's/:.*## \[other\] */|/' | awk -F'|' '{printf "  make %-14s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## \[other\]' Makefile | sed -E 's/:.*## \[other\] */|/' | awk -F'|' '{printf "  make %-17s %s\n", $$1, $$2}'
 
 setup: ## [other] One-time: create .env files and install web deps
 	@[ -f .env ] || cp .env.example .env
@@ -96,3 +97,15 @@ check: stage-db ## [stage] Lint, typecheck and test everything (the Definition o
 
 gen-api: ## [other] Regenerate the TS API client from the Rust OpenAPI spec
 	cd web && pnpm gen:api
+
+signing-setup: ## [other] One-time: create the "Vitarchy Dev" signing identity
+	scripts/setup-signing.sh
+
+helper-install: ## [other] Build, sign and install the activity helper, then open Full Disk Access
+	scripts/install-activity-helper.sh
+
+helper-uninstall: ## [other] Remove the activity helper (Snapshots are kept)
+	scripts/uninstall-activity-helper.sh
+
+helper-run: ## [other] Run the activity helper now (via launchd, so Full Disk Access applies)
+	launchctl kickstart -k gui/$$(id -u)/dev.vitarchy.activity-snapshot

@@ -16,6 +16,7 @@ Every change to Vitarchy follows these rules. They exist so the codebase stays *
 - `settings`: the Core feature for Settings, listed in the server's `CORE` registry.
 - `server`: the composition root. It wires things together and holds no domain logic.
 - `modules/<id>`: one crate per Module. It depends on `core` and nothing else, and owns the Postgres schema named after its id.
+- `helpers/<name>`: standalone binaries that run outside the server. They depend on no workspace crate.
 
 **Web (`web/src/`)**
 - `app`: composes the shell, routing, pages, settings and theme.

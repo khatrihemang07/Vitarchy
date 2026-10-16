@@ -2,14 +2,14 @@
 
 Your personal life-management app. Vitarchy grows one area of life at a time (time, money and more), each as its own **Module**, behind a colourful, game-flavoured interface.
 
-It runs entirely on your own machine. Your data stays in a local database, and the app never talks to the internet.
+It runs entirely on your own machine. Your data stays in a local database. The app contacts an outside service only when you connect one yourself (such as Toggl Track), and only the server does, never the browser.
 
 ## Features
 
 - **Modular.** Each area of life is a self-contained Module. None are built yet; Time and Finance come first.
 - **Settings in one place.** Theme (light, dark or system), motion, your name, week start, clock and date format. Modules add their own sections.
 - **Chroma + Quest design.** Each Module has its own accent colour, with springy motion and game touches like XP, levels and streaks.
-- **Private by default.** The server listens only on `127.0.0.1`, and nothing loads from the internet.
+- **Private by default.** The server listens only on `127.0.0.1`, and the browser loads nothing from the internet.
 
 ## Quick start
 

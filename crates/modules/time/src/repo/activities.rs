@@ -1,0 +1,84 @@
+//! `time.activities`: Imported Activity. Rows are only ever added or refreshed, never deleted.
+
+use chrono::{DateTime, Utc};
+use sqlx::PgPool;
+
+use crate::activity::parse::Activity;
+
+/// How many rows of a batch were new and how many changed.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct Written {
+    /// Rows stored for the first time.
+    pub inserted: u64,
+    /// Existing rows whose fields differed.
+    pub updated: u64,
+}
+
+/// Upserts `activities` in one statement (one transaction). Identical rows are left untouched.
+pub async fn upsert_all(pool: &PgPool, activities: &[Activity]) -> Result<Written, sqlx::Error> {
+    // Columns bound as parallel arrays; ids and raw travel as text and are cast in SQL.
+    let ids: Vec<&str> = activities.iter().map(|a| a.toggl_id.as_str()).collect();
+    let clients: Vec<Option<&str>> = activities.iter().map(|a| a.client_id.as_deref()).collect();
+    let apps: Vec<&str> = activities.iter().map(|a| a.app.as_str()).collect();
+    let titles: Vec<&str> = activities.iter().map(|a| a.title.as_str()).collect();
+    let starts: Vec<DateTime<Utc>> = activities.iter().map(|a| a.start_at).collect();
+    let ends: Vec<DateTime<Utc>> = activities.iter().map(|a| a.end_at).collect();
+    let idles: Vec<bool> = activities.iter().map(|a| a.idle).collect();
+    let raws: Vec<String> = activities.iter().map(|a| a.raw.to_string()).collect();
+    let (inserted, updated): (i64, i64) = sqlx::query_as(
+        "WITH written AS (
+           INSERT INTO time.activities AS a
+             (toggl_id, client_id, app, title, start_at, end_at, idle, raw)
+           SELECT i.id::uuid, i.client::uuid, i.app, i.title, i.start_at, i.end_at, i.idle, i.raw::jsonb
+           FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::timestamptz[],
+                       $6::timestamptz[], $7::bool[], $8::text[])
+             AS i(id, client, app, title, start_at, end_at, idle, raw)
+           ON CONFLICT (toggl_id) DO UPDATE SET
+             client_id = EXCLUDED.client_id, app = EXCLUDED.app, title = EXCLUDED.title,
+             start_at = EXCLUDED.start_at, end_at = EXCLUDED.end_at, idle = EXCLUDED.idle,
+             raw = EXCLUDED.raw, imported_at = now()
+           WHERE (a.client_id, a.app, a.title, a.start_at, a.end_at, a.idle, a.raw)
+             IS DISTINCT FROM
+             (EXCLUDED.client_id, EXCLUDED.app, EXCLUDED.title, EXCLUDED.start_at,
+              EXCLUDED.end_at, EXCLUDED.idle, EXCLUDED.raw)
+           RETURNING (xmax = 0) AS inserted)
+         SELECT count(*) FILTER (WHERE inserted), count(*) FILTER (WHERE NOT inserted) FROM written",
+    )
+    .bind(&ids)
+    .bind(&clients)
+    .bind(&apps)
+    .bind(&titles)
+    .bind(&starts)
+    .bind(&ends)
+    .bind(&idles)
+    .bind(&raws)
+    .fetch_one(pool)
+    .await?;
+    Ok(Written {
+        inserted: u64::try_from(inserted).unwrap_or(0),
+        updated: u64::try_from(updated).unwrap_or(0),
+    })
+}
+
+/// How much Activity is stored, and over what span.
+#[derive(Debug, sqlx::FromRow)]
+pub struct Stats {
+    /// Rows stored.
+    pub count: i64,
+    /// Earliest start.
+    pub oldest: Option<DateTime<Utc>>,
+    /// Latest end.
+    pub newest: Option<DateTime<Utc>>,
+    /// Distinct apps.
+    pub app_count: i64,
+}
+
+/// Summary of stored Activity for the status page.
+pub async fn stats(pool: &PgPool) -> Result<Stats, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT count(*) AS count, min(start_at) AS oldest, max(end_at) AS newest,
+                count(DISTINCT app) AS app_count FROM time.activities",
+    )
+    .fetch_one(pool)
+    .await
+}

@@ -123,6 +123,32 @@ Only if it is a new theme or motion value: also add it to the lists in `web/publ
 
 See ADR 0006 for why settings are stored as one JSON document per scope.
 
+## Time module
+
+Time keeps two things apart: **Time Entries** (what you record in Toggl, brought in by **Sync**) and **Activity** (what the Toggl Track app noticed, brought in by **Import**). Open Time in the app; both run from buttons.
+
+- **Connect Toggl:** paste your Toggl API token (Toggl profile > API token) into the Connect card. The server checks it, stores it, and never shows or logs it again. Disconnect forgets it but keeps synced entries.
+- **Sync now:** brings the last 3 months of Time Entries and keeps the copy matching Toggl (a deleted entry disappears here too). Running timers wait for a later Sync. A Toggl rate limit shows when it resets.
+- **Import activity:** reads the latest Snapshot (see [Activity snapshot helper](#activity-snapshot-helper)) and only adds or refreshes rows, never deletes, so Vitarchy keeps Activity that Toggl later discards. A repeat Import changes nothing. An ongoing activity gets its later end on the next Import. Rows with an unreadable id or impossible times are skipped and counted.
+- **Stage and tests:** `TIME_ACTIVITY_SNAPSHOT` points the server at another Snapshot file. Tests build a synthetic one in a temporary folder.
+- **Troubleshooting:**
+  - "No Snapshot yet": the helper has not run. `make helper-install`, grant Full Disk Access, then `make helper-run`.
+  - "The Snapshot could not be read": the file is damaged or not Toggl's database. `make helper-run` takes a fresh one.
+  - Snapshot looks old: it is at most 8 hours old by design. `make helper-run` takes one now.
+  - Server logs: `activity import finished` carries `read`, `inserted`, `updated`, `unchanged`, `skipped`, `duration_ms` and the request id. Titles and app names are never logged.
+
+## Activity snapshot helper
+
+Toggl Track's Activity lives in a macOS-protected folder. `crates/helpers/activity-snapshot` is a small signed binary, run by launchd, that copies it into `~/Library/Application Support/Vitarchy/activity/latest.sqlite` (the Snapshot). It has its own Full Disk Access grant, so the terminal and editor need none. Why: [ADR 0009](adr/0009-activity-via-signed-snapshot-helper.md).
+
+- **Install:**
+  1. `make signing-setup` once. It creates the self-signed `Vitarchy Dev` identity in its own keychain, and refuses to run again without `scripts/setup-signing.sh --force`, because a new identity revokes the Full Disk Access grant.
+  2. `make helper-install` builds, signs and verifies the binary, installs it to `~/Library/Application Support/Vitarchy/bin/activity-snapshot`, registers the launchd agent (every 8 hours and at login), and opens System Settings.
+- **Grant Full Disk Access:** in Privacy & Security > Full Disk Access, click `+`, press Cmd+Shift+G, paste the binary path that `make helper-install` printed, and switch it on.
+- **Verify:** `make helper-run`, then `tail -n 3 ~/Library/Logs/Vitarchy/activity-snapshot.log`. A good run logs `outcome=ok bytes=... duration_ms=...`, and `latest.sqlite` exists. Its modification time is the Snapshot time. A failure logs `outcome=error kind=...` (never database content), and `kind=sqlite` usually means the grant is missing.
+- **Uninstall:** `make helper-uninstall` removes the agent and binary but keeps Snapshots. Remove the Full Disk Access entry by hand.
+- **Tests and stage:** `ACTIVITY_SNAPSHOT_SOURCE` and `ACTIVITY_SNAPSHOT_DEST_DIR` override the source database and destination folder. Never run the helper by hand from a terminal to test Full Disk Access: launchd (`make helper-run`) is what macOS attributes the access to.
+
 ## Design system
 
 The look is "Chroma + Quest" (light and dark) on shadcn/ui, Tailwind v4 and Motion. Import everything from the barrel: `import { Button, XpBar } from "@/design"`. ESLint blocks deep paths.

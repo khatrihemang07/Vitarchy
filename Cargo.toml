@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/settings", "crates/server"]
+members = ["crates/core", "crates/settings", "crates/server", "crates/modules/time", "crates/helpers/activity-snapshot"]
 # Module crates (crates/modules/*) are added here, one line each.
 
 [workspace.package]
@@ -12,6 +12,7 @@ publish = false
 [workspace.dependencies]
 vitarchy-core = { path = "crates/core" }
 vitarchy-settings = { path = "crates/settings" }
+vitarchy-time = { path = "crates/modules/time" }
 
 axum = "0.8.9"
 tokio = { version = "1.53", features = ["macros", "rt-multi-thread", "net", "signal", "time"] }
@@ -28,6 +29,9 @@ dotenvy = "0.15"
 tower = "0.5"
 http-body-util = "0.1"
 url = "2"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+async-trait = "0.1"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

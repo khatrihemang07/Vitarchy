@@ -1,0 +1,32 @@
+[package]
+name = "vitarchy-time"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+vitarchy-core.workspace = true
+axum.workspace = true
+sqlx = { workspace = true, features = ["chrono"] }
+utoipa = { workspace = true, features = ["chrono"] }
+utoipa-axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+async-trait.workspace = true
+# Reads the Snapshot. 0.39 matches the helper and sqlx's libsqlite3-sys.
+rusqlite = { version = "0.39", features = ["bundled"] }
+tokio.workspace = true
+
+[dev-dependencies]
+vitarchy-core = { workspace = true, features = ["test-support"] }
+tempfile = "3"
+tower.workspace = true
+http-body-util.workspace = true
+
+[lints]
+workspace = true

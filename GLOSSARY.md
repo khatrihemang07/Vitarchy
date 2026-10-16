@@ -31,3 +31,27 @@ _Avoid_: Common settings, global settings, general settings
 **Module settings**:
 The Settings that belong to one Module and only change that Module.
 _Avoid_: Plugin settings, feature flags
+
+**Time Entry**:
+A span of time the person deliberately recorded in Toggl Track, usually with a description and a project. Toggl owns it, and Vitarchy keeps a read-only copy.
+_Avoid_: Log, record
+
+**Activity**:
+What the Toggl Track app passively noticed on this computer: which app and window was in use, and when. It is separate from Time Entries and is analysed separately.
+_Avoid_: Timeline, tracking
+
+**Sync**:
+Bringing the person's Time Entries from Toggl into Vitarchy so the copy matches Toggl, including deletions. The person starts it with a button.
+_Avoid_: Refresh, pull, update
+
+**Import**:
+Adding Activity from the latest Snapshot to Vitarchy. It only adds, so Vitarchy keeps Activity that Toggl later discards. The person starts it with a button.
+_Avoid_: Sync, load
+
+**Snapshot**:
+A consistent copy of the Toggl Track app's local data, taken on a schedule, from which Activity is Imported. Its age is when it was taken.
+_Avoid_: Backup, export, dump
+
+**Toggl connection**:
+The person's link between Vitarchy and their Toggl Track account, made by entering their Toggl API token. The token is never shown again.
+_Avoid_: Integration, login, account
