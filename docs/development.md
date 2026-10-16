@@ -31,7 +31,7 @@ web/src/modules   one folder per Module
 **Backend:**
 1. Create the crate `crates/modules/<id>`. It may depend only on `vitarchy-core`, and it exports `fn module() -> Module` built with `Module::new`.
 2. The Module owns one Postgres schema named after its id. Its migrations create and use only that schema.
-3. Add the crate to the workspace members, to `crates/server/Cargo.toml`, and as one line in `MODULES` in `crates/server/src/registry.rs`.
+3. Add the crate to the workspace `members` in the root `Cargo.toml`, to the dependencies of `crates/server/Cargo.toml`, and as one line in `MODULES` in `crates/server/src/registry.rs`. (Cargo cannot use a `crates/modules/*` glob until that folder exists.)
 
 Use `ApiJson<T>` from core for request bodies, so bad input returns the standard 400 problem JSON.
 
@@ -41,7 +41,7 @@ Use `ApiJson<T>` from core for request bodies, so bad input returns the standard
 
 The nav, routes, ⌘K entries, accent colour and Settings section all come from the manifest.
 
-A Module may import only `@/design`, `@/api` and `@/app/module-manifest`, and never another Module. ESLint enforces this.
+A Module may import only `@/design`, `@/api`, `@/lib` and `@/app/module-manifest`, and never another Module. `web/src/lib` holds shared plumbing (such as the logger): everyone may import it, and it imports nothing from `app`, `api`, `design` or Modules. ESLint enforces this.
 
 **Module settings.** Declare your settings in the manifest and the Settings page renders them as a section:
 
@@ -137,7 +137,31 @@ Rust tests need Postgres (`make db`). Database tests create and drop their own t
 |---|---|---|---|
 | `.env` | `DATABASE_URL` | `postgres://vitarchy:vitarchy@127.0.0.1:5433/vitarchy` | Postgres connection |
 | `.env` | `BIND_ADDR` | `127.0.0.1:3000` | API address (loopback only) |
+| `.env` | `RUST_LOG` | `info`, with `sqlx`, `hyper`, `h2` and `tower` quieted to `warn` | Server log level filter |
+| `.env` | `LOG_FORMAT` | `pretty` | Server log output: `pretty` or `json` |
 | `.env` | `POSTGRES_PORT` | `5433` | Host port for the Postgres container |
 | `web/.env` | `WEB_PORT` | `7420` | UI dev and preview port |
 | `web/.env` | `API_PORT` | `3000` | Where the dev proxy sends `/api` |
+| `web/.env` | `VITE_LOG_LEVEL` | `debug` in dev, `warn` in builds | Browser console log level (`debug`, `info`, `warn`, `error`, `silent`) |
 | `web/.env` | `VITE_API_BASE_URL` | empty (same origin) | API base URL for non-proxied builds such as Tauri |
+
+### Logging (server)
+
+Logs go to stderr through `tracing`; `core::telemetry::init` picks the format (`LOG_FORMAT=pretty|json`) and the level (`RUST_LOG`).
+
+- **Requests:** `server/src/request_log.rs` gives every request an `x-request-id` (UUID, or the caller's if sent), echoes it on the response, and logs one `response` line. A caller's id is kept only if it is 1-64 characters of `A-Za-z0-9._-`; otherwise a new UUID is used. `request_id`, `method` and the matched `path` are **span fields** (under `spans` in `LOG_FORMAT=json`, on every line logged while handling the request); `status` and `latency_ms` are **event fields** on the `response` line itself. The level comes from `core::level_for_status` (5xx `error`, 4xx `warn`, the rest `info`), the same rule `ApiError` uses; healthy `/api/health` polls are `debug`.
+- **Errors:** `ApiError` logs once when rendered, at the level `level_for_status` gives. 5xx includes the source error (internal); 4xx logs only the status and a fixed kind (`bad_request`, `not_found`, `conflict`), because the message can quote what the person entered.
+- **Startup:** the config (database password masked), bind address and registered Core features and Modules.
+- **Settings:** a save logs the scope and the changed key names; a stored value that no longer parses logs a `warn` with the scope and field.
+- **Never log secrets or setting values.** Log scopes, keys, ids and statuses.
+- **New Module crates:** nothing to do. `DEFAULT_FILTER` in `core/src/telemetry.rs` is crate-agnostic (`info` for everything, noisy dependencies quieted), so a new Module's logs show up on their own.
+- Use structured fields (`tracing::info!(scope, changed = ?keys, "settings saved")`), and `#[tracing::instrument(skip_all, fields(...))]` on handlers and repo functions.
+
+### Logging (web)
+
+Use `createLogger(scope)` from `@/lib/log` (`debug`, `info`, `warn`, `error`), never `console.*` (ESLint `no-console` allows it only in `lib/log.ts`). Output is `[scope] message {fields}` in the browser console only; nothing is sent anywhere.
+
+- **Level:** `VITE_LOG_LEVEL` (`debug|info|warn|error|silent`); default `debug` in `pnpm dev`, `warn` in a production build.
+- **Never log secrets or setting values.** Log scopes, keys, statuses and paths.
+- **API calls:** `api/requestLog.ts` logs every failed response once (`warn` for 4xx, `error` for 5xx, `error` for network failures) with method, path, status and the server's `x-request-id`. Search the server logs for that id to find the matching line.
+- **Log at boundaries** (a failed save, an unknown route, an applied appearance), not in render paths or loops.

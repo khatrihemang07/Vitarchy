@@ -3,11 +3,15 @@
 
 mod api_json;
 mod error;
+#[cfg(any(test, feature = "test-support"))]
+pub mod log_capture;
+mod log_level;
 mod module;
 mod state;
 pub mod telemetry;
 
 pub use api_json::ApiJson;
 pub use error::{ApiError, Problem};
+pub use log_level::level_for_status;
 pub use module::Module;
 pub use state::AppState;

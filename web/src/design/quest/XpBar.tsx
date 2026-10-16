@@ -11,6 +11,7 @@ interface XpBarProps {
   className?: string;
 }
 
+/** Progress toward the next level. */
 export function XpBar({ value, max, label, className }: XpBarProps) {
   const progress = xpProgress(value, max);
   return (

@@ -15,6 +15,7 @@ interface NavItemProps {
 /** Shared layout id so the active pill glides between entries. */
 const INDICATOR_ID = "nav-indicator";
 
+/** One sidebar link; the active one gets the gliding pill. */
 export function NavItem({ to, label, icon: Icon, active, accent }: NavItemProps) {
   return (
     <div style={accent ? accentScope(accent) : {}} className="shrink-0">

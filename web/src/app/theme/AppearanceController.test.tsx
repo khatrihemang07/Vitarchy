@@ -1,3 +1,4 @@
+import type { MockInstance } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, waitFor } from "@testing-library/react";
 import { AppearanceController } from "./AppearanceController";
@@ -91,5 +92,40 @@ describe("AppearanceController", () => {
     mount();
     expect(root).toHaveAttribute("data-theme", "dark");
     expect(root).toHaveAttribute("data-motion", "full");
+  });
+
+  describe("logging", () => {
+    let debug: MockInstance<typeof console.debug>;
+    beforeEach(() => {
+      debug = vi.spyOn(console, "debug").mockImplementation(() => undefined);
+    });
+    afterEach(() => {
+      debug.mockRestore();
+    });
+
+    it("logs that appearance was applied, without the chosen values", async () => {
+      serve({ theme: "light", motion: "reduced" });
+      mount();
+      await waitFor(() => {
+        expect(root).toHaveAttribute("data-motion", "reduced");
+      });
+      expect(debug).toHaveBeenCalledWith("[appearance] applied appearance");
+      const logged = JSON.stringify(debug.mock.calls);
+      expect(logged).not.toContain("reduced");
+      expect(logged).not.toContain("light");
+    });
+
+    it("logs the fallback when there is no cached appearance and no answer yet", () => {
+      vi.stubGlobal("fetch", () => new Promise(() => undefined));
+      mount();
+      expect(debug).toHaveBeenCalledWith("[appearance] no cached appearance; following system");
+    });
+
+    it("stays quiet about the fallback when a cached appearance exists", () => {
+      localStorage.setItem(APPEARANCE_CACHE_KEY, JSON.stringify({ theme: "dark", motion: "full" }));
+      vi.stubGlobal("fetch", () => new Promise(() => undefined));
+      mount();
+      expect(JSON.stringify(debug.mock.calls)).not.toContain("no cached appearance");
+    });
   });
 });

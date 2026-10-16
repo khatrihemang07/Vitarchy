@@ -1,6 +1,7 @@
 import { cn } from "../lib/utils";
 import { QuestRow } from "./QuestRow";
 
+/** One quest: a task worth XP. */
 export interface Quest {
   id: string;
   title: string;
@@ -16,6 +17,7 @@ interface QuestListProps {
   className?: string;
 }
 
+/** A checklist of quests. */
 export function QuestList({ quests, onToggle, className }: QuestListProps) {
   return (
     <ul className={cn("divide-y divide-border/60", className)}>

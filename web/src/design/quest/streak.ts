@@ -1,3 +1,4 @@
+/** How hot a streak looks. */
 export type StreakTier = "cold" | "warm" | "hot";
 
 /** A week or more keeps the flame hot. */

@@ -79,6 +79,7 @@
   --duration-fast: 150ms;
   --duration-base: 250ms;
   --duration-slow: 600ms;
+  --duration-reduced: 0.01ms;
 
   /* Layout and focus */
   --sidebar-width: 16rem;

@@ -1,6 +1,7 @@
 import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
 import { cn } from "../lib/utils";
 
+/** One segment: the value it selects and its label. */
 export interface SegmentedOption {
   value: string;
   label: string;

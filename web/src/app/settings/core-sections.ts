@@ -56,6 +56,7 @@ export const generalSection: SettingsSection = {
   ],
 };
 
+/** The Appearance section of the Core settings. */
 export const appearanceSection: SettingsSection = {
   id: "appearance",
   scope: CORE_SCOPE,
@@ -89,6 +90,7 @@ export const appearanceSection: SettingsSection = {
   ],
 };
 
+/** Every Core settings section, in page order. */
 export const coreSections: readonly SettingsSection[] = [generalSection, appearanceSection];
 
 /**

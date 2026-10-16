@@ -50,6 +50,7 @@ const checking: View = {
   surface: "",
 };
 
+/** Server and database health, with a checking state while the first answer is pending. */
 export function HealthCard() {
   const { data, isPending } = useHealth();
   const view = isPending || !data ? checking : views[data.kind];

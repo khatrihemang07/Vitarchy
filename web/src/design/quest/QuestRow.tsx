@@ -12,6 +12,7 @@ interface QuestRowProps {
 
 const rowClass = "flex w-full items-center gap-3 rounded-md px-3 py-2.5";
 
+/** One quest with its checkbox and XP reward. */
 export function QuestRow({ quest, onToggle }: QuestRowProps) {
   const body = (
     <>

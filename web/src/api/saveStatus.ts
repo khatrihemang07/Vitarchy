@@ -18,17 +18,20 @@ export interface SaveStatus {
   readonly everSaved: boolean;
 }
 
+/** Something that happened to one save, identified by `id`. */
 export type SaveEvent =
   | { type: "started"; id: number }
   | { type: "succeeded"; id: number }
   | { type: "failed"; id: number; message: string };
 
+/** Status before any save has happened. */
 export const initialSaveStatus: SaveStatus = { clock: 0, inFlight: {}, everSaved: false };
 
 function without(inFlight: SaveStatus["inFlight"], id: number): SaveStatus["inFlight"] {
   return Object.fromEntries(Object.entries(inFlight).filter(([key]) => Number(key) !== id));
 }
 
+/** Folds one save event into the status. */
 export function saveStatusReducer(status: SaveStatus, event: SaveEvent): SaveStatus {
   const clock = status.clock + 1;
   const inFlight = without(status.inFlight, event.id);
@@ -50,6 +53,7 @@ export function saveStatusReducer(status: SaveStatus, event: SaveEvent): SaveSta
   }
 }
 
+/** What to show for a status: error beats saving beats saved. */
 export function saveStateOf(status: SaveStatus): SaveState {
   if (status.failure) return { kind: "error", message: status.failure.message };
   if (Object.keys(status.inFlight).length > 0) return { kind: "saving" };

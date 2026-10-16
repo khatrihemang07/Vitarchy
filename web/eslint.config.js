@@ -32,6 +32,7 @@ export default tseslint.config(
         { type: "app", pattern: "src/app" },
         { type: "api", pattern: "src/api" },
         { type: "design", pattern: "src/design" },
+        { type: "lib", pattern: "src/lib" },
       ],
     },
     rules: {
@@ -45,6 +46,14 @@ export default tseslint.config(
               from: { element: { type: "design" } },
               disallow: {
                 to: { element: { type: ["app", "api", "module"] } },
+              },
+            },
+            {
+              // lib/ is shared plumbing (logging, ...) that anyone may import, so it
+              // must stay a leaf: it knows nothing of app, api, design or Modules.
+              from: { element: { type: "lib" } },
+              disallow: {
+                to: { element: { type: ["app", "api", "design", "module"] } },
               },
             },
             {
@@ -120,6 +129,12 @@ export default tseslint.config(
       "@typescript-eslint/restrict-template-expressions": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
     },
+  },
+  {
+    // All console output goes through lib/log.ts (levels, scope, one shape).
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/lib/log.ts"],
+    rules: { "no-console": "error" },
   },
   {
     files: ["eslint.config.js"],

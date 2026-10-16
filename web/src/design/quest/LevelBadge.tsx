@@ -6,6 +6,7 @@ interface LevelBadgeProps {
   className?: string;
 }
 
+/** The player's level on a gradient badge. */
 export function LevelBadge({ level, className }: LevelBadgeProps) {
   const shown = normalizeLevel(level);
   return (

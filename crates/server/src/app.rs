@@ -1,9 +1,11 @@
+//! Builds the HTTP application from the registered Modules.
+
 use axum::Router;
 use utoipa::{OpenApi as _, openapi::OpenApi};
 use utoipa_axum::router::OpenApiRouter;
 use vitarchy_core::{AppState, Module};
 
-use crate::{health, openapi::ApiDoc};
+use crate::{health, openapi::ApiDoc, request_log};
 
 /// Mounts every Module at `/api/{id}` and merges their `OpenAPI` documents.
 #[must_use]
@@ -17,10 +19,11 @@ pub fn compose(modules: Vec<Module>) -> OpenApiRouter<AppState> {
 /// Builds the full HTTP application, including `GET /api/openapi.json`.
 pub fn build(state: AppState, modules: Vec<Module>) -> Router {
     let (router, spec) = compose(modules).split_for_parts();
-    router
+    let router = router
         .route(
             "/api/openapi.json",
             axum::routing::get(move || async move { axum::Json::<OpenApi>(spec) }),
         )
-        .with_state(state)
+        .with_state(state);
+    request_log::layer(router)
 }

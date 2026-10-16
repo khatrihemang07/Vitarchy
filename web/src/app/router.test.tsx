@@ -92,7 +92,7 @@ describe("app router", () => {
 
   it("has no /design route when the showcase is disabled", async () => {
     renderAt("/design", [], false);
-    expect(await screen.findByText(/not found/i)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Design system" })).not.toBeInTheDocument();
   });
 
@@ -143,5 +143,23 @@ describe("app router", () => {
     ]);
     expect(await screen.findByRole("heading", { name: "Finance" })).toBeInTheDocument();
     expect(await screen.findByRole("switch", { name: "Round up savings" })).toBeChecked();
+  });
+});
+
+describe("unknown URL", () => {
+  it("shows a Page not found state with a way back Home", async () => {
+    renderAt("/nope/never", []);
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    expect(screen.getByText(/nothing lives at this address/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to Home" })).toHaveAttribute("href", "/");
+  });
+
+  it("logs a scoped warning with the path", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    renderAt("/nope/never", []);
+    await waitFor(() => {
+      expect(warn).toHaveBeenCalledWith("[router] route not found", { path: "/nope/never" });
+    });
+    warn.mockRestore();
   });
 });

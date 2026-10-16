@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./client";
 
+/** Outcome of a health check: healthy, server up but database down, or no answer. */
 export type HealthState =
   | { kind: "ok" }
   | { kind: "db-down" }
   | { kind: "unreachable" };
 
+/** Asks the server for its health; never throws, an unreachable server is a state. */
 export async function fetchHealth(): Promise<HealthState> {
   try {
     const { data, error } = await api.GET("/api/health");
@@ -20,6 +22,7 @@ export async function fetchHealth(): Promise<HealthState> {
   }
 }
 
+/** Polls health every few seconds. */
 export function useHealth() {
   return useQuery({
     queryKey: ["health"],

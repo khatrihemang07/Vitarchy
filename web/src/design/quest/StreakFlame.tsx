@@ -13,6 +13,7 @@ interface StreakFlameProps {
   className?: string;
 }
 
+/** A flame whose heat follows the streak length. */
 export function StreakFlame({ days, className }: StreakFlameProps) {
   const tier = streakTier(days);
   return (

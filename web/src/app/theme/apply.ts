@@ -2,6 +2,7 @@ import { appearanceSection } from "../settings/core-sections";
 import { optionValues } from "../settings/schema";
 import { type MotionSetting, resolveTheme, type ThemeSetting } from "./resolve";
 
+/** The two settings that style the page itself. */
 export interface Appearance {
   theme: ThemeSetting;
   motion: MotionSetting;
@@ -12,8 +13,10 @@ export const APPEARANCE_CACHE_KEY = "vitarchy.appearance";
 
 /** The valid values, derived from the core sections. */
 export const THEMES = optionValues(appearanceSection, "theme");
+/** The valid motion values, derived from the core sections. */
 export const MOTIONS = optionValues(appearanceSection, "motion");
 
+/** The appearance cached by the last visit, or undefined if absent or invalid. */
 export function readCachedAppearance(): Appearance | undefined {
   try {
     const raw = localStorage.getItem(APPEARANCE_CACHE_KEY);

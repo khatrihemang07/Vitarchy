@@ -1,8 +1,11 @@
+//! The `OpenAPI` document: the contract the web client is generated from.
+
 use utoipa::{OpenApi, openapi::OpenApi as OpenApiDoc};
 use vitarchy_core::Module;
 
 use crate::app;
 
+/// Document-level metadata; paths are merged in per Module.
 #[derive(OpenApi)]
 #[openapi(info(
     title = "Vitarchy API",

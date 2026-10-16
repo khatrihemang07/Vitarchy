@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, QuestList } from "@/design";
 import { quests as initial } from "./sample-data";
 
+/** A quest list whose checkboxes toggle locally. */
 export function QuestDemo() {
   const [quests, setQuests] = useState(initial);
   const toggle = (id: string) => {

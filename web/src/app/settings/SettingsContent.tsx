@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useSettings } from "@/api/settings";
 import { Button } from "@/design";
+import { generalSection } from "./core-sections";
 import { SettingsNotice } from "./SettingsNotice";
 import { SettingsSectionView } from "./SettingsSectionView";
 import type { SettingsSection } from "./schema";
@@ -14,8 +15,8 @@ export function SettingsContent({ section }: { section: SettingsSection | undefi
       <SettingsNotice>
         <p className="font-medium text-foreground">Settings section not found.</p>
         <Button asChild variant="link" className="px-0">
-          <Link to="/settings/$section" params={{ section: "general" }}>
-            Back to General
+          <Link to="/settings/$section" params={{ section: generalSection.id }}>
+            Back to {generalSection.label}
           </Link>
         </Button>
       </SettingsNotice>

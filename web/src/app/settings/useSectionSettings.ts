@@ -1,4 +1,5 @@
-import { type AllSettings, CORE_SCOPE, useSaveSettings } from "@/api/settings";
+import { type AllSettings, useSaveSettings } from "@/api/settings";
+import { storedFor } from "@/api/settingsScope";
 import type { SaveState } from "@/api/saveStatus";
 import { type SettingsSection, type SettingsValues, type SettingValue, withDefaults } from "./schema";
 
@@ -11,7 +12,5 @@ export function useSectionSettings(
   settings: AllSettings,
 ): { values: SettingsValues; save: (key: string, value: SettingValue) => void; state: SaveState } {
   const { save, state } = useSaveSettings(section.scope);
-  const stored: Record<string, unknown> =
-    section.scope === CORE_SCOPE ? settings.core : (settings.modules[section.scope] ?? {});
-  return { values: withDefaults(section, stored), save, state };
+  return { values: withDefaults(section, storedFor(settings, section.scope)), save, state };
 }

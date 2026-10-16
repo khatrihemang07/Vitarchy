@@ -9,6 +9,7 @@ import {
 import type { FieldProps } from "./types";
 import { usesSegmentedControl } from "./usesSegmentedControl";
 
+/** A choice: a segmented control for few short options, otherwise a dropdown. */
 export function SelectSetting({ field, value, onChange, id }: FieldProps<"select">) {
   if (usesSegmentedControl(field.options)) {
     return (

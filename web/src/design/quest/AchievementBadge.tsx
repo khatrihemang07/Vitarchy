@@ -24,6 +24,7 @@ interface AchievementBadgeProps extends VariantProps<typeof badgeVariants> {
   className?: string;
 }
 
+/** A hexagonal achievement badge; the locked tone greys it out. */
 export function AchievementBadge({ glyph, label, tone, className }: AchievementBadgeProps) {
   return (
     <span role="img" aria-label={label} title={label} className={cn(badgeVariants({ tone }), className)}>

@@ -3,8 +3,11 @@ use serde_json::Value;
 use utoipa::ToSchema;
 use vitarchy_core::ApiError;
 
+use crate::repo::CORE_SCOPE;
+
 const DISPLAY_NAME_MAX_CHARS: usize = 50;
 
+/// Colour theme: follow the system or force one.
 #[derive(Clone, Copy, Default, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Theme {
@@ -14,6 +17,7 @@ pub enum Theme {
     Dark,
 }
 
+/// Motion setting: follow the system or force reduced or full.
 #[derive(Clone, Copy, Default, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Motion {
@@ -23,6 +27,7 @@ pub enum Motion {
     Full,
 }
 
+/// First day of the week.
 #[derive(Clone, Copy, Default, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum WeekStart {
@@ -31,6 +36,7 @@ pub enum WeekStart {
     Sunday,
 }
 
+/// 12- or 24-hour clock.
 #[derive(Clone, Copy, Default, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Clock {
@@ -40,6 +46,7 @@ pub enum Clock {
     H24,
 }
 
+/// How dates are written.
 #[derive(Clone, Copy, Default, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum DateFormat {
@@ -57,19 +64,33 @@ pub enum DateFormat {
 pub struct CoreSettings {
     /// What Vitarchy calls the user; trimmed, at most 50 characters.
     pub display_name: String,
+    /// Colour theme.
     pub theme: Theme,
+    /// Motion setting.
     pub motion: Motion,
+    /// First day of the week.
     pub week_start: WeekStart,
+    /// Clock style.
     pub clock: Clock,
+    /// Date style.
     pub date_format: DateFormat,
 }
 
 /// One field of a stored object, or its default if missing or no longer valid.
+/// A present-but-invalid value is a reset worth a `warn` (the field name only,
+/// never the value); a missing key is normal after a new setting is added.
 fn field_or_default<T: DeserializeOwned + Default>(stored: &Value, key: &str) -> T {
-    stored
-        .get(key)
-        .and_then(|v| serde_json::from_value(v.clone()).ok())
-        .unwrap_or_default()
+    let Some(raw) = stored.get(key) else {
+        return T::default();
+    };
+    serde_json::from_value(raw.clone()).unwrap_or_else(|_| {
+        tracing::warn!(
+            scope = CORE_SCOPE,
+            field = key,
+            "stored setting invalid, reset to default"
+        );
+        T::default()
+    })
 }
 
 impl CoreSettings {

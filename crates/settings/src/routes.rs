@@ -15,18 +15,22 @@ use vitarchy_core::{ApiError, ApiJson, AppState, Problem};
 use crate::{
     core_settings::CoreSettings,
     repo::{self, CORE_SCOPE},
+    save::save_scope,
 };
 
 const MODULE_ID_MAX_LEN: usize = 32;
 
+/// Body of `GET /api/settings`.
 #[derive(Serialize, ToSchema)]
 pub struct AllSettings {
+    /// The Core settings, defaults filled in.
     pub core: CoreSettings,
     /// Each Module's settings object, keyed by Module id.
     #[schema(value_type = HashMap<String, Object>)]
     pub modules: BTreeMap<String, Value>,
 }
 
+/// The settings routes, relative to `/api/settings`.
 pub fn router() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(get_all))
@@ -44,6 +48,7 @@ pub fn router() -> OpenApiRouter<AppState> {
         (status = 500, description = "Internal error", body = Problem),
     )
 )]
+#[tracing::instrument(skip_all, fields(scope = "all"))]
 async fn get_all(State(state): State<AppState>) -> Result<Json<AllSettings>, ApiError> {
     let core = match repo::get(&state.pool, CORE_SCOPE).await? {
         // Lenient per field: one value that no longer parses resets only itself.
@@ -65,6 +70,7 @@ async fn get_all(State(state): State<AppState>) -> Result<Json<AllSettings>, Api
         (status = 400, description = "Invalid settings", body = Problem),
     )
 )]
+#[tracing::instrument(skip_all, fields(scope = CORE_SCOPE))]
 async fn put_core(
     State(state): State<AppState>,
     ApiJson(body): ApiJson<CoreSettings>,
@@ -72,7 +78,7 @@ async fn put_core(
     let settings = body.validated()?;
     let stored =
         serde_json::to_value(&settings).map_err(|e| ApiError::BadRequest(e.to_string()))?;
-    repo::upsert(&state.pool, CORE_SCOPE, &stored).await?;
+    save_scope(&state.pool, CORE_SCOPE, &stored).await?;
     Ok(Json(settings))
 }
 
@@ -88,6 +94,8 @@ async fn put_core(
         (status = 400, description = "Invalid Module id or body is not a JSON object", body = Problem),
     )
 )]
+// `scope` is recorded only once the id is valid: a rejected id is untrusted input.
+#[tracing::instrument(skip_all, fields(scope = tracing::field::Empty))]
 async fn put_module(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -99,12 +107,13 @@ async fn put_module(
             MODULE_ID_MAX_LEN - 1
         )));
     }
+    tracing::Span::current().record("scope", id.as_str());
     let Value::Object(settings) = body else {
         return Err(ApiError::BadRequest(
             "module settings must be a JSON object".to_owned(),
         ));
     };
-    repo::upsert(&state.pool, &id, &Value::Object(settings.clone())).await?;
+    save_scope(&state.pool, &id, &Value::Object(settings.clone())).await?;
     Ok(Json(settings))
 }
 

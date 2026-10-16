@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { Badge, Button, MotionButton, Separator } from "@/design";
 
+/** Buttons and badges in each variant. */
 export function ControlsDemo() {
   return (
     <div className="flex flex-wrap items-center gap-3">

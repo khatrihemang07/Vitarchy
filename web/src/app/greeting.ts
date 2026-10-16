@@ -1,3 +1,4 @@
+/** The time-of-day phrase for `date`. */
 export function greetingFor(date: Date): string {
   const hour = date.getHours();
   if (hour >= 5 && hour < 12) return "Good morning";

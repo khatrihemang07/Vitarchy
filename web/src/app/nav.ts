@@ -1,7 +1,9 @@
 import { Home, Settings } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleManifest } from "./module-manifest";
+import { generalSection } from "./settings/core-sections";
 
+/** One sidebar and command-bar entry for a Module. */
 export interface NavEntry {
   id: string;
   label: string;
@@ -14,8 +16,9 @@ export interface NavEntry {
 export const HOME_NAV = { label: "Home", to: "/", icon: Home } as const;
 
 /** Settings is Core too: the gear in the sidebar and the command bar both link here. */
-export const SETTINGS_NAV = { label: "Settings", to: "/settings/general", icon: Settings } as const;
+export const SETTINGS_NAV = { label: "Settings", to: `/settings/${generalSection.id}`, icon: Settings } as const;
 
+/** Nav entries for the registered Modules, in registry order. */
 export function buildNav(modules: readonly ModuleManifest[]): NavEntry[] {
   return modules.map((m) => ({
     id: m.id,

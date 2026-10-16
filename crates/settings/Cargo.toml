@@ -13,8 +13,10 @@ utoipa.workspace = true
 utoipa-axum.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
+vitarchy-core = { workspace = true, features = ["test-support"] }
 tokio.workspace = true
 tower.workspace = true
 http-body-util.workspace = true

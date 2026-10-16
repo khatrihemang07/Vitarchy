@@ -10,16 +10,17 @@ import {
   CommandList,
   MotionButton,
 } from "@/design";
-import { HOME_NAV, SETTINGS_NAV, type NavEntry } from "../nav";
+import type { NavEntry } from "../nav";
 import type { SettingsSection } from "../settings/schema";
+import { buildCommandGroups } from "./commands";
 import { useCommandHotkey } from "./useCommandHotkey";
 
-/** Quick-add / jump bar. Navigation only until Modules contribute actions. */
 interface CommandBarProps {
   nav: readonly NavEntry[];
   sections: readonly SettingsSection[];
 }
 
+/** Quick-add / jump bar (Cmd+K). Navigation only until Modules contribute actions. */
 export function CommandBar({ nav, sections }: CommandBarProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -51,45 +52,21 @@ export function CommandBar({ nav, sections }: CommandBarProps) {
             <Search className="mx-auto mb-2 size-5" />
             Nothing matches yet.
           </CommandEmpty>
-          <CommandGroup heading="Go to">
-            <CommandItem
-              onSelect={() => {
-                go(HOME_NAV.to);
-              }}
-            >
-              <HOME_NAV.icon /> {HOME_NAV.label}
-            </CommandItem>
-            {nav.map(({ id, label, to, icon: Icon }) => (
-              <CommandItem
-                key={id}
-                onSelect={() => {
-                  go(to);
-                }}
-              >
-                <Icon /> {label}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-          <CommandGroup heading="Settings">
-            <CommandItem
-              onSelect={() => {
-                go(SETTINGS_NAV.to);
-              }}
-            >
-              <SETTINGS_NAV.icon /> {SETTINGS_NAV.label}
-            </CommandItem>
-            {sections.map(({ id, label, icon: Icon }) => (
-              <CommandItem
-                key={id}
-                value={`Settings ${label}`}
-                onSelect={() => {
-                  go(`/settings/${id}`);
-                }}
-              >
-                <Icon /> Settings: {label}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {buildCommandGroups(nav, sections).map(({ heading, entries }) => (
+            <CommandGroup key={heading} heading={heading}>
+              {entries.map(({ key, label, to, icon: Icon, searchValue }) => (
+                <CommandItem
+                  key={key}
+                  {...(searchValue && { value: searchValue })}
+                  onSelect={() => {
+                    go(to);
+                  }}
+                >
+                  <Icon /> {label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ))}
         </CommandList>
       </CommandDialog>
     </>

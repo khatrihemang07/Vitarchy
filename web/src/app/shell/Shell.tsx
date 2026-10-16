@@ -6,16 +6,16 @@ import type { SettingsSection } from "../settings/schema";
 import { CommandBar } from "./CommandBar";
 import { Sidebar } from "./Sidebar";
 
-/**
- * App frame. Exposes the active Module's accent as `--module-accent`, so any
- * descendant (`text-module`, `bg-module/20`, primary buttons, focus rings)
- * picks it up with no wiring.
- */
 interface ShellProps {
   nav: readonly NavEntry[];
   sections: readonly SettingsSection[];
 }
 
+/**
+ * App frame. Exposes the active Module's accent as `--module-accent`, so any
+ * descendant (`text-module`, `bg-module/20`, primary buttons, focus rings)
+ * picks it up with no wiring.
+ */
 export function Shell({ nav, sections }: ShellProps) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { moduleId, accent } = resolveAccent(pathname, nav);

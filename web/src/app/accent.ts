@@ -6,6 +6,7 @@ interface AccentSource {
   readonly accent: string;
 }
 
+/** The accent for a route and the Module it belongs to, if any. */
 export interface ResolvedAccent {
   /** The Module whose routes contain the path, or null outside any Module. */
   moduleId: string | null;

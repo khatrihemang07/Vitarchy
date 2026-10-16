@@ -7,22 +7,26 @@ interface FieldBase {
   readonly description?: string;
 }
 
+/** One choice of a select field. */
 export interface SelectOption {
   readonly value: string;
   readonly label: string;
 }
 
+/** A choice among fixed options. */
 export interface SelectField extends FieldBase {
   readonly kind: "select";
   readonly options: readonly SelectOption[];
   readonly default: string;
 }
 
+/** An on/off setting. */
 export interface ToggleField extends FieldBase {
   readonly kind: "toggle";
   readonly default: boolean;
 }
 
+/** Free text, trimmed and optionally length-limited. */
 export interface TextField extends FieldBase {
   readonly kind: "text";
   readonly default: string;
@@ -30,6 +34,7 @@ export interface TextField extends FieldBase {
   readonly placeholder?: string;
 }
 
+/** A number, optionally clamped to `min` and `max`. */
 export interface NumberField extends FieldBase {
   readonly kind: "number";
   readonly default: number;
@@ -39,10 +44,14 @@ export interface NumberField extends FieldBase {
 
 /** One declarative setting. Add a kind here, then register its renderer. */
 export type SettingField = SelectField | ToggleField | TextField | NumberField;
+/** The names of the field kinds. */
 export type SettingKind = SettingField["kind"];
+/** Any value a field can hold. */
 export type SettingValue = string | number | boolean;
+/** A section's values, keyed by field key. */
 export type SettingsValues = Record<string, SettingValue>;
 
+/** A group of fields shown (and stored) together. */
 export interface SettingsSection {
   /** URL segment: `/settings/{id}`. A Module's section uses the Module id. */
   readonly id: string;

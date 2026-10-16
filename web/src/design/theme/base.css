@@ -29,9 +29,7 @@
     :root:not([data-motion="full"]) *,
     :root:not([data-motion="full"]) *::before,
     :root:not([data-motion="full"]) *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+      @apply motion-reduced;
     }
   }
 
@@ -45,10 +43,15 @@
   :root[data-motion="reduced"] *,
   :root[data-motion="reduced"] *::before,
   :root[data-motion="reduced"] *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    @apply motion-reduced;
   }
+}
+
+/* Near-instant animation and transitions, kept above zero so end events still fire. */
+@utility motion-reduced {
+  animation-duration: var(--duration-reduced) !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: var(--duration-reduced) !important;
 }
 
 /*

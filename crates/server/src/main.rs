@@ -2,7 +2,7 @@ use std::process::ExitCode;
 
 use sqlx::postgres::PgPoolOptions;
 use vitarchy_core::{AppState, telemetry};
-use vitarchy_server::{app, config::Config, migrate, openapi, registry};
+use vitarchy_server::{app, config::Config, migrate, openapi, registry, startup_log};
 
 const USAGE: &str = "usage: vitarchy-server [openapi]\n  (no argument)  run the HTTP server\n  openapi        print the OpenAPI document to stdout";
 
@@ -47,11 +47,13 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
     telemetry::init();
     let config = Config::from_env()?;
+    let (core, modules) = (registry::core(), registry::modules());
+    startup_log::log(&config, &core, &modules);
 
     let pool = PgPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_secs(5))
         .connect_lazy(&config.database_url)?;
-    let modules = registry::all();
+    let modules: Vec<_> = core.into_iter().chain(modules).collect();
     migrate::run(&pool, &modules).await?;
 
     let router = app::build(AppState::new(pool), modules);

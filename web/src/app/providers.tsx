@@ -6,6 +6,7 @@ import { modules } from "./modules";
 import { createAppRouter } from "./router";
 import { AppearanceController } from "./theme/AppearanceController";
 
+/** Root of the app: data, appearance, tooltips and the router. */
 export function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [router] = useState(() => createAppRouter(modules));

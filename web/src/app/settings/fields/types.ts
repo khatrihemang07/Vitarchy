@@ -13,4 +13,5 @@ export interface FieldProps<K extends SettingKind> {
   id: string;
 }
 
+/** Maps each field kind to the component that renders it. */
 export type FieldRenderers = { [K in SettingKind]: ComponentType<FieldProps<K>> };

@@ -1,3 +1,4 @@
+/** Progress inside the current level. */
 export interface XpProgress {
   /** Value clamped into [0, max]. */
   value: number;

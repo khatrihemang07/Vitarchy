@@ -11,6 +11,7 @@ interface HomePageProps {
   now?: Date;
 }
 
+/** Home: greeting, date and time in the person's formats, first-run state and health. */
 export function HomePage({ moduleCount, now }: HomePageProps) {
   const live = useNow();
   const date = now ?? live;

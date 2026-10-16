@@ -6,3 +6,5 @@ pub mod health;
 pub mod migrate;
 pub mod openapi;
 pub mod registry;
+pub mod request_log;
+pub mod startup_log;

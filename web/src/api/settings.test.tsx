@@ -189,6 +189,29 @@ describe("useSaveSettings", () => {
     expect(save.result.current.state).toEqual({ kind: "error", message: "name too long" });
   });
 
+  it("logs a failed save with scope, key and status but never the value or the server's message", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    // Serde-style rejections quote the entered value, so the detail must stay out of the log.
+    stubServer(() => json(400, { detail: "unknown variant `Secret Person`" }));
+    const { save } = await mountSave("core");
+
+    act(() => {
+      save.result.current.save("display_name", "Secret Person");
+    });
+    await waitFor(() => {
+      expect(save.result.current.state.kind).toBe("error");
+    });
+    const saveWarning = warn.mock.calls.find(([line]) => line === "[settings] save failed");
+    expect(saveWarning?.[1]).toEqual({
+      scope: "core",
+      key: "display_name",
+      kind: "rejected",
+      status: 400,
+    });
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("Secret Person");
+    warn.mockRestore();
+  });
+
   it("clears the error once a later save succeeds", async () => {
     stubServer((n) => (n === 0 ? json(400, { detail: "nope" }) : json(200, {})));
     const { save } = await mountSave("core");

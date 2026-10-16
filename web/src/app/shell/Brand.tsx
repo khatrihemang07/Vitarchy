@@ -1,5 +1,6 @@
 import { LogoMark } from "@/design";
 
+/** Logo and name at the top of the sidebar. */
 export function Brand() {
   return (
     <div className="flex shrink-0 items-center gap-2.5 px-1">

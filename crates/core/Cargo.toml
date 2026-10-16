@@ -5,6 +5,10 @@ version.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[features]
+# Exposes `log_capture` to other crates' tests.
+test-support = []
+
 [dependencies]
 axum.workspace = true
 sqlx.workspace = true

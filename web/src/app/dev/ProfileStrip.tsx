@@ -1,6 +1,7 @@
 import { AchievementBadge, LevelBadge, StreakFlame, XpBar } from "@/design";
 import { achievements, profile } from "./sample-data";
 
+/** XP bar, level, streak and achievements together. */
 export function ProfileStrip() {
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border-2 border-border bg-card p-4">
