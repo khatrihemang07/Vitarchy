@@ -9,12 +9,14 @@ use crate::{
     toggl::{
         api::TogglApi,
         error::TogglError,
-        types::{Raw, TogglClient, TogglEntry, TogglProject, TogglTag},
+        types::{EntryQuery, Raw, TogglClient, TogglEntry, TogglProject, TogglTag},
     },
 };
 
 /// Toggl's answers for one Sync.
 pub struct Fetched {
+    /// What the entries answer, so planning knows whether they are a full window.
+    pub query: EntryQuery,
     /// Time Entries in the requested window.
     pub entries: Vec<Raw<TogglEntry>>,
     /// All projects.
@@ -32,10 +34,10 @@ pub async fn fetch(
     now: DateTime<Utc>,
 ) -> Result<Fetched, TogglError> {
     let wid = connection.workspace_id;
+    let query = window(connection.sync_cursor, now);
     Ok(Fetched {
-        entries: api
-            .time_entries(&window(connection.sync_cursor, now))
-            .await?,
+        entries: api.time_entries(&query).await?,
+        query,
         projects: api.projects(wid).await?,
         clients: api.clients(wid).await?,
         tags: api.tags(wid).await?,

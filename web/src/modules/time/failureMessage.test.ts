@@ -20,6 +20,14 @@ describe("failureMessage", () => {
     expect(failureMessage({ kind: "server_unreachable" })).toMatch(/Vitarchy server/);
   });
 
+  it("asks the person to wait when a Sync is already running", () => {
+    expect(failureMessage({ kind: "sync_in_progress" })).toMatch(/already running/);
+  });
+
+  it("asks for another Sync when the connection changed during one", () => {
+    expect(failureMessage({ kind: "connection_changed" })).toMatch(/Sync again/);
+  });
+
   it("passes through any other message", () => {
     expect(failureMessage({ kind: "other", message: "Toggl is not connected." })).toBe("Toggl is not connected.");
   });

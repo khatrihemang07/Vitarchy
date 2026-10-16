@@ -108,4 +108,4 @@ helper-uninstall: ## [other] Remove the activity helper (Snapshots are kept)
 	scripts/uninstall-activity-helper.sh
 
 helper-run: ## [other] Run the activity helper now (via launchd, so Full Disk Access applies)
-	launchctl kickstart -k gui/$$(id -u)/dev.vitarchy.activity-snapshot
+	scripts/run-activity-helper.sh

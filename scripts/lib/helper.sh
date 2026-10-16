@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Names and paths shared by the activity-helper scripts (single source of truth).
 # Sourced, not run. See docs/adr/0009-activity-via-signed-snapshot-helper.md.
+#
+# HELPER_NAME and HELPER_SNAPSHOT are also written in Rust (crates cannot share them:
+# helpers depend on nothing, modules only on core). scripts/test-guards.sh fails when
+# they disagree, so change them in all places together.
 
 SIGN_IDENTITY="Vitarchy Dev"
 SIGN_KEYCHAIN="$HOME/Library/Keychains/vitarchy-signing.keychain-db"

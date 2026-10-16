@@ -96,3 +96,97 @@ async fn disconnecting_when_not_connected_still_succeeds() {
     );
     db.drop().await;
 }
+
+async fn mirror_counts(db: &vitarchy_core::test_db::TestDb) -> (i64, i64, i64, i64) {
+    sqlx::query_as(
+        "SELECT (SELECT count(*) FROM time.time_entries), (SELECT count(*) FROM time.projects),
+                (SELECT count(*) FROM time.clients), (SELECT count(*) FROM time.tags)",
+    )
+    .fetch_one(&db.pool)
+    .await
+    .unwrap()
+}
+
+async fn synced_with_activity(
+    label: &str,
+) -> (vitarchy_core::test_db::TestDb, FakeToggl, axum::Router) {
+    let db = time_db(label).await;
+    let fake = FakeToggl::new();
+    fake.with(|w| w.entries = vec![stopped_entry(1, "kept?")]);
+    let app = time_app(&db, &fake);
+    connect(&app).await;
+    call(&app, "POST", "/api/time/sync", None).await;
+    sqlx::query(
+        "INSERT INTO time.activities (toggl_id, app, title, start_at, end_at, idle, raw)
+         VALUES (gen_random_uuid(), 'App', 'T', now(), now(), false, '{}')",
+    )
+    .execute(&db.pool)
+    .await
+    .unwrap();
+    assert_eq!(mirror_counts(&db).await, (1, 1, 1, 1));
+    (db, fake, app)
+}
+
+async fn activity_count(db: &vitarchy_core::test_db::TestDb) -> i64 {
+    sqlx::query_scalar("SELECT count(*) FROM time.activities")
+        .fetch_one(&db.pool)
+        .await
+        .unwrap()
+}
+
+#[tokio::test]
+async fn reconnecting_the_same_account_keeps_the_mirror() {
+    let (db, _, app) = synced_with_activity("reconsame").await;
+
+    connect(&app).await;
+
+    assert_eq!(mirror_counts(&db).await, (1, 1, 1, 1));
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn connecting_another_workspace_clears_the_old_mirror_but_never_activity() {
+    let (db, fake, app) = synced_with_activity("reconworkspace").await;
+    fake.with(|w| w.workspace_id = 8);
+
+    connect(&app).await;
+
+    assert_eq!(mirror_counts(&db).await, (0, 0, 0, 0));
+    assert_eq!(activity_count(&db).await, 1);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn connecting_another_user_clears_the_old_mirror() {
+    let (db, fake, app) = synced_with_activity("reconuser").await;
+    fake.with(|w| w.user_id = 6);
+
+    connect(&app).await;
+
+    assert_eq!(mirror_counts(&db).await, (0, 0, 0, 0));
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn a_different_account_after_a_disconnect_still_clears_the_old_mirror() {
+    let (db, fake, app) = synced_with_activity("recondisc").await;
+    call(&app, "DELETE", "/api/time/connection", None).await;
+    assert_eq!(mirror_counts(&db).await.0, 1);
+    fake.with(|w| w.user_id = 6);
+
+    connect(&app).await;
+
+    assert_eq!(mirror_counts(&db).await, (0, 0, 0, 0));
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn reconnecting_after_a_disconnect_as_the_same_account_keeps_the_mirror() {
+    let (db, _, app) = synced_with_activity("recondiscsame").await;
+    call(&app, "DELETE", "/api/time/connection", None).await;
+
+    connect(&app).await;
+
+    assert_eq!(mirror_counts(&db).await, (1, 1, 1, 1));
+    db.drop().await;
+}

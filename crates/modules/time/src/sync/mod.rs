@@ -1,5 +1,6 @@
 //! Sync: bringing Time Entries from Toggl into Vitarchy so the copy matches Toggl.
 
+pub(crate) mod account;
 mod apply;
 mod counts;
 mod fetch;

@@ -29,6 +29,18 @@ pub struct World {
     pub tags: Vec<Value>,
     pub fail_with: Option<TogglError>,
     pub entry_queries: Vec<EntryQuery>,
+    /// Who the token belongs to and which workspace is the default.
+    pub user_id: i64,
+    pub workspace_id: i64,
+    /// When set, `time_entries` announces it was called and waits to be released.
+    pub gate: Option<Gate>,
+}
+
+/// Holds a fake `time_entries` call open so a test can act while a Sync is mid-flight.
+#[derive(Clone, Default)]
+pub struct Gate {
+    pub entered: Arc<tokio::sync::Notify>,
+    pub release: Arc<tokio::sync::Notify>,
 }
 
 /// A fake Toggl, shared between the test and the app.
@@ -45,6 +57,9 @@ impl FakeToggl {
             tags: vec![json!({"id": 10, "name": "focus"})],
             fail_with: None,
             entry_queries: vec![],
+            user_id: 5,
+            workspace_id: 7,
+            gate: None,
         })))
     }
 
@@ -84,10 +99,10 @@ impl FakeApi {
 #[async_trait]
 impl TogglApi for FakeApi {
     async fn me(&self) -> Result<Me, TogglError> {
-        drop(self.check()?);
+        let world = self.check()?;
         Ok(Me {
-            id: 5,
-            default_workspace_id: 7,
+            id: world.user_id,
+            default_workspace_id: world.workspace_id,
         })
     }
     async fn workspace(&self, _: i64) -> Result<Workspace, TogglError> {
@@ -97,9 +112,16 @@ impl TogglApi for FakeApi {
         })
     }
     async fn time_entries(&self, query: &EntryQuery) -> Result<Vec<Raw<TogglEntry>>, TogglError> {
-        let mut world = self.check()?;
-        world.entry_queries.push(query.clone());
-        Raw::parse_list(Value::Array(world.entries.clone()))
+        let (entries, gate) = {
+            let mut world = self.check()?;
+            world.entry_queries.push(query.clone());
+            (world.entries.clone(), world.gate.clone())
+        };
+        if let Some(gate) = gate {
+            gate.entered.notify_one();
+            gate.release.notified().await;
+        }
+        Raw::parse_list(Value::Array(entries))
     }
     async fn projects(&self, _: i64) -> Result<Vec<Raw<TogglProject>>, TogglError> {
         Raw::parse_list(Value::Array(self.check()?.projects.clone()))
@@ -120,6 +142,15 @@ pub fn stopped_entry(id: i64, description: &str) -> Value {
         "stop": "2026-04-01T11:00:00+00:00", "duration": 3600,
         "at": "2026-04-01T11:00:01+00:00"
     })
+}
+
+/// A stopped one-hour entry that started `days_ago` days before now (inside a Sync's window).
+pub fn recent_entry(id: i64, days_ago: i64) -> Value {
+    let start = chrono::Utc::now() - chrono::Duration::days(days_ago);
+    let mut entry = stopped_entry(id, "recent");
+    entry["start"] = json!(start.to_rfc3339());
+    entry["stop"] = json!((start + chrono::Duration::hours(1)).to_rfc3339());
+    entry
 }
 
 /// The same entry still running.

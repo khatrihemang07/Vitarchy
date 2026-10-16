@@ -14,6 +14,10 @@ export function failureMessage(failure: TimeFailure): string {
       return "Could not reach Toggl. Check your connection and try again.";
     case "server_unreachable":
       return "Could not reach the Vitarchy server.";
+    case "sync_in_progress":
+      return "A Sync is already running. Wait for it to finish.";
+    case "connection_changed":
+      return "Toggl was connected again while syncing, so nothing was saved. Sync again.";
     case "no_snapshot":
       return "No Snapshot yet. Install the helper with make helper-install, then try again.";
     case "snapshot_unreadable":

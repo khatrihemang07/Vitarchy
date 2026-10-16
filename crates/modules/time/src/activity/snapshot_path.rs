@@ -10,7 +10,8 @@ use chrono::{DateTime, Utc};
 
 /// Env var that replaces the Snapshot path (stage and tests).
 pub const SNAPSHOT_ENV: &str = "TIME_ACTIVITY_SNAPSHOT";
-/// Where the helper writes the Snapshot, relative to the home folder.
+/// Where the helper writes the Snapshot, relative to the home folder. Restated in the
+/// helper crate and `scripts/lib/helper.sh`; `scripts/test-guards.sh` fails if they differ.
 const DEFAULT_RELATIVE: &str = "Library/Application Support/Vitarchy/activity/latest.sqlite";
 
 /// The Snapshot file's location (it may not exist yet).

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
+import { toTimeFailure } from "./failure";
 import { timeStatusKey } from "./keys";
 
 const log = createLogger("time");
@@ -17,7 +18,7 @@ export function useSetConnection() {
       return client.invalidateQueries({ queryKey: timeStatusKey });
     },
     onError: (error) => {
-      log.warn("connect failed", { kind: error.name });
+      log.warn("connect failed", { kind: toTimeFailure(error).kind });
     },
   });
 }

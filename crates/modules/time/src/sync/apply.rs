@@ -1,45 +1,53 @@
-//! Writes one Sync's results in a single transaction, moving the cursor last,
+//! Writes one Sync's results inside the Sync's transaction, moving the cursor last,
 //! so a failure leaves both the data and the cursor as they were.
 
 use chrono::{DateTime, Utc};
-use sqlx::PgPool;
+use sqlx::PgConnection;
 
-use super::{
-    counts::{SyncCounts, count},
-    fetch::Fetched,
-    plan::Plan,
+use super::{counts::SyncCounts, fetch::Fetched, plan::Plan};
+use crate::{
+    error::TimeError,
+    repo::{catalog, connection, connection::Connection, entries},
+    saturating::saturating_u32,
 };
-use crate::repo::{catalog, connection, entries};
 
 /// Stores `plan` and the catalog lists, then sets the cursor to `started_at`.
+/// The caller commits; any error means nothing was kept.
+///
+/// # Errors
+/// [`TimeError::ConnectionChanged`] when the connection is no longer the one the
+/// Sync started with; a database error otherwise.
 pub async fn apply(
-    pool: &PgPool,
-    workspace_id: i64,
+    tx: &mut PgConnection,
+    connection: &Connection,
     fetched: &Fetched,
     plan: &Plan,
     started_at: DateTime<Utc>,
-) -> Result<SyncCounts, sqlx::Error> {
-    let mut tx = pool.begin().await?;
-    let mut counts = SyncCounts {
-        skipped_running: plan.skipped_running,
-        projects: count(fetched.projects.len()),
-        clients: count(fetched.clients.len()),
-        tags: count(fetched.tags.len()),
-        ..SyncCounts::default()
-    };
-    for row in &plan.upserts {
-        if entries::upsert(&mut tx, row).await? {
-            counts.inserted += 1;
-        } else {
-            counts.updated += 1;
-        }
+) -> Result<SyncCounts, TimeError> {
+    let (token, workspace_id) = (connection.api_token.as_str(), connection.workspace_id);
+    // Also blocks a reconnect until this transaction ends.
+    if !connection::confirm_current(tx, token, workspace_id).await? {
+        return Err(TimeError::ConnectionChanged);
     }
-    counts.deleted =
-        u32::try_from(entries::delete(&mut tx, &plan.deletes).await?).unwrap_or(u32::MAX);
-    catalog::upsert_projects(&mut tx, workspace_id, &fetched.projects).await?;
-    catalog::upsert_clients(&mut tx, workspace_id, &fetched.clients).await?;
-    catalog::upsert_tags(&mut tx, workspace_id, &fetched.tags).await?;
-    connection::set_cursor(&mut tx, started_at).await?;
-    tx.commit().await?;
-    Ok(counts)
+    let written = entries::upsert_all(tx, &plan.upserts).await?;
+    let mut deleted = entries::delete(tx, &plan.deletes).await?;
+    if let Some(span) = &plan.reconcile {
+        deleted += entries::delete_unlisted(tx, workspace_id, span).await?;
+    }
+    catalog::upsert_projects(tx, workspace_id, &fetched.projects).await?;
+    catalog::upsert_clients(tx, workspace_id, &fetched.clients).await?;
+    catalog::upsert_tags(tx, workspace_id, &fetched.tags).await?;
+    if !connection::set_cursor(tx, started_at, token, workspace_id).await? {
+        return Err(TimeError::ConnectionChanged);
+    }
+    Ok(SyncCounts {
+        inserted: saturating_u32(written.inserted),
+        updated: saturating_u32(written.updated),
+        deleted: saturating_u32(deleted),
+        skipped_running: plan.skipped_running,
+        skipped_other_workspace: plan.skipped_other_workspace,
+        projects: saturating_u32(fetched.projects.len()),
+        clients: saturating_u32(fetched.clients.len()),
+        tags: saturating_u32(fetched.tags.len()),
+    })
 }

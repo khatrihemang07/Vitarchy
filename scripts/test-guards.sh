@@ -94,5 +94,37 @@ unset START_ADDR
 [ "$(START_ADDR=127.0.0.1:7500 make_addr LIVE_ENV="$root/.env")" = "BIND_ADDR=127.0.0.1:7500" ] && ok || bad "START_ADDR env override"
 [ "$(make_addr LIVE_ENV="$root/.env" START_ADDR=127.0.0.1:7600)" = "BIND_ADDR=127.0.0.1:7600" ] && ok || bad "START_ADDR make argument"
 
+# --- the helper's names and paths agree across Rust and shell ----------------
+# The helper crate, the time Module and scripts/lib/helper.sh each write the Snapshot
+# path (crates cannot depend on each other), and the crate name is the helper's name.
+# snapshot_paths_agree HELPER_SH TIME_RS PATHS_RS CARGO_TOML prints each disagreement.
+snapshot_paths_agree() {
+  local helper_sh=$1 time_rs=$2 paths_rs=$3 cargo_toml=$4
+  local sh_path sh_name time_path dir file crate
+  sh_path=$( . "$helper_sh"; printf '%s' "${HELPER_SNAPSHOT#"$HOME"/}" )
+  sh_name=$( . "$helper_sh"; printf '%s' "$HELPER_NAME" )
+  time_path=$(sed -n 's/^const DEFAULT_RELATIVE: &str = "\(.*\)";$/\1/p' "$time_rs")
+  dir=$(sed -n 's/^const DEST_DIR_RELATIVE: &str = "\(.*\)";$/\1/p' "$paths_rs")
+  file=$(sed -n 's/^pub const SNAPSHOT_FILE: &str = "\(.*\)";$/\1/p' "$paths_rs")
+  crate=$(sed -n 's/^name = "\(.*\)"$/\1/p' "$cargo_toml" | head -1)
+  local status=0
+  [ -n "$sh_path" ] && [ "$sh_path" = "$time_path" ] || { echo "snapshot path: helper.sh '$sh_path' vs time Module '$time_path'"; status=1; }
+  [ "$sh_path" = "$dir/$file" ] || { echo "snapshot path: helper.sh '$sh_path' vs helper crate '$dir/$file'"; status=1; }
+  [ -n "$sh_name" ] && [ "$sh_name" = "$crate" ] || { echo "helper name: helper.sh '$sh_name' vs Cargo package '$crate'"; status=1; }
+  return $status
+}
+helper_files=(
+  "$here/scripts/lib/helper.sh"
+  "$here/crates/modules/time/src/activity/snapshot_path.rs"
+  "$here/crates/helpers/activity-snapshot/src/paths.rs"
+  "$here/crates/helpers/activity-snapshot/Cargo.toml"
+)
+expect_status "helper names and paths agree" 0 snapshot_paths_agree "${helper_files[@]}"
+cp "${helper_files[2]}" "$tmp/paths.rs"
+sed -i.bak 's#latest.sqlite#other.sqlite#' "$tmp/paths.rs"
+expect_status "a drifted helper path is caught" nonzero \
+  snapshot_paths_agree "${helper_files[0]}" "${helper_files[1]}" "$tmp/paths.rs" "${helper_files[3]}"
+expect_out "the drift is named" "helper crate"
+
 echo "guards: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

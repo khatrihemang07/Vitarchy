@@ -14,15 +14,12 @@ pub struct SyncCounts {
     pub deleted: u32,
     /// Running timers left for a later Sync.
     pub skipped_running: u32,
+    /// Entries of other workspaces, ignored.
+    pub skipped_other_workspace: u32,
     /// Projects in the workspace.
     pub projects: u32,
     /// Clients in the workspace.
     pub clients: u32,
     /// Tags in the workspace.
     pub tags: u32,
-}
-
-/// A list length as a count (saturating, never panicking).
-pub fn count(len: usize) -> u32 {
-    u32::try_from(len).unwrap_or(u32::MAX)
 }

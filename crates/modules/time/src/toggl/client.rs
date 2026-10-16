@@ -16,6 +16,10 @@ use super::{
 pub const TOGGL_BASE_URL: &str = "https://api.track.toggl.com/api/v9";
 const QUOTA_HEADER: &str = "x-toggl-quota-resets-in";
 const TIMEOUT: Duration = Duration::from_secs(30);
+/// Projects per request (Toggl's maximum); a shorter page is the last one.
+const PROJECTS_PER_PAGE: usize = 200;
+/// A stop for a server that never returns a short page: 200 pages is 40,000 projects.
+const MAX_PROJECT_PAGES: u32 = 200;
 
 /// A [`TogglApi`] that calls Toggl over HTTPS with one person's token.
 pub struct HttpToggl {
@@ -109,14 +113,26 @@ impl TogglApi for HttpToggl {
     }
 
     async fn projects(&self, workspace_id: i64) -> Result<Vec<Raw<TogglProject>>, TogglError> {
-        let params = [
-            ("active", "both".to_owned()),
-            ("per_page", "200".to_owned()),
-        ];
-        self.list(&format!("/workspaces/{workspace_id}/projects"), &params)
-            .await
+        let path = format!("/workspaces/{workspace_id}/projects");
+        let mut projects = Vec::new();
+        for page in 1..=MAX_PROJECT_PAGES {
+            let params = [
+                ("active", "both".to_owned()),
+                ("per_page", PROJECTS_PER_PAGE.to_string()),
+                ("page", page.to_string()),
+            ];
+            let batch: Vec<Raw<TogglProject>> = self.list(&path, &params).await?;
+            let last = batch.len() < PROJECTS_PER_PAGE;
+            projects.extend(batch);
+            if last {
+                return Ok(projects);
+            }
+        }
+        // Never a short page: something is wrong, and a partial list must not look complete.
+        Err(TogglError::Malformed)
     }
 
+    // Toggl's clients and tags endpoints take no paging parameters (v9 docs): one request returns all.
     async fn clients(&self, workspace_id: i64) -> Result<Vec<Raw<TogglClient>>, TogglError> {
         self.list(
             &format!("/workspaces/{workspace_id}/clients"),

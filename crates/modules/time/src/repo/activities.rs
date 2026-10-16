@@ -3,16 +3,8 @@
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
+use super::written::Written;
 use crate::activity::parse::Activity;
-
-/// How many rows of a batch were new and how many changed.
-#[derive(Debug, Default, PartialEq, Eq)]
-pub struct Written {
-    /// Rows stored for the first time.
-    pub inserted: u64,
-    /// Existing rows whose fields differed.
-    pub updated: u64,
-}
 
 /// Upserts `activities` in one statement (one transaction). Identical rows are left untouched.
 pub async fn upsert_all(pool: &PgPool, activities: &[Activity]) -> Result<Written, sqlx::Error> {
@@ -25,7 +17,7 @@ pub async fn upsert_all(pool: &PgPool, activities: &[Activity]) -> Result<Writte
     let ends: Vec<DateTime<Utc>> = activities.iter().map(|a| a.end_at).collect();
     let idles: Vec<bool> = activities.iter().map(|a| a.idle).collect();
     let raws: Vec<String> = activities.iter().map(|a| a.raw.to_string()).collect();
-    let (inserted, updated): (i64, i64) = sqlx::query_as(
+    let counts: (i64, i64) = sqlx::query_as(
         "WITH written AS (
            INSERT INTO time.activities AS a
              (toggl_id, client_id, app, title, start_at, end_at, idle, raw)
@@ -54,10 +46,7 @@ pub async fn upsert_all(pool: &PgPool, activities: &[Activity]) -> Result<Writte
     .bind(&raws)
     .fetch_one(pool)
     .await?;
-    Ok(Written {
-        inserted: u64::try_from(inserted).unwrap_or(0),
-        updated: u64::try_from(updated).unwrap_or(0),
-    })
+    Ok(Written::from_counts(counts))
 }
 
 /// How much Activity is stored, and over what span.

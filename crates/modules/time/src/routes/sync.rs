@@ -2,7 +2,7 @@
 
 use axum::{Extension, Json, extract::State};
 use chrono::Utc;
-use vitarchy_core::{ApiError, AppState, Problem};
+use vitarchy_core::{ApiError, AppState};
 
 use crate::{
     error::{ProblemBody, TimeError},
@@ -18,7 +18,7 @@ use crate::{
     tag = "time",
     responses(
         (status = 200, description = "Sync finished", body = SyncCounts),
-        (status = 409, description = "Toggl is not connected", body = Problem),
+        (status = 409, description = "Toggl is not connected (no code), another Sync is running (`sync_in_progress`) or the connection changed meanwhile (`connection_changed`)", body = ProblemBody),
         (status = 401, description = "Toggl rejected the stored token", body = ProblemBody),
         (status = 429, description = "Toggl request limit reached", body = ProblemBody),
         (status = 502, description = "Toggl unreachable or unreadable", body = ProblemBody),

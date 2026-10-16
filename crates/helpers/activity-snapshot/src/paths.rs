@@ -11,7 +11,9 @@ pub const DEST_DIR_ENV: &str = "ACTIVITY_SNAPSHOT_DEST_DIR";
 /// The Toggl Track for Mac database, relative to the home folder. The single
 /// place to correct if Activity turns out to live elsewhere.
 const SOURCE_RELATIVE: &str = "Library/Group Containers/B227VTMZ94.group.com.toggl.daneel.extensions/production/DatabaseModel.sqlite";
-/// Vitarchy's Activity folder, relative to the home folder.
+/// Vitarchy's Activity folder, relative to the home folder. With [`SNAPSHOT_FILE`] it is
+/// restated in the time Module and `scripts/lib/helper.sh`; `scripts/test-guards.sh`
+/// fails if they differ.
 const DEST_DIR_RELATIVE: &str = "Library/Application Support/Vitarchy/activity";
 /// The Snapshot's file name. Its modification time is the Snapshot time.
 pub const SNAPSHOT_FILE: &str = "latest.sqlite";

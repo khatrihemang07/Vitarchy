@@ -97,7 +97,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Checks the token with Toggl and stores it with the default workspace. */
+        /**
+         * Checks the token with Toggl and stores it with the default workspace. Connecting a
+         *     different Toggl user or workspace clears the old one's mirrored data (never Activity).
+         */
         put: operations["put_connection"];
         post?: never;
         /** Forgets the token. Time Entries already synced are kept. */
@@ -306,7 +309,7 @@ export interface components {
         ProblemBody: {
             /**
              * @description `invalid_token`, `rate_limited`, `unreachable`, `unexpected`, `malformed`,
-             *     `no_snapshot` or `snapshot_unreadable`.
+             *     `sync_in_progress`, `connection_changed`, `no_snapshot` or `snapshot_unreadable`.
              */
             code: string;
             /** @description Explanation fit to show the person; never holds the token. */
@@ -374,6 +377,11 @@ export interface components {
              * @description Projects in the workspace.
              */
             projects: number;
+            /**
+             * Format: int32
+             * @description Entries of other workspaces, ignored.
+             */
+            skipped_other_workspace: number;
             /**
              * Format: int32
              * @description Running timers left for a later Sync.
@@ -734,13 +742,13 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemBody"];
                 };
             };
-            /** @description Toggl is not connected */
+            /** @description Toggl is not connected (no code), another Sync is running (`sync_in_progress`) or the connection changed meanwhile (`connection_changed`) */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Problem"];
+                    "application/json": components["schemas"]["ProblemBody"];
                 };
             };
             /** @description Toggl request limit reached */

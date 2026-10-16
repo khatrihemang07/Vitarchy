@@ -115,3 +115,30 @@ async fn an_unreadable_body_is_malformed() {
 
     assert_eq!(client.me().await.unwrap_err(), TogglError::Malformed);
 }
+
+#[tokio::test]
+async fn projects_are_read_page_by_page_until_a_short_page() {
+    let router = Router::new().route(
+        "/workspaces/1/projects",
+        get(|Query(q): Query<HashMap<String, String>>| async move {
+            assert_eq!(q["per_page"], "200");
+            let page: u32 = q["page"].parse().unwrap();
+            let (first, count) = match page {
+                1 => (1, 200),
+                2 => (201, 200),
+                3 => (401, 5),
+                _ => panic!("asked past the last page: {page}"),
+            };
+            let projects: Vec<Value> = (first..first + count)
+                .map(|id| json!({"id": id, "name": "p"}))
+                .collect();
+            axum::Json(projects)
+        }),
+    );
+    let client = HttpToggl::new("tok", &serve(router).await);
+
+    let projects = client.projects(1).await.unwrap();
+
+    assert_eq!(projects.len(), 405);
+    assert_eq!(projects.last().unwrap().item.id, 405);
+}

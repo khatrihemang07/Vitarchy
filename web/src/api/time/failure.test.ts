@@ -38,6 +38,8 @@ describe("toTimeFailure", () => {
     expect(failureFromCode("malformed")).toEqual({ kind: "toggl_unavailable" });
     expect(failureFromCode("no_snapshot")).toEqual({ kind: "no_snapshot" });
     expect(failureFromCode("snapshot_unreadable")).toEqual({ kind: "snapshot_unreadable" });
+    expect(failureFromCode("sync_in_progress")).toEqual({ kind: "sync_in_progress" });
+    expect(failureFromCode("connection_changed")).toEqual({ kind: "connection_changed" });
     expect(failureFromCode("database")).toBeNull();
     expect(failureFromCode(null)).toBeNull();
   });

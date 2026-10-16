@@ -22,6 +22,12 @@ pub enum TimeError {
     /// Toggl refused or could not be reached.
     #[error(transparent)]
     Toggl(#[from] TogglError),
+    /// Another Sync is already running; only one may at a time.
+    #[error("a Sync is already running")]
+    SyncInProgress,
+    /// The Toggl connection was replaced while this Sync was running.
+    #[error("the Toggl connection changed during the Sync")]
+    ConnectionChanged,
     /// The Activity Snapshot is missing or unreadable.
     #[error(transparent)]
     Activity(#[from] ActivityError),
@@ -40,6 +46,8 @@ impl TimeError {
         match self {
             Self::Toggl(error) => error.code(),
             Self::Activity(error) => error.code(),
+            Self::SyncInProgress => "sync_in_progress",
+            Self::ConnectionChanged => "connection_changed",
             Self::Api(ApiError::Database(_)) => "database",
             Self::Api(_) => "rejected",
         }
@@ -59,7 +67,7 @@ pub struct ProblemBody {
     /// Explanation fit to show the person; never holds the token.
     pub detail: String,
     /// `invalid_token`, `rate_limited`, `unreachable`, `unexpected`, `malformed`,
-    /// `no_snapshot` or `snapshot_unreadable`.
+    /// `sync_in_progress`, `connection_changed`, `no_snapshot` or `snapshot_unreadable`.
     pub code: String,
     /// For `rate_limited`: seconds until Toggl accepts requests again.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -122,6 +130,18 @@ impl IntoResponse for TimeError {
             Self::Api(error) => error.into_response(),
             Self::Toggl(error) => problem_response(ProblemBody::for_toggl(&error)),
             Self::Activity(error) => problem_response(ProblemBody::for_activity(error)),
+            Self::SyncInProgress => problem_response(ProblemBody::new(
+                StatusCode::CONFLICT,
+                "A Sync is already running. Wait for it to finish.",
+                "sync_in_progress",
+                None,
+            )),
+            Self::ConnectionChanged => problem_response(ProblemBody::new(
+                StatusCode::CONFLICT,
+                "Toggl was connected again while syncing, so nothing was saved. Sync again.",
+                "connection_changed",
+                None,
+            )),
         }
     }
 }
@@ -171,6 +191,14 @@ mod tests {
             ProblemBody::for_toggl(&TogglError::Unreachable).resets_in_secs,
             None
         );
+    }
+
+    #[test]
+    fn sync_conflicts_are_409s_with_their_own_codes() {
+        assert_eq!(TimeError::SyncInProgress.code(), "sync_in_progress");
+        assert_eq!(TimeError::ConnectionChanged.code(), "connection_changed");
+        let response = TimeError::SyncInProgress.into_response();
+        assert_eq!(response.status(), StatusCode::CONFLICT);
     }
 
     #[test]

@@ -8,6 +8,7 @@ use vitarchy_core::{ApiError, ApiJson, AppState, Problem};
 use crate::{
     error::{ProblemBody, TimeError},
     repo::connection,
+    sync::account::Account,
     toggl::api::TogglFactory,
 };
 
@@ -26,7 +27,8 @@ pub struct ConnectResponse {
     pub workspace_name: String,
 }
 
-/// Checks the token with Toggl and stores it with the default workspace.
+/// Checks the token with Toggl and stores it with the default workspace. Connecting a
+/// different Toggl user or workspace clears the old one's mirrored data (never Activity).
 #[utoipa::path(
     put,
     path = "/connection",
@@ -53,15 +55,16 @@ pub async fn put_connection(
     let api = factory(token);
     let me = api.me().await?;
     let workspace = api.workspace(me.default_workspace_id).await?;
-    connection::save(
-        &state.pool,
-        token,
-        me.default_workspace_id,
-        &workspace.name,
-        me.id,
-    )
-    .await?;
-    tracing::info!(workspace_id = me.default_workspace_id, "toggl connected");
+    let account = Account {
+        user_id: me.id,
+        workspace_id: me.default_workspace_id,
+    };
+    let mirror_cleared = connection::save(&state.pool, token, &workspace.name, account).await?;
+    tracing::info!(
+        workspace_id = me.default_workspace_id,
+        mirror_cleared,
+        "toggl connected"
+    );
     Ok(Json(ConnectResponse {
         workspace_name: workspace.name,
     }))

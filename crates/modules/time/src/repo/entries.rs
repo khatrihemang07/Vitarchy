@@ -3,38 +3,70 @@
 use chrono::{DateTime, Utc};
 use sqlx::{PgConnection, PgPool};
 
-use crate::sync::plan::EntryRow;
+use super::written::Written;
+use crate::sync::plan::{EntryRow, Reconcile};
 
-/// Inserts or updates one entry; `true` when it was new.
-pub async fn upsert(tx: &mut PgConnection, row: &EntryRow) -> Result<bool, sqlx::Error> {
-    // `xmax = 0` is true only for a freshly inserted row.
-    sqlx::query_scalar(
-        "INSERT INTO time.time_entries
-           (toggl_id, workspace_id, project_id, task_id, description, tags, billable,
-            start, stop, duration_s, toggl_updated_at, raw)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-         ON CONFLICT (toggl_id) DO UPDATE SET
-           workspace_id = EXCLUDED.workspace_id, project_id = EXCLUDED.project_id,
-           task_id = EXCLUDED.task_id, description = EXCLUDED.description,
-           tags = EXCLUDED.tags, billable = EXCLUDED.billable, start = EXCLUDED.start,
-           stop = EXCLUDED.stop, duration_s = EXCLUDED.duration_s,
-           toggl_updated_at = EXCLUDED.toggl_updated_at, raw = EXCLUDED.raw, synced_at = now()
-         RETURNING (xmax = 0)",
+/// Inserts or updates `rows` (distinct ids) in one statement. Existing rows are
+/// always written again, which refreshes `synced_at`.
+pub async fn upsert_all(tx: &mut PgConnection, rows: &[EntryRow]) -> Result<Written, sqlx::Error> {
+    if rows.is_empty() {
+        return Ok(Written::default());
+    }
+    // Columns bound as parallel arrays. Tags are ragged, so each row's tags travel
+    // as a JSON text and are unpacked in SQL; raw travels as text too.
+    let ids: Vec<i64> = rows.iter().map(|r| r.toggl_id).collect();
+    let workspaces: Vec<i64> = rows.iter().map(|r| r.workspace_id).collect();
+    let projects: Vec<Option<i64>> = rows.iter().map(|r| r.project_id).collect();
+    let tasks: Vec<Option<i64>> = rows.iter().map(|r| r.task_id).collect();
+    let descriptions: Vec<&str> = rows.iter().map(|r| r.description.as_str()).collect();
+    let tags: Vec<String> = rows
+        .iter()
+        .map(|r| serde_json::json!(r.tags).to_string())
+        .collect();
+    let billable: Vec<bool> = rows.iter().map(|r| r.billable).collect();
+    let starts: Vec<DateTime<Utc>> = rows.iter().map(|r| r.start).collect();
+    let stops: Vec<DateTime<Utc>> = rows.iter().map(|r| r.stop).collect();
+    let durations: Vec<i64> = rows.iter().map(|r| r.duration_s).collect();
+    let updated: Vec<Option<DateTime<Utc>>> = rows.iter().map(|r| r.toggl_updated_at).collect();
+    let sources: Vec<String> = rows.iter().map(|r| r.raw.to_string()).collect();
+    let counts: (i64, i64) = sqlx::query_as(
+        "WITH written AS (
+           INSERT INTO time.time_entries
+             (toggl_id, workspace_id, project_id, task_id, description, tags, billable,
+              start, stop, duration_s, toggl_updated_at, raw)
+           SELECT i.id, i.workspace_id, i.project_id, i.task_id, i.description,
+                  ARRAY(SELECT jsonb_array_elements_text(i.tags::jsonb)), i.billable,
+                  i.start, i.stop, i.duration_s, i.updated_at, i.raw::jsonb
+           FROM UNNEST($1::bigint[], $2::bigint[], $3::bigint[], $4::bigint[], $5::text[],
+                       $6::text[], $7::bool[], $8::timestamptz[], $9::timestamptz[],
+                       $10::bigint[], $11::timestamptz[], $12::text[])
+             AS i(id, workspace_id, project_id, task_id, description, tags, billable,
+                  start, stop, duration_s, updated_at, raw)
+           ON CONFLICT (toggl_id) DO UPDATE SET
+             workspace_id = EXCLUDED.workspace_id, project_id = EXCLUDED.project_id,
+             task_id = EXCLUDED.task_id, description = EXCLUDED.description,
+             tags = EXCLUDED.tags, billable = EXCLUDED.billable, start = EXCLUDED.start,
+             stop = EXCLUDED.stop, duration_s = EXCLUDED.duration_s,
+             toggl_updated_at = EXCLUDED.toggl_updated_at, raw = EXCLUDED.raw,
+             synced_at = now()
+           RETURNING (xmax = 0) AS inserted)
+         SELECT count(*) FILTER (WHERE inserted), count(*) FILTER (WHERE NOT inserted) FROM written",
     )
-    .bind(row.toggl_id)
-    .bind(row.workspace_id)
-    .bind(row.project_id)
-    .bind(row.task_id)
-    .bind(&row.description)
-    .bind(&row.tags)
-    .bind(row.billable)
-    .bind(row.start)
-    .bind(row.stop)
-    .bind(row.duration_s)
-    .bind(row.toggl_updated_at)
-    .bind(&row.raw)
+    .bind(&ids)
+    .bind(&workspaces)
+    .bind(&projects)
+    .bind(&tasks)
+    .bind(&descriptions)
+    .bind(&tags)
+    .bind(&billable)
+    .bind(&starts)
+    .bind(&stops)
+    .bind(&durations)
+    .bind(&updated)
+    .bind(&sources)
     .fetch_one(tx)
-    .await
+    .await?;
+    Ok(Written::from_counts(counts))
 }
 
 /// Deletes entries by Toggl id; returns how many existed.
@@ -44,6 +76,34 @@ pub async fn delete(tx: &mut PgConnection, ids: &[i64]) -> Result<u64, sqlx::Err
         .execute(tx)
         .await?;
     Ok(done.rows_affected())
+}
+
+/// Deletes the workspace's entries that start inside the span but are not in `keep`;
+/// returns how many went.
+pub async fn delete_unlisted(
+    tx: &mut PgConnection,
+    workspace_id: i64,
+    span: &Reconcile,
+) -> Result<u64, sqlx::Error> {
+    let done = sqlx::query(
+        "DELETE FROM time.time_entries
+         WHERE workspace_id = $1 AND start >= $2 AND start < $3 AND NOT (toggl_id = ANY($4))",
+    )
+    .bind(workspace_id)
+    .bind(span.from)
+    .bind(span.to)
+    .bind(&span.keep)
+    .execute(tx)
+    .await?;
+    Ok(done.rows_affected())
+}
+
+/// Empties the mirror of Time Entries (Toggl owns them, so they can be fetched again).
+pub async fn clear(tx: &mut PgConnection) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM time.time_entries")
+        .execute(tx)
+        .await?;
+    Ok(())
 }
 
 /// How much is mirrored, and over what span.

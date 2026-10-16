@@ -8,6 +8,10 @@ export type TimeFailure =
   | { kind: "toggl_unavailable" }
   /** The Vitarchy server itself could not be reached. */
   | { kind: "server_unreachable" }
+  /** Another Sync is already running. */
+  | { kind: "sync_in_progress" }
+  /** Toggl was connected again while a Sync ran, so it saved nothing. */
+  | { kind: "connection_changed" }
   /** There is no Snapshot to Import from (the helper has not run). */
   | { kind: "no_snapshot" }
   /** The Snapshot exists but could not be read. */
@@ -25,6 +29,8 @@ export function failureFromCode(code: unknown, resetsInSecs?: unknown): TimeFail
   if (code === "rate_limited") {
     return typeof resetsInSecs === "number" ? { kind: "rate_limited", resetsInSecs } : { kind: "rate_limited" };
   }
+  if (code === "sync_in_progress") return { kind: "sync_in_progress" };
+  if (code === "connection_changed") return { kind: "connection_changed" };
   if (code === "no_snapshot") return { kind: "no_snapshot" };
   if (code === "snapshot_unreadable") return { kind: "snapshot_unreadable" };
   if (typeof code === "string" && UNAVAILABLE_CODES.has(code)) return { kind: "toggl_unavailable" };
