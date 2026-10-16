@@ -1,12 +1,12 @@
 mod common;
 
-use common::{TempDb, call};
+use common::{call, settings_app, settings_db};
 use serde_json::json;
 
 #[tokio::test]
 async fn module_settings_round_trip_under_their_id() {
-    let db = TempDb::create("modules").await;
-    let app = db.app();
+    let db = settings_db("modules").await;
+    let app = settings_app(&db);
     let body = json!({"goal_hours": 8, "show_streak": true});
 
     let put = call(
@@ -27,8 +27,8 @@ async fn module_settings_round_trip_under_their_id() {
 
 #[tokio::test]
 async fn a_module_id_cannot_shadow_core_scope() {
-    let db = TempDb::create("scopes").await;
-    let app = db.app();
+    let db = settings_db("scopes").await;
+    let app = settings_app(&db);
 
     call(
         &app,
@@ -53,8 +53,8 @@ async fn a_module_id_cannot_shadow_core_scope() {
 
 #[tokio::test]
 async fn bad_module_id_or_non_object_body_is_a_400_problem() {
-    let db = TempDb::create("badmodule").await;
-    let app = db.app();
+    let db = settings_db("badmodule").await;
+    let app = settings_app(&db);
     let cases = [
         ("/api/settings/modules/core", r#"{"a":1}"#),
         ("/api/settings/modules/Time", r#"{"a":1}"#),

@@ -9,6 +9,8 @@ mod log_level;
 mod module;
 mod state;
 pub mod telemetry;
+#[cfg(any(test, feature = "test-support"))]
+pub mod test_db;
 
 pub use api_json::ApiJson;
 pub use error::{ApiError, Problem};

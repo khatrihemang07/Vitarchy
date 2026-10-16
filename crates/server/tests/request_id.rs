@@ -7,7 +7,7 @@ use vitarchy_core::{AppState, log_capture::capture_logs};
 use vitarchy_server::app;
 
 async fn request_id_of(request: Request<Body>) -> String {
-    let res = app::build(AppState::new(unreachable_pool()), vec![])
+    let res = app::build(AppState::new(unreachable_pool()), vec![], None)
         .oneshot(request)
         .await
         .unwrap();

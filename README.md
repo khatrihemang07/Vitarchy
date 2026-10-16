@@ -16,22 +16,29 @@ It runs entirely on your own machine. Your data stays in a local database, and t
 You need [Rust](https://rustup.rs), [Node 22+](https://nodejs.org), [pnpm](https://pnpm.io) and [Docker](https://www.docker.com).
 
 ```sh
-make dev
+make start
 ```
 
-Then open **http://127.0.0.1:7420**. Press Ctrl+C to stop.
+Then open **http://127.0.0.1:7400**. Press Ctrl+C to stop.
 
-The first run creates your `.env` files, installs packages and starts the database for you.
+The first run creates your `.env` files, installs packages, starts the database, takes a backup and builds the app. Change the address with `START_ADDR` in `.env`.
 
 ## Everyday commands
 
 | Command | What it does |
 |---|---|
-| `make dev` | Start everything (database, API, app) |
-| `make check` | Run every lint and test |
-| `make db` / `make db-stop` | Start or stop just the database |
+| `make start` | Use the app (your real data) on http://127.0.0.1:7400 |
+| `make dev` | Work on the code with hot reload, on your real data: http://127.0.0.1:7420 |
+| `make stage` | Hot-reload on throwaway data instead: http://127.0.0.1:7520 |
+| `make check` | Run every lint and test (on throwaway data) |
 | `make gen-api` | Refresh the app's API types after changing the server |
 | `make help` | List all commands |
+
+## Backups
+
+`make start` and `make dev` back up your data first, into `backups/` (the last 10 are kept). `make backup` does it on demand.
+
+To go back to a backup: stop the app, then `make restore FILE=backups/vitarchy-<time>.sql.gz`. It asks y/N before replacing anything.
 
 ## Settings
 
@@ -42,6 +49,7 @@ Open **Settings** from the gear at the bottom of the sidebar, or press **⌘K** 
 ```
 crates/      Rust server: core, settings, server (and one crate per Module)
 web/         React app: app shell, design system, API client, modules
+scripts/     backup, restore and smoke-check scripts
 docs/        development guide and architecture decisions
 ```
 

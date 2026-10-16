@@ -6,7 +6,7 @@ license.workspace = true
 publish.workspace = true
 
 [features]
-# Exposes `log_capture` to other crates' tests.
+# Exposes `log_capture` and `test_db` (stage-only throwaway databases) to other crates' tests.
 test-support = []
 
 [dependencies]
@@ -19,6 +19,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+url.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true

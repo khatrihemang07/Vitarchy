@@ -1,10 +1,9 @@
 mod common;
 
-use common::{database_url, dummy_module};
-use sqlx::{Connection, PgConnection, PgPool, postgres::PgConnectOptions};
-use std::str::FromStr;
+use common::dummy_module;
+use sqlx::PgPool;
 use utoipa_axum::router::OpenApiRouter;
-use vitarchy_core::Module;
+use vitarchy_core::{Module, test_db::TestDb};
 use vitarchy_server::migrate;
 
 fn second_module() -> Module {
@@ -13,45 +12,6 @@ fn second_module() -> Module {
         OpenApiRouter::new,
         sqlx::migrate!("./tests/dummy2_migrations"),
     )
-}
-
-/// A throwaway database so the test never touches real data.
-struct TempDb {
-    name: String,
-    pool: PgPool,
-}
-
-impl TempDb {
-    async fn create() -> Self {
-        let name = format!("vitarchy_test_{}", std::process::id());
-        let opts = PgConnectOptions::from_str(&database_url()).unwrap();
-        let mut admin = PgConnection::connect_with(&opts).await.unwrap();
-        sqlx::query(sqlx::AssertSqlSafe(format!(
-            "DROP DATABASE IF EXISTS {name} WITH (FORCE)"
-        )))
-        .execute(&mut admin)
-        .await
-        .unwrap();
-        sqlx::query(sqlx::AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut admin)
-            .await
-            .unwrap();
-        let pool = PgPool::connect_with(opts.database(&name)).await.unwrap();
-        Self { name, pool }
-    }
-
-    async fn drop(self) {
-        self.pool.close().await;
-        let opts = PgConnectOptions::from_str(&database_url()).unwrap();
-        let mut admin = PgConnection::connect_with(&opts).await.unwrap();
-        sqlx::query(sqlx::AssertSqlSafe(format!(
-            "DROP DATABASE {} WITH (FORCE)",
-            self.name
-        )))
-        .execute(&mut admin)
-        .await
-        .unwrap();
-    }
 }
 
 async fn table_exists(pool: &PgPool, schema: &str, table: &str) -> bool {
@@ -64,7 +24,7 @@ async fn table_exists(pool: &PgPool, schema: &str, table: &str) -> bool {
 
 #[tokio::test]
 async fn modules_share_one_tracking_table_and_each_creates_its_own_schema() {
-    let db = TempDb::create().await;
+    let db = TestDb::create("migrations").await;
 
     migrate::run(&db.pool, &[dummy_module(), second_module()])
         .await

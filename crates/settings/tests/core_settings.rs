@@ -1,6 +1,6 @@
 mod common;
 
-use common::{TempDb, call};
+use common::{call, settings_app, settings_db};
 use serde_json::json;
 
 fn defaults() -> serde_json::Value {
@@ -16,9 +16,9 @@ fn defaults() -> serde_json::Value {
 
 #[tokio::test]
 async fn empty_database_returns_defaults() {
-    let db = TempDb::create("defaults").await;
+    let db = settings_db("defaults").await;
 
-    let r = call(&db.app(), "GET", "/api/settings", None).await;
+    let r = call(&settings_app(&db), "GET", "/api/settings", None).await;
 
     assert_eq!(r.status, 200);
     assert_eq!(r.json, json!({"core": defaults(), "modules": {}}));
@@ -27,8 +27,8 @@ async fn empty_database_returns_defaults() {
 
 #[tokio::test]
 async fn saved_core_settings_read_back_and_put_returns_them() {
-    let db = TempDb::create("roundtrip").await;
-    let app = db.app();
+    let db = settings_db("roundtrip").await;
+    let app = settings_app(&db);
     let body = json!({
         "display_name": "Hemang", "theme": "dark", "motion": "reduced",
         "week_start": "sunday", "clock": "h24", "date_format": "day_month_year"
@@ -45,8 +45,8 @@ async fn saved_core_settings_read_back_and_put_returns_them() {
 
 #[tokio::test]
 async fn partial_body_and_partial_stored_object_fill_in_defaults() {
-    let db = TempDb::create("partial").await;
-    let app = db.app();
+    let db = settings_db("partial").await;
+    let app = settings_app(&db);
 
     let put = call(
         &app,
@@ -70,10 +70,10 @@ async fn partial_body_and_partial_stored_object_fill_in_defaults() {
 
 #[tokio::test]
 async fn display_name_is_trimmed() {
-    let db = TempDb::create("trim").await;
+    let db = settings_db("trim").await;
 
     let r = call(
-        &db.app(),
+        &settings_app(&db),
         "PUT",
         "/api/settings/core",
         Some(r#"{"display_name":"  Ada  "}"#),
@@ -86,8 +86,8 @@ async fn display_name_is_trimmed() {
 
 #[tokio::test]
 async fn invalid_core_input_is_a_400_problem_and_nothing_is_saved() {
-    let db = TempDb::create("invalid").await;
-    let app = db.app();
+    let db = settings_db("invalid").await;
+    let app = settings_app(&db);
     let too_long = json!({"display_name": "x".repeat(51)}).to_string();
     let bad = [r#"{"theme":"purple"}"#, r"{not json", too_long.as_str()];
 
@@ -111,7 +111,7 @@ async fn invalid_core_input_is_a_400_problem_and_nothing_is_saved() {
 
 #[tokio::test]
 async fn one_bad_stored_field_resets_only_that_field() {
-    let db = TempDb::create("lenient").await;
+    let db = settings_db("lenient").await;
     let stored = r#"{"theme":"purple","clock":"h24","display_name":"Ada","motion":7}"#;
     sqlx::query("INSERT INTO settings.entries (scope, value) VALUES ('core', $1::jsonb)")
         .bind(stored)
@@ -119,7 +119,7 @@ async fn one_bad_stored_field_resets_only_that_field() {
         .await
         .unwrap();
 
-    let get = call(&db.app(), "GET", "/api/settings", None).await;
+    let get = call(&settings_app(&db), "GET", "/api/settings", None).await;
 
     let core = &get.json["core"];
     assert_eq!(core["theme"], "system");

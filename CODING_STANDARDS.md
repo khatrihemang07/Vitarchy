@@ -85,7 +85,9 @@ Logs are for debugging, so make each line answer *what happened, where, and to w
 - Work test-first at agreed seams (the `tdd` skill): see the test go red, then make it green.
 - Every pure function has unit tests. Every API route has an integration test. Every component with behaviour has a test.
 - Test names describe behaviour ("rolls back when the save fails"), not implementation.
-- Tests and manual checks run against throwaway data: a temporary database, or a server on its own port pointed at one. The dev database holds the person's real data and stays untouched.
+- Tests and manual checks run against **stage**, the throwaway Postgres (see `docs/development.md` → Environments), never **live**, which holds the person's real data.
+  - Rust integration tests get their database from `vitarchy_core::test_db::TestDb` (one shared helper) and connect only through `TEST_DATABASE_URL`. It refuses a URL that points at live. Do not write another helper.
+  - Run them with `make test`, `make check` or `make smoke`. For a manual check, use `make stage` or a server on its own port with `.env.stage`.
 
 ## Docs
 

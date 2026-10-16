@@ -34,6 +34,8 @@ pub fn log(config: &Config, core: &[Module], modules: &[Module]) {
     tracing::info!(
         database_url = %redact_url(&config.database_url),
         bind_addr = %config.bind_addr,
+        mode = if config.web_dist.is_some() { "app (serves web build)" } else { "api only" },
+        web_dist = ?config.web_dist,
         "configuration"
     );
     tracing::info!(core = ?ids(core), modules = ?ids(modules), "registered");

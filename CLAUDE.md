@@ -6,7 +6,7 @@ Before writing, changing or reviewing code, or briefing a subagent to, read `COD
 - **Single source of truth**: derive values; never restate them.
 - **Boundaries**: code lives where `CODING_STANDARDS.md` § Where code lives says. Modules never import each other.
 - **Debuggable**: structured logs at boundaries with the request id. Never log secrets or entered values.
-- **Real data is sacred**: test and verify against a throwaway database; leave the dev database and the user's running servers untouched.
+- **Real data is sacred**: the live database (`:5433`, `.env`) holds the user's real data. Tests and every agent or manual check use **stage** (`make stage`, `make smoke`, `make test`, `TEST_DATABASE_URL` from `.env.stage`), never live. Leave the user's running servers untouched.
 - **Done** means its Definition of done checklist is ticked.
 
 ## Agent skills

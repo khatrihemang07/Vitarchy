@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{TempDb, call};
+use common::{call, settings_app, settings_db};
 use serde_json::Value;
 use vitarchy_core::log_capture::capture_logs;
 
@@ -16,8 +16,8 @@ fn lines_with(logs: &str, message: &str) -> Vec<Value> {
 
 #[tokio::test]
 async fn a_save_logs_its_scope_and_changed_keys_but_not_the_values() {
-    let db = TempDb::create("logsave").await;
-    let app = db.app();
+    let db = settings_db("logsave").await;
+    let app = settings_app(&db);
     call(
         &app,
         "PUT",
@@ -44,8 +44,8 @@ async fn a_save_logs_its_scope_and_changed_keys_but_not_the_values() {
 
 #[tokio::test]
 async fn a_save_costs_one_statement_so_there_is_no_separate_read_before_the_write() {
-    let db = TempDb::create("onestmt").await;
-    let app = db.app();
+    let db = settings_db("onestmt").await;
+    let app = settings_app(&db);
 
     let (_, logs) = capture_logs(call(
         &app,
@@ -65,8 +65,8 @@ async fn a_save_costs_one_statement_so_there_is_no_separate_read_before_the_writ
 
 #[tokio::test]
 async fn a_rejected_enum_value_is_logged_as_a_warning_without_the_value() {
-    let db = TempDb::create("logreject").await;
-    let app = db.app();
+    let db = settings_db("logreject").await;
+    let app = settings_app(&db);
 
     let (reply, logs) = capture_logs(call(
         &app,
@@ -87,8 +87,8 @@ async fn a_rejected_enum_value_is_logged_as_a_warning_without_the_value() {
 
 #[tokio::test]
 async fn an_invalid_module_id_never_reaches_the_log() {
-    let db = TempDb::create("logbadid").await;
-    let app = db.app();
+    let db = settings_db("logbadid").await;
+    let app = settings_app(&db);
 
     let (reply, logs) = capture_logs(call(
         &app,
@@ -108,8 +108,8 @@ async fn an_invalid_module_id_never_reaches_the_log() {
 
 #[tokio::test]
 async fn a_valid_module_id_is_logged_as_the_scope() {
-    let db = TempDb::create("logmodid").await;
-    let app = db.app();
+    let db = settings_db("logmodid").await;
+    let app = settings_app(&db);
 
     let (_, logs) = capture_logs(call(
         &app,
@@ -126,8 +126,8 @@ async fn a_valid_module_id_is_logged_as_the_scope() {
 
 #[tokio::test]
 async fn a_failed_save_is_a_500_that_logs_no_success_and_no_values() {
-    let db = TempDb::create("logfail").await;
-    let app = db.app();
+    let db = settings_db("logfail").await;
+    let app = settings_app(&db);
     db.pool.close().await;
 
     let (reply, logs) = capture_logs(call(

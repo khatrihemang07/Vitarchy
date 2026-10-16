@@ -35,9 +35,3 @@ pub fn unreachable_pool() -> PgPool {
         .connect_lazy("postgres://nobody:nothing@127.0.0.1:1/none")
         .expect("lazy pool")
 }
-
-/// `DATABASE_URL` from the environment or the repo's `.env`.
-pub fn database_url() -> String {
-    dotenvy::dotenv().ok();
-    std::env::var("DATABASE_URL").expect("DATABASE_URL must be set (see .env.example)")
-}

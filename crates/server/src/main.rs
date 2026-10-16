@@ -1,8 +1,8 @@
-use std::process::ExitCode;
+use std::{env, process::ExitCode};
 
 use sqlx::postgres::PgPoolOptions;
 use vitarchy_core::{AppState, telemetry};
-use vitarchy_server::{app, config::Config, migrate, openapi, registry, startup_log};
+use vitarchy_server::{app, config::Config, migrate, openapi, registry, spa, startup_log};
 
 const USAGE: &str = "usage: vitarchy-server [openapi]\n  (no argument)  run the HTTP server\n  openapi        print the OpenAPI document to stdout";
 
@@ -44,11 +44,18 @@ fn print_openapi() -> ExitCode {
 }
 
 async fn serve() -> Result<(), Box<dyn std::error::Error>> {
-    dotenvy::dotenv().ok();
+    // Stage runs (scripts/with-env.sh sets VITARCHY_STAGE) must never pick up the
+    // live `.env`, even for variables the stage file leaves out.
+    if env::var_os("VITARCHY_STAGE").is_none() {
+        dotenvy::dotenv().ok();
+    }
     telemetry::init();
     let config = Config::from_env()?;
     let (core, modules) = (registry::core(), registry::modules());
     startup_log::log(&config, &core, &modules);
+    if let Some(dist) = &config.web_dist {
+        spa::ensure_built(dist)?;
+    }
 
     let pool = PgPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_secs(5))
@@ -56,7 +63,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     let modules: Vec<_> = core.into_iter().chain(modules).collect();
     migrate::run(&pool, &modules).await?;
 
-    let router = app::build(AppState::new(pool), modules);
+    let router = app::build(AppState::new(pool), modules, config.web_dist.as_deref());
     let listener = tokio::net::TcpListener::bind(config.bind_addr).await?;
     tracing::info!(addr = %config.bind_addr, "listening");
     axum::serve(listener, router)

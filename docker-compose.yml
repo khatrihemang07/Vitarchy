@@ -1,19 +1,44 @@
 services:
+  # Ports, user and database names come from the env files' DATABASE_URL: use
+  # scripts/compose.sh (or the make targets), which pass them in. The defaults below
+  # only apply to a bare `docker compose`.
   postgres:
     image: postgres:17
     restart: unless-stopped
     environment:
-      POSTGRES_USER: vitarchy
-      POSTGRES_PASSWORD: vitarchy
-      POSTGRES_DB: vitarchy
+      POSTGRES_USER: ${POSTGRES_USER:-vitarchy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vitarchy}
+      POSTGRES_DB: ${POSTGRES_DB:-vitarchy}
     ports:
       # Host port is configurable because 5432 is often taken by another local Postgres.
       - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - vitarchy-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vitarchy -d vitarchy"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vitarchy} -d ${POSTGRES_DB:-vitarchy}"]
       interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # STAGE: a throwaway Postgres for tests and agent/manual checks. Data lives in
+  # RAM (tmpfs) and vanishes when the container stops. The profile keeps a bare
+  # `docker compose up` from starting it; `make stage-db` names it explicitly.
+  postgres-stage:
+    image: postgres:17
+    profiles: ["stage"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vitarchy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vitarchy}
+      POSTGRES_DB: ${POSTGRES_STAGE_DB:-vitarchy_stage}
+    ports:
+      - "127.0.0.1:${POSTGRES_STAGE_PORT:-5434}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    # Durability is pointless for data that is thrown away; this speeds up tests.
+    command: ["postgres", "-c", "fsync=off"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vitarchy} -d ${POSTGRES_STAGE_DB:-vitarchy_stage}"]
+      interval: 3s
       timeout: 3s
       retries: 10
 

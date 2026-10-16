@@ -7,7 +7,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const port = Number(env.WEB_PORT) || 7420;
-  const apiPort = Number(env.API_PORT) || 3000;
+  // The API listens on BIND_ADDR (exported by `make dev` / `make stage`), so its port
+  // is derived from there; API_PORT is only the fallback for a bare `pnpm dev`.
+  const apiPort =
+    Number(env.BIND_ADDR?.split(":").pop()) || Number(env.API_PORT) || 3000;
 
   return {
     plugins: [react(), tailwindcss()],

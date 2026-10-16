@@ -9,7 +9,11 @@ use vitarchy_server::app;
 
 #[tokio::test]
 async fn module_router_is_mounted_under_api_id() {
-    let router = app::build(AppState::new(unreachable_pool()), vec![dummy_module()]);
+    let router = app::build(
+        AppState::new(unreachable_pool()),
+        vec![dummy_module()],
+        None,
+    );
 
     let res = router
         .oneshot(Request::get("/api/dummy/ping").body(Body::empty()).unwrap())
@@ -23,7 +27,11 @@ async fn module_router_is_mounted_under_api_id() {
 
 #[tokio::test]
 async fn module_paths_appear_in_merged_openapi_document() {
-    let router = app::build(AppState::new(unreachable_pool()), vec![dummy_module()]);
+    let router = app::build(
+        AppState::new(unreachable_pool()),
+        vec![dummy_module()],
+        None,
+    );
 
     let res = router
         .oneshot(
