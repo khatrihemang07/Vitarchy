@@ -11,9 +11,9 @@ fn count(n: usize) -> i64 {
     i64::try_from(n).unwrap_or(i64::MAX)
 }
 
-/// Totals over all items. Each item is one entry, so a multi-tag entry is never doubled.
+/// Totals over all items, with the comparisons left empty. Each item is one entry, so a multi-tag entry is never doubled.
 #[must_use]
-pub fn overview(items: &[Item<'_>], before: Option<&Overview>) -> Overview {
+pub fn overview(items: &[Item<'_>]) -> Overview {
     let total_s: i64 = items.iter().map(Item::seconds).sum();
     let days: BTreeSet<_> = items
         .iter()
@@ -25,20 +25,24 @@ pub fn overview(items: &[Item<'_>], before: Option<&Overview>) -> Overview {
     } else {
         (total_s + days_tracked / 2) / days_tracked
     };
-    let mut now = Overview {
+    Overview {
         total_s,
         entries: count(items.len()),
         days_tracked,
         avg_per_day_s,
-        change: OverviewChange::default(),
-    };
-    if let Some(before) = before {
-        now.change = OverviewChange {
-            total_s: now.total_s - before.total_s,
-            entries: now.entries - before.entries,
-            days_tracked: now.days_tracked - before.days_tracked,
-            avg_per_day_s: now.avg_per_day_s - before.avg_per_day_s,
-        };
+        usual_days: 0,
+        vs_previous: OverviewChange::default(),
+        vs_usual: OverviewChange::default(),
     }
-    now
+}
+
+/// Current minus `before`, figure by figure.
+#[must_use]
+pub fn change(now: &Overview, before: &Overview) -> OverviewChange {
+    OverviewChange {
+        total_s: now.total_s - before.total_s,
+        entries: now.entries - before.entries,
+        days_tracked: now.days_tracked - before.days_tracked,
+        avg_per_day_s: now.avg_per_day_s - before.avg_per_day_s,
+    }
 }

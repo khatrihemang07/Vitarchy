@@ -22,4 +22,11 @@ describe("buildNav", () => {
       ["finance", "Finance", "/finance"],
     ]);
   });
+
+  it("passes a Module's pages through, and gives none when it has no pages", () => {
+    const pages = [{ id: "reports", label: "Reports", to: "/time/reports" }];
+    const [withPages, without] = buildNav([{ ...fake("time", "Time"), pages }, fake("finance", "Finance")]);
+    expect(withPages?.pages).toEqual(pages);
+    expect(without?.pages).toEqual([]);
+  });
 });

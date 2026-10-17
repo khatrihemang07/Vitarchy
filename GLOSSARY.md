@@ -71,9 +71,13 @@ The stretch of Days a Report covers: one Day, a week, a month, or a custom stret
 _Avoid_: Timeframe, window
 
 **Report**:
-A summary of the Time Entries in one Period, filtered and grouped the way the person chooses, and compared with the Previous Period.
+A summary of the Time Entries in one Period, filtered and grouped the way the person chooses, and compared with either the Previous Period or the Usual.
 _Avoid_: Analysis, dashboard, insights
 
 **Previous Period**:
 The Period of the same kind just before the one being looked at: yesterday, last week, last month, or the same-length stretch just before a custom one.
 _Avoid_: Last period, baseline
+
+**Usual**:
+How a group usually went over the 4 weeks (28 Days) just before a Period: its per-Day average, minimum and maximum over the Days it happened, and how many Days that was. When a Period is compared with the Usual, totals and counts are scaled to the Days that have passed in the Period, against the Days of history available.
+_Avoid_: Baseline, norm, typical

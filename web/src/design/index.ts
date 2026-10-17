@@ -31,6 +31,7 @@ export * from "./effects/number-ticker";
 export { MotionButton } from "./motion/MotionButton";
 export { Expand } from "./motion/Expand";
 export { FadeUp } from "./motion/FadeUp";
+export { FadeValue } from "./motion/FadeValue";
 export { MotionProvider } from "./motion/MotionProvider";
 export { Pressable } from "./motion/Pressable";
 export { nudge, pressable, springs } from "./motion/springs";

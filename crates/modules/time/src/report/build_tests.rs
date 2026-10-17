@@ -1,10 +1,25 @@
 //! `build_report` end to end on in-memory entries.
 
 use super::{
-    build_report,
+    Context, Entries,
     entry::{WindowEntry, fixtures::entry},
+    model::Report,
     query::ReportQuery,
 };
+
+/// A Report without a Usual; the Usual is covered by `build_usual_tests`.
+fn build_report(q: &ReportQuery, current: &[WindowEntry], previous: &[WindowEntry]) -> Report {
+    let entries = Entries {
+        current,
+        previous,
+        usual: &[],
+    };
+    let context = Context {
+        now: "2026-10-25T10:00:00Z".parse().unwrap(),
+        first_entry: None,
+    };
+    super::build_report(q, &entries, &context)
+}
 
 fn query(extra: &[(&str, &str)]) -> ReportQuery {
     let mut pairs = vec![
@@ -88,9 +103,9 @@ fn groups_are_compared_with_the_previous_period_and_unseen_ones_are_new() {
     let report = build_report(&query(&[]), &now, &before);
     let same = report.groups.iter().find(|g| g.label == "same").unwrap();
     let fresh = report.groups.iter().find(|g| g.label == "fresh").unwrap();
-    assert_eq!(same.change.unwrap().total_s, 3600);
-    assert!(fresh.is_new && fresh.change.is_none());
-    assert_eq!(report.overview.change.total_s, 7200);
+    assert_eq!(same.vs_previous.change.unwrap().total_s, 3600);
+    assert!(fresh.vs_previous.is_new && fresh.vs_previous.change.is_none());
+    assert_eq!(report.overview.vs_previous.total_s, 7200);
     assert_eq!(report.period.previous_from.to_string(), "2026-10-05");
 }
 
@@ -125,7 +140,7 @@ fn the_filter_applies_before_grouping() {
 
 // ---- time zones ----
 
-fn totals(report: &super::model::Report) -> Vec<i64> {
+fn totals(report: &Report) -> Vec<i64> {
     report.daily.iter().map(|p| p.seconds).collect()
 }
 
@@ -179,11 +194,11 @@ fn an_entry_across_the_boundary_is_clipped_once_per_period_and_never_counted_twi
     assert_eq!(group.stats.per_entry.max_s, 3 * 3600);
     assert_eq!(group.stats.per_entry.min_s, 3 * 3600);
     // The previous side holds the other 2h, so the change is 3h - 2h.
-    let change = group.change.unwrap();
+    let change = group.vs_previous.change.unwrap();
     assert_eq!(change.total_s, 3600);
     assert_eq!(change.per_entry.max_s, 3600);
     assert_eq!(report.overview.total_s, 3 * 3600);
-    assert_eq!(report.overview.change.total_s, 3600);
+    assert_eq!(report.overview.vs_previous.total_s, 3600);
 }
 
 #[test]
@@ -193,7 +208,7 @@ fn an_entry_ending_exactly_at_the_boundary_belongs_to_the_previous_period_only()
     let report = build_report(&query(&[]), &both, &both);
     assert_eq!(report.overview.total_s, 0);
     assert!(report.groups.is_empty());
-    assert_eq!(report.overview.change.total_s, -7200);
+    assert_eq!(report.overview.vs_previous.total_s, -7200);
 }
 
 #[test]
@@ -207,7 +222,10 @@ fn the_previous_period_clips_at_its_own_end() {
     // The entry runs from the 10th to the 13th, so this week holds the 12th only: 24h.
     assert_eq!(group.stats.total_s, 24 * 3600);
     // Previous: 10th and 11th, 48h.
-    assert_eq!(group.change.unwrap().total_s, 24 * 3600 - 48 * 3600);
+    assert_eq!(
+        group.vs_previous.change.unwrap().total_s,
+        24 * 3600 - 48 * 3600
+    );
 }
 
 #[test]
@@ -217,7 +235,7 @@ fn two_empty_periods_give_an_empty_report() {
     assert_eq!(report.overview.total_s, 0);
     assert_eq!(report.overview.entries, 0);
     assert_eq!(
-        report.overview.change,
+        report.overview.vs_previous,
         super::model::OverviewChange::default()
     );
     assert_eq!(totals(&report), [0; 7]);
@@ -232,8 +250,8 @@ fn a_description_matches_the_previous_period_across_a_case_change() {
     let report = build_report(&query(&[]), &now, &before);
     let group = &report.groups[0];
     assert_eq!(group.label, "OFFICE");
-    assert!(!group.is_new);
-    assert_eq!(group.change.unwrap().total_s, 3600);
+    assert!(!group.vs_previous.is_new);
+    assert_eq!(group.vs_previous.change.unwrap().total_s, 3600);
 }
 
 #[test]
@@ -247,6 +265,6 @@ fn a_renamed_project_still_matches_by_its_id() {
     let report = build_report(&query(&[("group1", "project")]), &[now], &[before]);
     let group = &report.groups[0];
     assert_eq!(group.label, "New name");
-    assert!(!group.is_new);
-    assert_eq!(group.change.unwrap().total_s, 2 * 3600);
+    assert!(!group.vs_previous.is_new);
+    assert_eq!(group.vs_previous.change.unwrap().total_s, 2 * 3600);
 }

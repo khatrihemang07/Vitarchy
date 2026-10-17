@@ -48,7 +48,7 @@ async fn a_report_groups_by_description_and_compares_with_the_previous_period() 
     assert_eq!(office["stats"]["days"], 1);
     assert_eq!(office["stats"]["per_day"]["avg_s"], 25200);
     assert_eq!(office["stats"]["per_entry"]["min_s"], 10800);
-    assert_eq!(office["change"]["total_s"], 25200 - 3600);
+    assert_eq!(office["vs_previous"]["change"]["total_s"], 25200 - 3600);
     assert_eq!(office["entries"].as_array().unwrap().len(), 2);
     assert_eq!(json["daily"].as_array().unwrap().len(), 7);
     let gym = json["groups"]
@@ -56,7 +56,41 @@ async fn a_report_groups_by_description_and_compares_with_the_previous_period() 
         .unwrap()
         .iter()
         .find(|g| g["label"] == "Gym");
-    assert_eq!(gym.unwrap()["is_new"], true);
+    assert_eq!(gym.unwrap()["vs_previous"]["is_new"], true);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn a_report_carries_both_comparisons() {
+    let db = time_db("report_usual").await;
+    seed(&db).await;
+    let app = time_app(&db, &FakeToggl::new());
+
+    // The Usual's range is 2026-09-14..2026-10-11: only entry 5 (1h on 10-05) is in it.
+    let reply = call(&app, "GET", &format!("/api/time/report?{WEEK}"), None).await;
+
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    let json = &reply.json;
+    assert_eq!(json["period"]["usual_from"], "2026-09-14");
+    assert_eq!(json["period"]["usual_to"], "2026-10-11");
+    assert_eq!(json["overview"]["usual_days"], 1);
+    // The earliest entry is on 2026-10-05, so 7 Days of the Usual's range exist. The test
+    // runs on the real clock, so the week's elapsed Days are read back, not assumed.
+    assert_eq!(json["period"]["usual_available_days"], 7);
+    let elapsed = json["period"]["elapsed_days"].as_i64().unwrap();
+    assert!((0..=7).contains(&elapsed));
+    let scaled = (3600 * elapsed + 3) / 7;
+    assert_eq!(json["overview"]["vs_usual"]["total_s"], 36000 - scaled);
+    assert_eq!(json["overview"]["vs_previous"]["total_s"], 36000 - 3600);
+    let groups = json["groups"].as_array().unwrap();
+    let office = groups.iter().find(|g| g["label"] == "Office").unwrap();
+    assert_eq!(office["vs_usual"]["is_new"], false);
+    assert_eq!(office["vs_usual"]["change"]["total_s"], 25200 - scaled);
+    assert_eq!(office["vs_usual"]["usual"]["days"], 1);
+    assert_eq!(office["vs_usual"]["usual"]["per_day"]["avg_s"], 3600);
+    let gym = groups.iter().find(|g| g["label"] == "Gym").unwrap();
+    assert_eq!(gym["vs_usual"]["is_new"], true);
+    assert!(gym["vs_usual"]["change"].is_null());
     db.drop().await;
 }
 
@@ -198,12 +232,12 @@ async fn the_time_zone_moves_which_entries_the_period_reads() {
     let utc = call(&app, "GET", &total("UTC"), None).await;
     assert_eq!(utc.json["overview"]["total_s"], 0);
     // ... and it is the Previous Period's in UTC.
-    assert_eq!(utc.json["overview"]["change"]["total_s"], -3600);
+    assert_eq!(utc.json["overview"]["vs_previous"]["total_s"], -3600);
 
     let kolkata = call(&app, "GET", &total("Asia%2FKolkata"), None).await;
     assert_eq!(kolkata.json["overview"]["total_s"], 3600);
     assert_eq!(daily_seconds(&kolkata.json), [3600, 0, 0, 0, 0, 0, 0]);
-    assert_eq!(kolkata.json["overview"]["change"]["total_s"], 3600);
+    assert_eq!(kolkata.json["overview"]["vs_previous"]["total_s"], 3600);
     db.drop().await;
 }
 
@@ -229,7 +263,10 @@ async fn an_entry_across_the_boundary_is_counted_once_in_each_period() {
         reply.json["groups"][0]["entries"][0]["duration_s"],
         3 * 3600
     );
-    assert_eq!(reply.json["groups"][0]["change"]["total_s"], 3600);
+    assert_eq!(
+        reply.json["groups"][0]["vs_previous"]["change"]["total_s"],
+        3600
+    );
     db.drop().await;
 }
 

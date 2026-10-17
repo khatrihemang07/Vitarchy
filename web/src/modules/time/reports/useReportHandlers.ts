@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { Grouping, PeriodKind } from "@/api/time";
+import type { CompareMode } from "./compareMode";
 import { changeKind, type DayRange, fitRange, jumpToToday, shiftPeriod, type WeekStart } from "./period";
 import { clearFilters, type FacetKey, withFacet, withGroups, withRange } from "./reportActions";
 import type { ReportSearch, StatMode } from "./reportSearch";
@@ -24,6 +25,7 @@ export function useReportHandlers({ search, range, today, weekStart, update }: H
       onSearch: (q: string) => { update({ ...search, q }); },
       onGroups: (group1: Grouping, group2: Grouping | undefined) => { update(withGroups(search, group1, group2)); },
       onMode: (mode: StatMode) => { update({ ...search, mode }); },
+      onCompare: (compare: CompareMode) => { update({ ...search, compare }); },
       onClear: () => { update(clearFilters(search)); },
     }),
     [search, range, today, weekStart, update],

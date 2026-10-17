@@ -134,7 +134,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A Report for one Period: overview, daily totals and groups, compared with the Previous Period. */
+        /**
+         * A Report for one Period: overview, daily totals and groups, compared with the Previous Period
+         *     and with the Usual (the Usual's range before the Period).
+         */
         get: operations["get_report"];
         put?: never;
         post?: never;
@@ -242,6 +245,12 @@ export interface components {
          * @enum {string}
          */
         Clock: "system" | "h12" | "h24";
+        /** @description How a group compares with a reference: the Previous Period's same group, or the Usual's. */
+        Comparison: {
+            change?: components["schemas"]["StatsChange"] | null;
+            /** @description True when the group has no time in the reference. */
+            is_new: boolean;
+        };
         /** @description Body of `PUT /api/time/connection`. */
         ConnectRequest: {
             /** @description The person's Toggl API token. Stored server-side, never returned. */
@@ -322,21 +331,22 @@ export interface components {
         };
         /** @description One row of the summary: a description, project or tag, with its numbers. */
         Group: {
-            change?: components["schemas"]["StatsChange"] | null;
             /** @description Second-level groups, when a second grouping was asked for. Empty otherwise. */
             children: components["schemas"]["Group"][];
             /** @description One point per Day of the Period, 0 where the group has no time. */
             daily: components["schemas"]["DailyPoint"][];
             /** @description The entries, only on bottom-level groups (empty on groups that have children). */
             entries: components["schemas"]["ReportEntry"][];
-            /** @description True when the group has no time in the Previous Period. */
-            is_new: boolean;
             /** @description Stable identity within its level; empty for the "(no ...)" group. */
             key: string;
             /** @description What to show: the most common spelling of the group. */
             label: string;
             /** @description Days, entries, total and the per-Day and per-entry spreads. */
             stats: components["schemas"]["Stats"];
+            /** @description Comparison with the same group in the Previous Period. */
+            vs_previous: components["schemas"]["Comparison"];
+            /** @description Comparison with the same group's Usual (the Usual's range). */
+            vs_usual: components["schemas"]["UsualComparison"];
         };
         /**
          * @description A way to group Time Entries.
@@ -390,8 +400,6 @@ export interface components {
              * @description Total divided by the Days tracked, rounded; 0 when none.
              */
             avg_per_day_s: number;
-            /** @description Change from the Previous Period. */
-            change: components["schemas"]["OverviewChange"];
             /**
              * Format: int64
              * @description Days with any time.
@@ -407,8 +415,20 @@ export interface components {
              * @description Seconds tracked.
              */
             total_s: number;
+            /**
+             * Format: int64
+             * @description Days with entries in the Usual's range (the Usual's range).
+             */
+            usual_days: number;
+            /** @description Change from the Previous Period. */
+            vs_previous: components["schemas"]["OverviewChange"];
+            /**
+             * @description Change from the Usual, whose total, entries and Days tracked are scaled to the
+             *     Days that have passed (see [`PeriodInfo::elapsed_days`]); the per-Day average is not.
+             */
+            vs_usual: components["schemas"]["OverviewChange"];
         };
-        /** @description Change of the overview figures from the Previous Period (current minus previous). */
+        /** @description Change of the overview figures from a reference (current minus reference). */
         OverviewChange: {
             /**
              * Format: int64
@@ -431,8 +451,14 @@ export interface components {
              */
             total_s: number;
         };
-        /** @description The Period the Report covers and the Previous Period it was compared with. */
+        /** @description The Period the Report covers, the Previous Period and the Usual's range it is compared with. */
         PeriodInfo: {
+            /**
+             * Format: int64
+             * @description Days of the Period up to and including today (in the request's time zone); all of
+             *     them once the Period is past, 0 before it starts.
+             */
+            elapsed_days: number;
             /**
              * Format: date
              * @description First Day.
@@ -455,6 +481,22 @@ export interface components {
              * @description Last Day (inclusive).
              */
             to: string;
+            /**
+             * Format: int64
+             * @description Days of the Usual's range on or after the Day of the first Time Entry ever tracked;
+             *     fewer than the range holds when the history is short, 0 when there is none yet.
+             */
+            usual_available_days: number;
+            /**
+             * Format: date
+             * @description First Day of the Usual's range (the Days ending the Day before `from`).
+             */
+            usual_from: string;
+            /**
+             * Format: date
+             * @description Last Day of the Usual's range (inclusive).
+             */
+            usual_to: string;
         };
         /**
          * @description How the Period was chosen; decides what the Previous Period is.
@@ -527,7 +569,10 @@ export interface components {
             /** @description Name. */
             name: string;
         };
-        /** @description A summary of the Time Entries in one Period, compared with the Previous Period. */
+        /**
+         * @description A summary of the Time Entries in one Period, compared with the Previous Period
+         *     and with the Usual.
+         */
         Report: {
             /** @description One point per Day of the Period. */
             daily: components["schemas"]["DailyPoint"][];
@@ -773,6 +818,25 @@ export interface components {
             time_entry_count: number;
             /** @description The synced workspace, when connected. */
             workspace_name?: string | null;
+        };
+        /** @description How a group compares with the Usual. */
+        UsualComparison: {
+            change?: components["schemas"]["StatsChange"] | null;
+            /** @description True when the group had no time in the Usual's range. */
+            is_new: boolean;
+            usual?: components["schemas"]["UsualFigures"] | null;
+        };
+        /** @description What a group usually looks like per Day and per entry, over the Days it happened. */
+        UsualFigures: {
+            /**
+             * Format: int64
+             * @description Days in the Usual's range on which the group had time.
+             */
+            days: number;
+            /** @description Spread of its daily totals over those Days (not scaled). */
+            per_day: components["schemas"]["Spread"];
+            /** @description Spread of each entry's time over the Usual's range (not scaled). */
+            per_entry: components["schemas"]["Spread"];
         };
         /**
          * @description First day of the week.

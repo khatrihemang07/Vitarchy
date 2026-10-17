@@ -147,3 +147,11 @@ pub async fn in_range(
     .fetch_all(pool)
     .await
 }
+
+/// When the earliest Time Entry started, or `None` with no entries. It ignores any filter on
+/// purpose: it measures how much history exists, which a Report's filters do not change.
+pub async fn first_start(pool: &PgPool) -> Result<Option<DateTime<Utc>>, sqlx::Error> {
+    sqlx::query_scalar("SELECT min(start) FROM time.time_entries")
+        .fetch_one(pool)
+        .await
+}

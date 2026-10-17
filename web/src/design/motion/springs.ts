@@ -10,6 +10,12 @@ export const springs = {
   gentle: { type: "spring", stiffness: 120, damping: 20 },
 } as const satisfies Record<string, Transition>;
 
+/** A value that changed dims to `from` and eases back to full strength. */
+export const valueFade = {
+  from: 0.4,
+  transition: { duration: 0.15, ease: "easeOut" },
+} as const satisfies { from: number; transition: Transition };
+
 /** The one hover/press interaction; spread onto any `m.*` element. */
 export const pressable = {
   whileHover: { scale: 1.04 },

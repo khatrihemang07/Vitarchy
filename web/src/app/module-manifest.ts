@@ -17,6 +17,15 @@ export type {
   ValuesOf,
 } from "./settings/schema";
 
+/** A screen inside a Module that the command bar can jump to. */
+export interface ModulePage {
+  readonly id: string;
+  readonly label: string;
+  readonly to: string;
+  /** Defaults to the Module's own icon. */
+  readonly icon?: ComponentType<{ className?: string }>;
+}
+
 /**
  * What a Module's `src/modules/<id>/index.ts` exports. The shell builds the
  * nav and the router from the list of manifests in `modules.ts`.
@@ -32,6 +41,8 @@ export interface ModuleManifest {
   readonly routes: (root: AnyRootRoute) => AnyRoute[];
   /** Where the nav entry links to. */
   readonly navItem: { readonly to: string };
+  /** The screens inside the Module, for the command bar ("Time: Reports"). */
+  readonly pages?: readonly ModulePage[];
   /**
    * Optional settings. The Settings page renders them as a section named
    * after the Module id; values are stored under that id.

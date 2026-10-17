@@ -8,6 +8,9 @@ use utoipa::ToSchema;
 /// The longest Period a Report accepts, in Days.
 pub const MAX_DAYS: i64 = 366;
 
+/// How many Days the Usual's range covers.
+pub const USUAL_DAYS: i64 = 28;
+
 /// How the Period was chosen; decides what the Previous Period is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, serde::Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
@@ -121,6 +124,19 @@ impl Period {
             ),
         };
         Self { from, to, ..*self }
+    }
+
+    /// The Usual's range: the [`USUAL_DAYS`] local Days ending the Day before this
+    /// Period starts. Built from local dates, so a DST change just makes one Day 23 or
+    /// 25 hours long.
+    #[must_use]
+    pub fn usual_range(&self) -> Self {
+        Self {
+            kind: PeriodKind::Custom,
+            from: self.from - Duration::days(USUAL_DAYS),
+            to: self.from - Duration::days(1),
+            tz: self.tz,
+        }
     }
 
     /// Every Day of the Period, in order.

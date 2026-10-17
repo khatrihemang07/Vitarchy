@@ -1,4 +1,5 @@
 import type { Grouping, PeriodKind } from "@/api/time";
+import { COMPARE_MODES, type CompareMode, defaultCompare } from "./compareMode";
 import { type DayRange, fitRange, periodFor, type WeekStart } from "./period";
 
 /** Whether group stats show daily totals or single entries. */
@@ -24,6 +25,8 @@ export interface ReportSearch extends ReportFilters {
   group1: Grouping;
   group2?: Grouping;
   mode: StatMode;
+  /** The comparison the person chose; absent means the default for the kind. */
+  compare?: CompareMode;
 }
 
 const KINDS: readonly PeriodKind[] = ["day", "week", "month", "custom"];
@@ -70,6 +73,7 @@ export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
   const group2 = pick(GROUPINGS, raw.group2);
   const q = typeof raw.q === "string" || typeof raw.q === "number" ? String(raw.q).slice(0, MAX_QUERY_LENGTH) : "";
   const date = kind === "custom" ? undefined : validDay(raw.date);
+  const compare = pick(COMPARE_MODES, raw.compare);
   return {
     kind: kind === "custom" && !range ? "week" : kind,
     ...(date && { date }),
@@ -81,6 +85,7 @@ export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
     group1,
     ...(group2 && group2 !== group1 && { group2 }),
     mode: pick(MODES, raw.mode) ?? "per_day",
+    ...(compare && { compare }),
   };
 }
 
@@ -98,6 +103,7 @@ export function toSearchParams(search: ReportSearch): Record<string, unknown> {
     ...(search.group1 !== "description" && { group1: search.group1 }),
     ...(search.group2 && { group2: search.group2 }),
     ...(search.mode !== "per_day" && { mode: search.mode }),
+    ...(search.compare && search.compare !== defaultCompare(search.kind) && { compare: search.compare }),
   };
 }
 

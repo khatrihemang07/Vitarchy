@@ -1,6 +1,6 @@
 import { Home, Settings } from "lucide-react";
 import type { ComponentType } from "react";
-import type { ModuleManifest } from "./module-manifest";
+import type { ModuleManifest, ModulePage } from "./module-manifest";
 import { generalSection } from "./settings/core-sections";
 
 /** One sidebar and command-bar entry for a Module. */
@@ -10,6 +10,8 @@ export interface NavEntry {
   to: string;
   accent: string;
   icon: ComponentType<{ className?: string }>;
+  /** The screens inside the Module; empty when it has none. */
+  pages: readonly ModulePage[];
 }
 
 /** Home is not a Module, so it has no manifest or accent; the shell and command bar both list it from here. */
@@ -26,5 +28,6 @@ export function buildNav(modules: readonly ModuleManifest[]): NavEntry[] {
     to: m.navItem.to,
     accent: m.accent,
     icon: m.icon,
+    pages: m.pages ?? [],
   }));
 }

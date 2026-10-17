@@ -2,12 +2,9 @@ import { ChevronRight } from "lucide-react";
 import { m } from "motion/react";
 import type { ReportGroup } from "@/api/time";
 import { Badge, cn, nudge } from "@/design";
-import { formatCount } from "../format";
-import { figureLabels } from "./columns";
-import { FigureCell } from "./FigureCell";
+import { ColumnCell } from "./ColumnCell";
 import { figuresFor } from "./groupFigures";
 import type { RowContext } from "./rowContext";
-import { StatCell } from "./StatCell";
 
 const INDENT_REM = 1.25;
 
@@ -15,24 +12,24 @@ interface GroupRowCellsProps {
   group: ReportGroup;
   context: RowContext;
   depth: number;
-  /** Whether the row is open; undefined when it cannot open, which leaves the chevron's space empty. */
+  /** Whether the row is open; undefined when it cannot open, so it shows no chevron. */
   open: boolean | undefined;
 }
 
-/** The label and figures of one row, shared by rows that open and rows that only show their stats. */
+/** The label and cells of one row, shared by rows that open and rows that only show their stats. */
 export function GroupRowCells({ group, context, depth, open }: GroupRowCellsProps) {
-  const figures = figuresFor(group, context.mode);
-  const labels = figureLabels(context.mode);
+  const figures = figuresFor(group, context.mode, context.compare);
   const label = group.label || "(none)";
   return (
     <>
       <m.span
         variants={{ hover: nudge.whileHover }}
         transition={nudge.transition}
-        className="col-span-3 flex min-w-0 items-center gap-2 md:col-span-1"
+        className="col-span-full flex min-w-0 items-center gap-2 md:col-span-1"
         style={{ paddingLeft: `${String(depth * INDENT_REM)}rem` }}>
         {open === undefined ? (
-          <span className="size-4 shrink-0" aria-hidden="true" />
+          // Only a nested row keeps the chevron's space, so its label lines up under its parent's.
+          depth > 0 ? <span className="size-4 shrink-0" aria-hidden="true" /> : null
         ) : (
           <ChevronRight className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-90")} aria-hidden="true" />
         )}
@@ -41,14 +38,9 @@ export function GroupRowCells({ group, context, depth, open }: GroupRowCellsProp
         </span>
         {figures.isNew ? <Badge variant="outline">new</Badge> : null}
       </m.span>
-      <StatCell label="Days">
-        {formatCount(figures.days)} of {formatCount(context.periodDays)}
-      </StatCell>
-      <StatCell label="Entries">{formatCount(figures.entries)}</StatCell>
-      <FigureCell label={labels.total} figure={figures.total} emphasis />
-      <FigureCell label={labels.avg} figure={figures.avg} />
-      <FigureCell label={labels.min} figure={figures.min} />
-      <FigureCell label={labels.max} figure={figures.max} />
+      {context.layout.columns.map((column) => (
+        <ColumnCell key={column.id} label={column.label} cell={column.cell(figures, context)} compare={context.compare} />
+      ))}
     </>
   );
 }

@@ -36,12 +36,44 @@ const api = (reportHandler: () => Response | Promise<Response>, status = synced)
 });
 
 describe("ReportsPage", () => {
-  it("shows a loading notice, then the Report with its first row open", async () => {
+  it("shows a loading notice, then the Report with every row closed", async () => {
     stubApi(api(() => jsonResponse(200, report([group("Standup"), group("Review")]))));
     renderPage();
     expect(await screen.findByText("Loading report…")).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: /Standup/ })).toHaveAttribute("aria-expanded", "true");
+    expect(await screen.findByRole("button", { name: /Standup/ })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: /Review/ })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("opens a Week on the Previous Period and switches to the last 4 weeks without another request", async () => {
+    const fetchMock = stubApi(api(() => jsonResponse(200, report([group("Standup")]))));
+    renderPage("/time/reports");
+    await screen.findByRole("button", { name: /Standup/ });
+    expect(screen.getByRole("radio", { name: "Previous Period" })).toBeChecked();
+    const reportCalls = () => fetchMock.mock.calls.filter(([r]) => new URL(r.url).pathname === "/api/time/report").length;
+    const before = reportCalls();
+    await userEvent.click(screen.getByRole("radio", { name: "Last 4 weeks" }));
+    expect(screen.getByRole("radio", { name: "Last 4 weeks" })).toBeChecked();
+    expect(screen.getByText(/^Compared with the last 4 weeks/)).toBeInTheDocument();
+    expect(reportCalls()).toBe(before);
+  });
+
+  it("opens a Day on the last 4 weeks unless the URL says otherwise", async () => {
+    stubApi(api(() => jsonResponse(200, report([group("Standup")], "day"))));
+    renderPage("/time/reports?kind=day");
+    await screen.findByText("Standup");
+    expect(screen.getByRole("radio", { name: "Last 4 weeks" })).toBeChecked();
+  });
+
+  it("offers Per Day / Per entry on a Week but not on a Day, where it changes nothing", async () => {
+    stubApi(api(() => jsonResponse(200, report([group("Standup")]))));
+    const week = renderPage("/time/reports");
+    await screen.findByRole("button", { name: /Standup/ });
+    expect(screen.getByRole("radio", { name: "Per entry" })).toBeInTheDocument();
+    week.unmount();
+    stubApi(api(() => jsonResponse(200, report([group("Standup")], "day"))));
+    renderPage("/time/reports?kind=day");
+    await screen.findByText("Standup");
+    expect(screen.queryByRole("radio", { name: "Per entry" })).not.toBeInTheDocument();
   });
 
   it("sends the filters, the Period and the time zone, repeating list values", async () => {

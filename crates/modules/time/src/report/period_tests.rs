@@ -166,3 +166,34 @@ fn a_custom_previous_period_of_a_365_day_stretch_is_the_365_days_before() {
     let p = period(PeriodKind::Custom, date(2026, 1, 1), date(2026, 12, 31)).previous();
     assert_eq!((p.from, p.to), (date(2025, 1, 1), date(2025, 12, 31)));
 }
+
+#[test]
+fn the_usual_range_is_the_28_days_before_the_period() {
+    let p = period(PeriodKind::Week, date(2026, 10, 12), date(2026, 10, 18));
+    let usual = p.usual_range();
+    assert_eq!(
+        (usual.from, usual.to),
+        (date(2026, 9, 14), date(2026, 10, 11))
+    );
+    assert_eq!(usual.days().len(), 28);
+}
+
+#[test]
+fn the_usual_range_crosses_a_month_boundary() {
+    let p = period(PeriodKind::Day, date(2026, 3, 2), date(2026, 3, 2));
+    let usual = p.usual_range();
+    assert_eq!((usual.from, usual.to), (date(2026, 2, 2), date(2026, 3, 1)));
+}
+
+#[test]
+fn the_usual_range_has_27_local_days_of_24_hours_and_one_of_23_across_spring_dst() {
+    let tz: Tz = "Europe/Berlin".parse().unwrap();
+    // Berlin skips an hour on 2026-03-29, which falls inside 2026-03-08..2026-04-04.
+    let p = Period::new(PeriodKind::Day, date(2026, 4, 5), date(2026, 4, 5), tz).unwrap();
+    let usual = p.usual_range();
+    assert_eq!((usual.from, usual.to), (date(2026, 3, 8), date(2026, 4, 4)));
+    let (from, to) = usual.utc_range();
+    assert_eq!((to - from).num_hours(), 28 * 24 - 1);
+    assert_eq!(from.to_rfc3339(), "2026-03-07T23:00:00+00:00");
+    assert_eq!(to.to_rfc3339(), "2026-04-04T22:00:00+00:00");
+}

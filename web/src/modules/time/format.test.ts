@@ -1,4 +1,4 @@
-import { formatAge, formatCount, formatDay, formatDuration, formatSpan } from "./format";
+import { formatSpanRange, formatAge, formatCount, formatDay, formatDuration, formatSpan } from "./format";
 
 const now = new Date("2026-04-10T12:00:00Z");
 const ago = (secs: number) => new Date(now.getTime() - secs * 1000);
@@ -67,5 +67,16 @@ describe("formatSpan", () => {
 
   it("drops the sign", () => {
     expect(formatSpan(-3900)).toBe("1h 5m");
+  });
+});
+
+describe("formatSpanRange", () => {
+  it("shows the smallest to the largest span", () => {
+    expect(formatSpanRange(5 * 3600, 9 * 3600)).toBe("5h – 9h");
+  });
+
+  it("shows a single value when both ends read the same", () => {
+    expect(formatSpanRange(2700, 2700)).toBe("45m");
+    expect(formatSpanRange(2700, 2710)).toBe("45m");
   });
 });

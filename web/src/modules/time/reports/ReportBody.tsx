@@ -2,18 +2,18 @@ import type { Report } from "@/api/time";
 import { FadeUp, MotionButton } from "@/design";
 import { TimeNotice } from "../TimeNotice";
 import { DayEntries } from "./DayEntries";
-import { elapsedDays } from "./elapsedDays";
 import type { Clock } from "./entryTimes";
 import { OverviewStrip } from "./OverviewStrip";
+import type { CompareMode } from "./compareMode";
+import { rowContextFor } from "./rowContext";
 import type { StatMode } from "./reportSearch";
 import { SummaryTable } from "./SummaryTable";
 
 interface ReportBodyProps {
   report: Report;
   mode: StatMode;
+  compare: CompareMode;
   clock: Clock;
-  /** Today's local Day, so "of M" leaves out Days that have not happened. */
-  today: string;
   filtered: boolean;
   onClear: () => void;
   /** Place in the page's entrance sequence of the first section, after whatever sits above. */
@@ -21,7 +21,7 @@ interface ReportBodyProps {
 }
 
 /** A loaded Report: overview, then (for one Day) its entries, then the summary table, or the empty notice. */
-export function ReportBody({ report, mode, clock, today, filtered, onClear, firstStagger }: ReportBodyProps) {
+export function ReportBody({ report, mode, compare, clock, filtered, onClear, firstStagger }: ReportBodyProps) {
   if (report.groups.length === 0) {
     return (
       <FadeUp index={firstStagger}>
@@ -42,9 +42,9 @@ export function ReportBody({ report, mode, clock, today, filtered, onClear, firs
     );
   }
   const isDay = report.period.kind === "day";
-  const context = { mode, clock, periodDays: elapsedDays(report.period, today), isDay };
+  const context = rowContextFor({ period: report.period, mode, compare, clock });
   const sections = [
-    <OverviewStrip key="overview" report={report} />,
+    <OverviewStrip key="overview" report={report} compare={compare} />,
     ...(isDay ? [<DayEntries key="entries" report={report} clock={clock} />] : []),
     <SummaryTable key={`summary-${report.group1}/${report.group2 ?? ""}`} groups={report.groups} context={context} />,
   ];

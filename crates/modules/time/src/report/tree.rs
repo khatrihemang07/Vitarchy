@@ -5,11 +5,13 @@ use std::collections::BTreeMap;
 use chrono::NaiveDate;
 
 use super::{
+    compare::Comparison,
     grouping::{Grouping, most_common_label},
     items::Item,
     model::{Group, ReportEntry},
     series::daily_series,
     stats::{Part, compute},
+    usual::UsualComparison,
 };
 
 /// Items of one group, with the labels they spelled it as.
@@ -64,8 +66,8 @@ fn group_of(
         key,
         label: most_common_label(members.labels.iter().map(String::as_str)),
         stats: stats_of(&members.items),
-        change: None,
-        is_new: false,
+        vs_previous: Comparison::default(),
+        vs_usual: UsualComparison::default(),
         daily: daily_series(days, members.items.iter().flat_map(|i| i.parts.iter())),
         children: if leaf {
             vec![]

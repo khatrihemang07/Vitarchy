@@ -10,7 +10,7 @@ function delays(container: HTMLElement): string[] {
 function renderBody(kind: "week" | "day") {
   return render(
     <TooltipProvider>
-      <ReportBody report={report([group("Standup")], kind)} mode="per_day" clock="h24" today="2026-10-13" filtered={false} onClear={() => undefined} firstStagger={3} />
+      <ReportBody report={report([group("Standup")], kind)} mode="per_day" compare="previous" clock="h24" filtered={false} onClear={() => undefined} firstStagger={3} />
     </TooltipProvider>,
   );
 }

@@ -4,6 +4,8 @@ import { Button, FadeUp, stagger } from "@/design";
 import { errorMessage } from "../failureMessage";
 import { TimeNotice } from "../TimeNotice";
 import { useClock } from "../useClock";
+import { CompareToggle } from "./CompareToggle";
+import { compareOf } from "./compareMode";
 import { FilterBar } from "./FilterBar";
 import { GroupBySelect } from "./GroupBySelect";
 import { PeriodPicker } from "./PeriodPicker";
@@ -24,7 +26,7 @@ const BODY_STAGGER = FILTERS_STAGGER + 1;
 
 const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-/** `/time/reports`: pick a Period and filters, group the Time Entries, and compare with the Previous Period. */
+/** `/time/reports`: pick a Period and filters, group the Time Entries, and compare with the Previous Period or the last 4 weeks. */
 export function ReportsPage() {
   const { search: urlSearch, update } = useReportSearch();
   const settings = useDisplaySettings();
@@ -32,6 +34,7 @@ export function ReportsPage() {
   const status = useTimeStatus();
   const search = useStartingFilters(urlSearch, facets.data, update);
   const today = todayOf(useClock());
+  const compare = compareOf(search);
   const range = rangeOf(search, today, settings.weekStart);
   const handlers = useReportHandlers({ search, range, today, weekStart: settings.weekStart, update });
 
@@ -53,7 +56,10 @@ export function ReportsPage() {
         <FilterBar facets={facets.data} search={search} active={hasAnyFilter(search)} onFacet={handlers.onFacet} onSearch={handlers.onSearch} onClear={handlers.onClear} />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <GroupBySelect group1={search.group1} group2={search.group2} onChange={handlers.onGroups} />
-          <StatModeToggle mode={search.mode} onChange={handlers.onMode} />
+          <div className="flex flex-wrap items-center gap-3">
+            {search.kind === "day" ? null : <StatModeToggle mode={search.mode} onChange={handlers.onMode} />}
+            <CompareToggle compare={compare} onChange={handlers.onCompare} />
+          </div>
         </div>
       </div>
       {neverSynced ? (
@@ -83,7 +89,7 @@ export function ReportsPage() {
       ) : null}
       {showReport && report.data ? (
         <div aria-busy={report.isPlaceholderData} className={report.isPlaceholderData ? "opacity-60 transition-opacity" : "transition-opacity"}>
-          <ReportBody report={report.data} mode={search.mode} clock={settings.clock} today={today} filtered={hasAnyFilter(search)} onClear={handlers.onClear} firstStagger={BODY_STAGGER} />
+          <ReportBody report={report.data} mode={search.mode} compare={compare} clock={settings.clock} filtered={hasAnyFilter(search)} onClear={handlers.onClear} firstStagger={BODY_STAGGER} />
         </div>
       ) : null}
     </div>

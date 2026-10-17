@@ -41,3 +41,10 @@ export function formatSpan(secs: number): string {
   if (h === 0) return `${String(m)}m`;
   return m === 0 ? `${String(h)}h` : `${String(h)}h ${String(m)}m`;
 }
+
+/** "5h – 9h": the smallest to the largest span, or one value when both read the same. */
+export function formatSpanRange(min: number, max: number): string {
+  const low = formatSpan(min);
+  const high = formatSpan(max);
+  return low === high ? low : `${low} – ${high}`;
+}

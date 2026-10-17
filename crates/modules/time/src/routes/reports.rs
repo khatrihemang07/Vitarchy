@@ -4,14 +4,15 @@ use axum::{
     Json,
     extract::{RawQuery, State},
 };
+use chrono::Utc;
 use utoipa::IntoParams;
 use vitarchy_core::{ApiError, AppState, Problem};
 
 use crate::{
     repo::{catalog, entries},
     report::{
-        build_report, facets::Facets, grouping::Grouping, model::Report, period::PeriodKind,
-        query::ReportQuery,
+        Context, Entries, build_report, facets::Facets, grouping::Grouping, model::Report,
+        period::PeriodKind, query::ReportQuery,
     },
 };
 
@@ -44,7 +45,8 @@ pub struct ReportParams {
     group2: Option<Grouping>,
 }
 
-/// A Report for one Period: overview, daily totals and groups, compared with the Previous Period.
+/// A Report for one Period: overview, daily totals and groups, compared with the Previous Period
+/// and with the Usual (the Usual's range before the Period).
 #[utoipa::path(
     get,
     path = "/report",
@@ -70,7 +72,20 @@ pub async fn get_report(
     let (before_from, before_to) = query.period.previous().utc_range();
     let current = entries::in_range(&state.pool, from, to).await?;
     let previous = entries::in_range(&state.pool, before_from, before_to).await?;
-    let report = build_report(&query, &current, &previous);
+    let (usual_from, usual_to) = query.period.usual_range().utc_range();
+    let usual = entries::in_range(&state.pool, usual_from, usual_to).await?;
+    // Ignores the filters: it is about how long the person has tracked, not what they look at.
+    let first_entry = entries::first_start(&state.pool).await?;
+    let entries = Entries {
+        current: &current,
+        previous: &previous,
+        usual: &usual,
+    };
+    let context = Context {
+        now: Utc::now(),
+        first_entry,
+    };
+    let report = build_report(&query, &entries, &context);
     tracing::info!(
         kind = ?query.period.kind,
         from = %query.period.from,
@@ -79,6 +94,9 @@ pub async fn get_report(
         groupings = query.groupings().len(),
         entries_read = current.len(),
         previous_entries_read = previous.len(),
+        usual_entries_read = usual.len(),
+        elapsed_days = report.period.elapsed_days,
+        usual_available_days = report.period.usual_available_days,
         groups = report.groups.len(),
         "report built"
     );

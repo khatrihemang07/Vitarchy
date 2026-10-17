@@ -6,4 +6,8 @@ describe("timeModule", () => {
     expect(timeModule.navItem.to).toBe("/time");
     expect(timeModule.accent).toBe("var(--module-time)");
   });
+
+  it("lists Sources and Reports as pages for the command bar", () => {
+    expect(timeModule.pages?.map((page) => page.to)).toEqual(["/time", "/time/reports"]);
+  });
 });

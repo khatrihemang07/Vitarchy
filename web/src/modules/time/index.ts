@@ -1,6 +1,7 @@
 import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import type { ModuleManifest } from "@/app/module-manifest";
+import { TIME_COMMAND_PAGES } from "./timePages";
 import { TimePageLayout } from "./TimePageLayout";
 import { parseReportSearch, toSearchParams } from "./reports/reportSearch";
 
@@ -32,4 +33,5 @@ export const timeModule: ModuleManifest = {
     ];
   },
   navItem: { to: "/time" },
+  pages: TIME_COMMAND_PAGES,
 };

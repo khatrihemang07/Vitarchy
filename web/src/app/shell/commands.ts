@@ -34,7 +34,16 @@ export function buildCommandGroups(
       heading: "Go to",
       entries: [
         { key: "home", ...HOME_NAV },
-        ...nav.map(({ id, label, to, icon }) => ({ key: id, label, to, icon })),
+        ...nav.flatMap(({ id, label, to, icon, pages }) => [
+          { key: id, label, to, icon },
+          ...pages.map((page) => ({
+            key: `${id}-${page.id}`,
+            label: `${label}: ${page.label}`,
+            searchValue: `${label} ${page.label}`,
+            to: page.to,
+            icon: page.icon ?? icon,
+          })),
+        ]),
       ],
     },
     {
