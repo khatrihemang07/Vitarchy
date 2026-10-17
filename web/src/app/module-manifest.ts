@@ -3,7 +3,6 @@ import type { ComponentType } from "react";
 import type { ModuleSettings } from "./settings/schema";
 
 export { useModuleSettings } from "./settings/useModuleSettings";
-export { useCoreSettings } from "./settings/useCoreSettings";
 export { withDefaults } from "./settings/schema";
 export type {
   ModuleSettings,

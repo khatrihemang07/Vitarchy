@@ -126,55 +126,5 @@ expect_status "a drifted helper path is caught" nonzero \
   snapshot_paths_agree "${helper_files[0]}" "${helper_files[1]}" "$tmp/paths.rs" "${helper_files[3]}"
 expect_out "the drift is named" "helper crate"
 
-# The web's Period limit must equal the server's, since the web cannot import the Rust constant.
-max_days_agree() {
-  local rust web
-  rust=$(sed -n 's/^pub const MAX_DAYS: usize = \([0-9]*\);.*/\1/p' "$1")
-  web=$(sed -n 's/^export const MAX_PERIOD_DAYS = \([0-9]*\);.*/\1/p' "$2")
-  [ -n "$rust" ] && [ "$rust" = "$web" ] || { echo "Period limit differs: server '$rust', web '$web'" >&2; return 1; }
-}
-rust_period="$here/crates/modules/time/src/analysis/period.rs"
-web_period="$here/web/src/modules/time/period.ts"
-expect_status "the Period limit agrees between server and web" 0 max_days_agree "$rust_period" "$web_period"
-sed 's/MAX_PERIOD_DAYS = 400/MAX_PERIOD_DAYS = 365/' "$web_period" >"$tmp/period.ts"
-expect_status "a drifted Period limit is caught" nonzero max_days_agree "$rust_period" "$tmp/period.ts"
-
-# Routine limits are written in Rust (validation), TypeScript (the editor) and SQL (a CHECK on the name).
-# routine_limits_agree DRAFT_RS LIMITS_TS MIGRATION_SQL prints each disagreement.
-routine_limits_agree() {
-  local status=0 name rust web sql
-  for name in MAX_STEPS_PER_ROUTINE MAX_NAME_CHARS MAX_LABEL_CHARS MAX_VALUE_CHARS; do
-    rust=$(sed -n "s/^pub const $name: usize = \([0-9]*\);.*/\1/p" "$1")
-    web=$(sed -n "s/^export const $name = \([0-9]*\);.*/\1/p" "$2")
-    [ -n "$rust" ] && [ "$rust" = "$web" ] || { echo "$name differs: server '$rust', web '$web'" >&2; status=1; }
-  done
-  rust=$(sed -n 's/^pub const MAX_NAME_CHARS: usize = \([0-9]*\);.*/\1/p' "$1")
-  sql=$(sed -n 's/.*char_length(name) <= \([0-9]*\).*/\1/p' "$3")
-  [ -n "$rust" ] && [ "$rust" = "$sql" ] || { echo "name length differs: server '$rust', database CHECK '$sql'" >&2; status=1; }
-  return $status
-}
-draft_rs="$here/crates/modules/time/src/analysis/routines/draft.rs"
-limits_ts="$here/web/src/modules/time/lifelog/routines/routineLimits.ts"
-routines_sql="$here/crates/modules/time/migrations/20260406000000_routines.sql"
-expect_status "Routine limits agree between server, web and database" 0 routine_limits_agree "$draft_rs" "$limits_ts" "$routines_sql"
-sed 's/MAX_LABEL_CHARS = 80/MAX_LABEL_CHARS = 60/' "$limits_ts" >"$tmp/limits.ts"
-expect_status "a drifted Routine limit is caught" nonzero routine_limits_agree "$draft_rs" "$tmp/limits.ts" "$routines_sql"
-expect_out "the drifted limit is named" "MAX_LABEL_CHARS"
-sed 's/char_length(name) <= 80/char_length(name) <= 100/' "$routines_sql" >"$tmp/routines.sql"
-expect_status "a drifted database CHECK is caught" nonzero routine_limits_agree "$draft_rs" "$limits_ts" "$tmp/routines.sql"
-
-# The name the server gives entries without a project must equal the web's, which colours that bucket neutral.
-no_project_agrees() {
-  local rust web
-  rust=$(sed -n 's/^pub const NO_PROJECT: &str = "\(.*\)";/\1/p' "$1")
-  web=$(sed -n 's/^export const NO_PROJECT = "\(.*\)";.*/\1/p' "$2")
-  [ -n "$rust" ] && [ "$rust" = "$web" ] || { echo "no-project name differs: server '$rust', web '$web'" >&2; return 1; }
-}
-entry_rs="$here/crates/modules/time/src/analysis/lifelog/entry.rs"
-colors_ts="$here/web/src/modules/time/lifelog/projectColors.ts"
-expect_status "the no-project name agrees between server and web" 0 no_project_agrees "$entry_rs" "$colors_ts"
-sed 's/"No project"/"Unassigned"/' "$colors_ts" >"$tmp/colors.ts"
-expect_status "a drifted no-project name is caught" nonzero no_project_agrees "$entry_rs" "$tmp/colors.ts"
-
 echo "guards: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

@@ -55,37 +55,3 @@ _Avoid_: Backup, export, dump
 **Toggl connection**:
 The person's link between Vitarchy and their Toggl Track account, made by entering their Toggl API token. The token is never shown again.
 _Avoid_: Integration, login, account
-
-## Analysing time
-
-**Day**:
-One calendar day in the person's own time zone, from midnight to midnight. Anything that spans midnight counts toward each Day it touches, only for the part inside that Day.
-_Avoid_: Date, 24 hours
-
-**Period**:
-The stretch of Days the person is looking at: one Day, a week, a month, or a custom range. Weeks start on the Core week-start Setting.
-_Avoid_: Range, timeframe, window
-
-**Unlogged**:
-The part of a Day that no Time Entry covers. Overlapping entries are not counted twice, and the part of today that has not happened yet is not Unlogged.
-_Avoid_: Idle, free time, gap
-
-**Context**:
-What a piece of Activity was spent on within an app: the code project in an editor, the site in a browser, otherwise the app itself.
-_Avoid_: Category, tag, project
-
-**Routine**:
-An ordered list of Steps the person goes through in a Day, such as the trip to the office, the time there, and the trip home. The person confirms or renames a Routine that Vitarchy suggests.
-_Avoid_: Habit, schedule, workflow
-
-**Step**:
-One part of a Routine, matched to a Time Entry description or project.
-_Avoid_: Stage, task
-
-**Occurrence**:
-One Day on which a Routine happened. It is complete when every Step happened, and incomplete when some are missing. A Routine's later Steps may run past midnight into the early hours. An incomplete Occurrence still counts for the Steps that happened, but not for the whole Routine's total time.
-_Avoid_: Instance, run
-
-**Insight**:
-A plain statement the person can act on, found by simple statistics on their own Time Entries and Activity, such as a typical time, a typical duration, or a change from before.
-_Avoid_: Tip, suggestion, recommendation

@@ -11,11 +11,7 @@ use serde::Serialize;
 use utoipa::ToSchema;
 use vitarchy_core::ApiError;
 
-use crate::{
-    activity::ActivityError,
-    analysis::{PeriodError, routines::RoutineError},
-    toggl::error::TogglError,
-};
+use crate::{activity::ActivityError, toggl::error::TogglError};
 
 /// What can go wrong in a Time handler.
 #[derive(Debug, thiserror::Error)]
@@ -35,12 +31,6 @@ pub enum TimeError {
     /// The Activity Snapshot is missing or unreadable.
     #[error(transparent)]
     Activity(#[from] ActivityError),
-    /// The `from`, `to` or `tz` of an analysis request is not usable.
-    #[error(transparent)]
-    Period(#[from] PeriodError),
-    /// A Routine could not be saved or found.
-    #[error(transparent)]
-    Routine(#[from] RoutineError),
 }
 
 impl From<sqlx::Error> for TimeError {
@@ -56,8 +46,6 @@ impl TimeError {
         match self {
             Self::Toggl(error) => error.code(),
             Self::Activity(error) => error.code(),
-            Self::Period(error) => error.code(),
-            Self::Routine(error) => error.code(),
             Self::SyncInProgress => "sync_in_progress",
             Self::ConnectionChanged => "connection_changed",
             Self::Api(ApiError::Database(_)) => "database",
@@ -79,11 +67,7 @@ pub struct ProblemBody {
     /// Explanation fit to show the person; never holds the token.
     pub detail: String,
     /// `invalid_token`, `rate_limited`, `unreachable`, `unexpected`, `malformed`,
-    /// `sync_in_progress`, `connection_changed`, `no_snapshot`, `snapshot_unreadable`,
-    /// `unknown_time_zone`, `invalid_date`, `period_reversed`, `period_too_long`, or a Routine's
-    /// `routine_name_empty`, `routine_name_too_long`, `routine_no_steps`, `routine_too_many_steps`,
-    /// `routine_label_empty`, `routine_value_empty`, `routine_step_too_long`, `routine_name_taken`,
-    /// `routine_not_found` or `routine_unreadable`.
+    /// `sync_in_progress`, `connection_changed`, `no_snapshot` or `snapshot_unreadable`.
     pub code: String,
     /// For `rate_limited`: seconds until Toggl accepts requests again.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -146,23 +130,6 @@ impl IntoResponse for TimeError {
             Self::Api(error) => error.into_response(),
             Self::Toggl(error) => problem_response(ProblemBody::for_toggl(&error)),
             Self::Activity(error) => problem_response(ProblemBody::for_activity(error)),
-            Self::Period(error) => problem_response(ProblemBody::new(
-                StatusCode::BAD_REQUEST,
-                &error.to_string(),
-                error.code(),
-                None,
-            )),
-            Self::Routine(error) => problem_response(ProblemBody::new(
-                match error {
-                    RoutineError::NotFound => StatusCode::NOT_FOUND,
-                    RoutineError::NameTaken => StatusCode::CONFLICT,
-                    RoutineError::Unreadable => StatusCode::INTERNAL_SERVER_ERROR,
-                    _ => StatusCode::BAD_REQUEST,
-                },
-                &error.to_string(),
-                error.code(),
-                None,
-            )),
             Self::SyncInProgress => problem_response(ProblemBody::new(
                 StatusCode::CONFLICT,
                 "A Sync is already running. Wait for it to finish.",

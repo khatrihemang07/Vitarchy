@@ -2,7 +2,6 @@
 //! Owns the `time` Postgres schema. Only the server talks to Toggl (ADR 0008).
 
 mod activity;
-pub mod analysis;
 mod error;
 mod repo;
 mod routes;

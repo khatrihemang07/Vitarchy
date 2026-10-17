@@ -1,4 +1,4 @@
-//! `/api/time`: connect Toggl, see the status, run a Sync, Import Activity, analyse, save Routines.
+//! `/api/time`: connect Toggl, see the status, run a Sync, Import Activity.
 //!
 //! **Injecting Toggl.** `AppState` (core) holds only the pool and must stay
 //! domain-free, so the Toggl client reaches handlers as an axum `Extension`
@@ -6,10 +6,8 @@
 //! call [`router_with`] to layer a fake. Nothing in core or the server changes.
 
 mod activity_status;
-mod analysis;
 mod connection;
 mod import;
-mod routines;
 mod run_info;
 mod status;
 mod sync;
@@ -38,30 +36,6 @@ pub fn router_with(factory: TogglFactory, snapshot: SnapshotFile) -> OpenApiRout
         .routes(utoipa_axum::routes!(status::get_status))
         .routes(utoipa_axum::routes!(sync::post_sync))
         .routes(utoipa_axum::routes!(import::post_import))
-        .routes(utoipa_axum::routes!(analysis::period::get_period))
-        .routes(utoipa_axum::routes!(analysis::insights::get_insights))
-        .routes(utoipa_axum::routes!(
-            analysis::activity::overview::get_overview
-        ))
-        .routes(utoipa_axum::routes!(
-            analysis::activity::timeline::get_timeline
-        ))
-        .routes(utoipa_axum::routes!(
-            analysis::lifelog::overview::get_lifelog_overview
-        ))
-        .routes(utoipa_axum::routes!(
-            analysis::lifelog::timeline::get_lifelog_timeline
-        ))
-        .routes(utoipa_axum::routes!(
-            routines::list::get_routines,
-            routines::save::post_routine
-        ))
-        .routes(utoipa_axum::routes!(routines::suggestions::get_suggestions))
-        .routes(utoipa_axum::routes!(routines::occurrences::get_occurrences))
-        .routes(utoipa_axum::routes!(
-            routines::save::put_routine,
-            routines::delete::delete_routine
-        ))
         .layer(Extension(factory))
         .layer(Extension(snapshot))
 }
