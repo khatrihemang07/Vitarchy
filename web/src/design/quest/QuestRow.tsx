@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { cn } from "../lib/utils";
 import { nudge } from "../motion/springs";
 import type { Quest } from "./QuestList";
@@ -33,7 +33,7 @@ export function QuestRow({ quest, onToggle }: QuestRowProps) {
   );
   if (!onToggle) return <div className={rowClass}>{body}</div>;
   return (
-    <motion.button
+    <m.button
       type="button"
       role="checkbox"
       aria-checked={quest.done}
@@ -44,6 +44,6 @@ export function QuestRow({ quest, onToggle }: QuestRowProps) {
       {...nudge}
     >
       {body}
-    </motion.button>
+    </m.button>
   );
 }

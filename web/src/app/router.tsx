@@ -10,12 +10,14 @@ import { NotFound } from "./NotFound";
 import type { ModuleManifest } from "./module-manifest";
 import { buildNav } from "./nav";
 import { generalSection } from "./settings/core-sections";
-import { SettingsRoute } from "./settings/SettingsRoute";
 import { buildSections } from "./settings/sections";
 import { Shell } from "./shell/Shell";
 
 /** Folded to `undefined` in production builds, so the showcase is not even bundled. */
 const loadShowcase = import.meta.env.DEV ? () => import("./dev/DesignShowcase") : undefined;
+
+/** Settings is rarely open, so its page (and the field renderers) load on first visit. */
+const SettingsRoute = lazyRouteComponent(() => import("./settings/SettingsRoute"), "SettingsRoute");
 
 interface RouterOptions {
   /** Registers the /design showcase. Defaults to dev builds only. */

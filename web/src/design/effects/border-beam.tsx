@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, type MotionStyle, type Transition } from "motion/react"
+import { m, type MotionStyle, type Transition } from "motion/react"
 
 import { cn } from "@/design/lib/utils"
 
@@ -73,7 +73,7 @@ export const BorderBeam = ({
         } as React.CSSProperties
       }
     >
-      <motion.div
+      <m.div
         className={cn(
           "absolute aspect-square",
           "bg-linear-to-l from-(--color-from) via-(--color-to) to-transparent",

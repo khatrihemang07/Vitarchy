@@ -26,12 +26,27 @@ describe("withFacet", () => {
   it("keeps tag names as text", () => {
     expect(withFacet(base, "tag", ["x", "y"]).tag).toEqual(["x", "y"]);
   });
+
+  it("replaces only the chosen filter", () => {
+    expect(withFacet(base, "client", ["7"])).toMatchObject({ project: [1], tag: ["a"], client: [7] });
+    expect(withFacet(base, "project", [])).toMatchObject({ project: [], tag: ["a"] });
+  });
 });
 
 describe("withGroups", () => {
   it("drops a second level that equals the new first level", () => {
     expect(withGroups(base, "tag", "tag").group2).toBeUndefined();
-    expect(withGroups(base, "tag", undefined)).toMatchObject({ group1: "tag" });
+    expect(withGroups(base, "tag", "tag")).not.toHaveProperty("group2");
+  });
+
+  it("drops the old second level when none is given", () => {
+    const next = withGroups(base, "tag", undefined);
+    expect(next.group1).toBe("tag");
+    expect(next).not.toHaveProperty("group2");
+  });
+
+  it("keeps the filters and Period while regrouping", () => {
+    expect(withGroups(base, "description", undefined)).toMatchObject({ project: [1], tag: ["a"], q: "x", kind: "week" });
   });
 
   it("sets both levels", () => {
@@ -50,5 +65,7 @@ describe("hasAnyFilter", () => {
   it("counts the description search too", () => {
     expect(hasAnyFilter(parseReportSearch({ q: "x" }))).toBe(true);
     expect(hasAnyFilter(parseReportSearch({}))).toBe(false);
+    expect(hasAnyFilter(parseReportSearch({ q: "   " }))).toBe(false);
+    expect(hasAnyFilter(parseReportSearch({ client: [3] }))).toBe(true);
   });
 });

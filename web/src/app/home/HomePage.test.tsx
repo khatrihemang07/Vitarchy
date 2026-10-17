@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { DEFAULT_CORE } from "../settings/core-sections";
+import { DEFAULT_CORE } from "@/api/settings";
 import { HomePage } from "./HomePage";
 
 const now = new Date(2026, 9, 16, 18, 5);

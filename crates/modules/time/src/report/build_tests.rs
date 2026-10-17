@@ -122,3 +122,131 @@ fn the_filter_applies_before_grouping() {
     let report = build_report(&query(&[("q", "OFFICE")]), &entries, &[]);
     assert_eq!(report.overview.entries, 1);
 }
+
+// ---- time zones ----
+
+fn totals(report: &super::model::Report) -> Vec<i64> {
+    report.daily.iter().map(|p| p.seconds).collect()
+}
+
+#[test]
+fn entries_land_on_the_local_day_in_asia_kolkata() {
+    // 20:00Z-22:00Z on the 12th is 01:30-03:30 on the 13th in Kolkata (UTC+5:30).
+    // 19:00Z-20:00Z on the 11th is 00:30-01:30 on the 12th: outside a UTC week, inside this one.
+    let entries = [
+        entry(1, "2026-10-12T20:00:00Z", 2, "late"),
+        entry(2, "2026-10-11T19:00:00Z", 1, "early"),
+    ];
+    let q = query(&[("tz", "Asia/Kolkata")]);
+    let report = build_report(&q, &entries, &[]);
+    assert_eq!(totals(&report), [3600, 7200, 0, 0, 0, 0, 0]);
+    assert_eq!(report.overview.total_s, 3 * 3600);
+    assert_eq!(report.overview.days_tracked, 2);
+}
+
+#[test]
+fn entries_land_on_the_local_day_in_america_los_angeles() {
+    // 03:00Z on the 13th is 20:00 on the 12th in Los Angeles (UTC-7 in October).
+    // 02:00Z on the 19th is still the 18th there, the last Day of the week.
+    let entries = [
+        entry(1, "2026-10-13T03:00:00Z", 1, "evening"),
+        entry(2, "2026-10-19T02:00:00Z", 1, "next week in UTC"),
+    ];
+    let q = query(&[("tz", "America/Los_Angeles")]);
+    let report = build_report(&q, &entries, &[]);
+    assert_eq!(totals(&report), [3600, 0, 0, 0, 0, 0, 3600]);
+}
+
+#[test]
+fn the_same_entry_is_outside_the_period_in_one_zone_and_inside_in_another() {
+    let entries = [entry(1, "2026-10-11T19:00:00Z", 1, "x")];
+    assert_eq!(build_report(&query(&[]), &entries, &[]).overview.total_s, 0);
+    let kolkata = query(&[("tz", "Asia/Kolkata")]);
+    assert_eq!(build_report(&kolkata, &entries, &[]).overview.total_s, 3600);
+}
+
+// ---- the boundary between the Period and the Previous Period ----
+
+#[test]
+fn an_entry_across_the_boundary_is_clipped_once_per_period_and_never_counted_twice() {
+    // 22:00Z on the 11th to 03:00Z on the 12th: 2h in the previous week, 3h in this one.
+    let spanning = entry(1, "2026-10-11T22:00:00Z", 5, "spans");
+    let both = [spanning];
+    let report = build_report(&query(&[]), &both, &both);
+    let group = &report.groups[0];
+    assert_eq!(group.stats.total_s, 3 * 3600);
+    assert_eq!(group.entries[0].duration_s, 3 * 3600);
+    assert_eq!(group.stats.per_entry.max_s, 3 * 3600);
+    assert_eq!(group.stats.per_entry.min_s, 3 * 3600);
+    // The previous side holds the other 2h, so the change is 3h - 2h.
+    let change = group.change.unwrap();
+    assert_eq!(change.total_s, 3600);
+    assert_eq!(change.per_entry.max_s, 3600);
+    assert_eq!(report.overview.total_s, 3 * 3600);
+    assert_eq!(report.overview.change.total_s, 3600);
+}
+
+#[test]
+fn an_entry_ending_exactly_at_the_boundary_belongs_to_the_previous_period_only() {
+    let before = entry(1, "2026-10-11T22:00:00Z", 2, "x");
+    let both = [before];
+    let report = build_report(&query(&[]), &both, &both);
+    assert_eq!(report.overview.total_s, 0);
+    assert!(report.groups.is_empty());
+    assert_eq!(report.overview.change.total_s, -7200);
+}
+
+#[test]
+fn the_previous_period_clips_at_its_own_end() {
+    // Starts in the previous week, ends well into this one; only the part before the
+    // boundary counts there.
+    let long = entry(1, "2026-10-10T00:00:00Z", 72, "long");
+    let both = [long];
+    let report = build_report(&query(&[]), &both, &both);
+    let group = &report.groups[0];
+    // The entry runs from the 10th to the 13th, so this week holds the 12th only: 24h.
+    assert_eq!(group.stats.total_s, 24 * 3600);
+    // Previous: 10th and 11th, 48h.
+    assert_eq!(group.change.unwrap().total_s, 24 * 3600 - 48 * 3600);
+}
+
+#[test]
+fn two_empty_periods_give_an_empty_report() {
+    let report = build_report(&query(&[]), &[], &[]);
+    assert!(report.groups.is_empty());
+    assert_eq!(report.overview.total_s, 0);
+    assert_eq!(report.overview.entries, 0);
+    assert_eq!(
+        report.overview.change,
+        super::model::OverviewChange::default()
+    );
+    assert_eq!(totals(&report), [0; 7]);
+}
+
+// ---- matching groups across Periods ----
+
+#[test]
+fn a_description_matches_the_previous_period_across_a_case_change() {
+    let now = [entry(1, "2026-10-13T08:00:00Z", 2, "OFFICE")];
+    let before = [entry(2, "2026-10-06T08:00:00Z", 1, "office")];
+    let report = build_report(&query(&[]), &now, &before);
+    let group = &report.groups[0];
+    assert_eq!(group.label, "OFFICE");
+    assert!(!group.is_new);
+    assert_eq!(group.change.unwrap().total_s, 3600);
+}
+
+#[test]
+fn a_renamed_project_still_matches_by_its_id() {
+    let mut now = entry(1, "2026-10-13T08:00:00Z", 3, "x");
+    now.project_id = Some(5);
+    now.project_name = Some("New name".to_owned());
+    let mut before = entry(2, "2026-10-06T08:00:00Z", 1, "x");
+    before.project_id = Some(5);
+    before.project_name = Some("Old name".to_owned());
+    let report = build_report(&query(&[("group1", "project")]), &[now], &[before]);
+    let group = &report.groups[0];
+    assert_eq!(group.label, "New name");
+    assert!(!group.is_new);
+    assert_eq!(group.change.unwrap().total_s, 2 * 3600);
+}

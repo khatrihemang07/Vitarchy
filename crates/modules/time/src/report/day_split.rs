@@ -128,4 +128,105 @@ mod tests {
         let hours: Vec<i64> = parts.iter().map(|p| p.seconds / 3600).collect();
         assert_eq!(hours, [1, 25]);
     }
+
+    fn hours(parts: &[DayPart]) -> Vec<i64> {
+        parts.iter().map(|p| p.seconds / 3600).collect()
+    }
+    fn berlin() -> Tz {
+        "Europe/Berlin".parse().unwrap()
+    }
+
+    #[test]
+    fn a_zero_length_entry_has_no_parts() {
+        let at = t("2026-10-17T09:00:00Z");
+        assert!(split(at, at, wide(), chrono_tz::UTC).is_empty());
+    }
+
+    #[test]
+    fn a_reversed_entry_has_no_parts() {
+        let parts = split(
+            t("2026-10-17T10:00:00Z"),
+            t("2026-10-17T09:00:00Z"),
+            wide(),
+            chrono_tz::UTC,
+        );
+        assert!(parts.is_empty());
+    }
+
+    #[test]
+    fn an_entry_stopping_exactly_at_midnight_has_no_zero_second_part_on_the_next_day() {
+        let parts = split(
+            t("2026-10-17T22:00:00Z"),
+            t("2026-10-18T00:00:00Z"),
+            wide(),
+            chrono_tz::UTC,
+        );
+        assert_eq!(parts.len(), 1);
+        assert_eq!(parts[0].seconds, 7200);
+        assert_eq!(parts[0].date.to_string(), "2026-10-17");
+    }
+
+    #[test]
+    fn an_entry_starting_exactly_at_midnight_belongs_wholly_to_that_day() {
+        let parts = split(
+            t("2026-10-18T00:00:00Z"),
+            t("2026-10-18T02:00:00Z"),
+            wide(),
+            chrono_tz::UTC,
+        );
+        assert_eq!(parts.len(), 1);
+        assert_eq!(parts[0].date.to_string(), "2026-10-18");
+    }
+
+    #[test]
+    fn a_spring_forward_day_holds_23_hours() {
+        // Berlin, 2026-03-29: 01:00 local on the 28th (00:00Z) to 01:00 local on the 30th.
+        let parts = split(
+            t("2026-03-28T22:00:00Z"),
+            t("2026-03-29T23:00:00Z"),
+            wide(),
+            berlin(),
+        );
+        assert_eq!(hours(&parts), [1, 23, 1]);
+    }
+
+    #[test]
+    fn an_entry_spanning_three_or_more_days_gets_a_part_on_each() {
+        let parts = split(
+            t("2026-10-16T12:00:00Z"),
+            t("2026-10-19T06:00:00Z"),
+            wide(),
+            chrono_tz::UTC,
+        );
+        assert_eq!(hours(&parts), [12, 24, 24, 6]);
+        let dates: Vec<String> = parts.iter().map(|p| p.date.to_string()).collect();
+        assert_eq!(
+            dates,
+            ["2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19"]
+        );
+    }
+
+    #[test]
+    fn parts_after_the_period_end_are_clipped() {
+        let range = (t("2026-10-17T00:00:00Z"), t("2026-10-18T00:00:00Z"));
+        let parts = split(
+            t("2026-10-17T23:00:00Z"),
+            t("2026-10-18T05:00:00Z"),
+            range,
+            chrono_tz::UTC,
+        );
+        assert_eq!(hours(&parts), [1]);
+    }
+
+    #[test]
+    fn an_entry_ending_exactly_at_the_period_start_has_no_part() {
+        let range = (t("2026-10-18T00:00:00Z"), t("2026-10-19T00:00:00Z"));
+        let parts = split(
+            t("2026-10-17T22:00:00Z"),
+            t("2026-10-18T00:00:00Z"),
+            range,
+            chrono_tz::UTC,
+        );
+        assert!(parts.is_empty());
+    }
 }

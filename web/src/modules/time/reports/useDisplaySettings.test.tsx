@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { jsonResponse, stubApi } from "../test-utils";
 import { useDisplaySettings } from "./useDisplaySettings";
@@ -29,5 +29,39 @@ describe("useDisplaySettings", () => {
     await waitFor(() => { expect(result.current.ready).toBe(true); });
     expect(result.current.weekStart).toBe("monday");
     await waitFor(() => { expect(warn).toHaveBeenCalled(); });
+  });
+
+  it("reports the failure and retries on request", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    let up = false;
+    stubApi({ "GET /api/settings": () => (up ? jsonResponse(200, { core: { week_start: "sunday", clock: "h24" }, modules: {} }) : jsonResponse(500, { title: "boom" })) });
+    const { result } = renderHook(useDisplaySettings, { wrapper });
+    await waitFor(() => { expect(result.current.failed).toBe(true); });
+    up = true;
+    act(() => { result.current.retry(); });
+    await waitFor(() => { expect(result.current.failed).toBe(false); });
+    expect(result.current).toMatchObject({ weekStart: "sunday", clock: "h24", ready: true });
+  });
+
+  it("is not failed while loading or after success", async () => {
+    stubApi({ "GET /api/settings": () => jsonResponse(200, { core: { week_start: "sunday", clock: "h12" }, modules: {} }) });
+    const { result } = renderHook(useDisplaySettings, { wrapper });
+    expect(result.current).toMatchObject({ weekStart: "monday", clock: "system", failed: false, ready: false });
+    await waitFor(() => { expect(result.current.ready).toBe(true); });
+    expect(result.current.failed).toBe(false);
+  });
+
+  it("fills in a field an older server leaves out", async () => {
+    stubApi({ "GET /api/settings": () => jsonResponse(200, { core: { clock: "h24" }, modules: {} }) });
+    const { result } = renderHook(useDisplaySettings, { wrapper });
+    await waitFor(() => { expect(result.current.ready).toBe(true); });
+    expect(result.current).toMatchObject({ weekStart: "monday", clock: "h24" });
+  });
+
+  it("uses the defaults when the body has the wrong shape", async () => {
+    stubApi({ "GET /api/settings": () => jsonResponse(200, { core: "nope", modules: {} }) });
+    const { result } = renderHook(useDisplaySettings, { wrapper });
+    await waitFor(() => { expect(result.current.ready).toBe(true); });
+    expect(result.current).toMatchObject({ weekStart: "monday", clock: "system" });
   });
 });

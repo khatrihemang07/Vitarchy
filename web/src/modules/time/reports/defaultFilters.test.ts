@@ -20,19 +20,15 @@ describe("startingFilters", () => {
     expect(startingFilters(bare, none, facets([[1, "Office"]]))).toBeNull();
   });
 
-  it("drops remembered choices that no longer exist, falling back to the default", () => {
-    expect(startingFilters(bare, { ...none, project: [99] }, facets([[1, "Gym"], [2, "office"]]))).toEqual({ ...none, project: [2] });
+  it("drops remembered choices that no longer exist", () => {
+    expect(startingFilters(bare, { ...none, project: [1, 99] }, facets([[1, "Gym"]]))).toEqual({ ...none, project: [1] });
   });
 
-  it("starts on the Office project on the first visit, whatever its case", () => {
-    expect(startingFilters(bare, null, facets([[1, "Gym"], [2, "OFFICE "]]))).toEqual({ ...none, project: [2] });
+  it("applies nothing when every remembered choice is gone", () => {
+    expect(startingFilters(bare, { ...none, project: [99] }, facets([[1, "Gym"], [2, "Office"]]))).toBeNull();
   });
 
-  it("falls back to the most recently used project", () => {
-    expect(startingFilters(bare, null, facets([[1, "Gym"], [2, "Home"]]))).toEqual({ ...none, project: [1] });
-  });
-
-  it("has nothing to apply without projects", () => {
-    expect(startingFilters(bare, null, facets([]))).toBeNull();
+  it("opens unfiltered on a first visit, even when an Office project exists", () => {
+    expect(startingFilters(bare, null, facets([[1, "Gym"], [2, "Office"]]))).toBeNull();
   });
 });

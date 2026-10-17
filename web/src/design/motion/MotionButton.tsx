@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import type { ComponentProps } from "react";
 import { Button } from "../ui/button";
 import { pressable } from "./springs";
@@ -9,7 +9,7 @@ type MotionButtonProps = Omit<ComponentProps<typeof Button>, "asChild">;
 export function MotionButton({ children, ...props }: MotionButtonProps) {
   return (
     <Button asChild {...props}>
-      <motion.button {...pressable}>{children}</motion.button>
+      <m.button {...pressable}>{children}</m.button>
     </Button>
   );
 }

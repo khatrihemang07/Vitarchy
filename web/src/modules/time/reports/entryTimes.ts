@@ -23,12 +23,16 @@ export interface EntryTimes {
   date: string;
   start: string;
   stop: string;
-  /** True when it stops on a later Day than it started. */
+  /** True when it runs past the midnight ending the Day it started on. */
   crossesMidnight: boolean;
 }
 
-const sameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+/** True when the entry runs past the end of the Day it started on; stopping exactly at midnight does not count (as on the server). */
+function stopsAfterMidnight(start: Date, stop: Date): boolean {
+  // Built from local parts so a 23- or 25-hour Day still ends at its own midnight.
+  const nextMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+  return stop.getTime() > nextMidnight.getTime();
+}
 
 /** Start, stop and Day of an entry in the browser's time zone, which is the Report's. */
 export function describeEntry(entry: ReportEntry, clock: Clock): EntryTimes {
@@ -38,7 +42,7 @@ export function describeEntry(entry: ReportEntry, clock: Clock): EntryTimes {
     date: dateFormat.format(start).replace(",", ""),
     start: formatClock(start, clock),
     stop: formatClock(stop, clock),
-    crossesMidnight: !sameDay(start, stop),
+    crossesMidnight: stopsAfterMidnight(start, stop),
   };
 }
 

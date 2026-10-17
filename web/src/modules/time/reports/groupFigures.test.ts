@@ -21,7 +21,21 @@ describe("figuresFor", () => {
   });
 
   it("reads the per-entry spread in per_entry mode", () => {
-    expect(figuresFor(group(), "per_entry")).toMatchObject({ avg: { value: 200, change: 5 }, max: { value: 400, change: 2 } });
+    expect(figuresFor(group(), "per_entry")).toMatchObject({
+      avg: { value: 200, change: 5 }, min: { value: 50, change: 1 }, max: { value: 400, change: 2 },
+    });
+  });
+
+  it("reads the per-Day minimum in per_day mode, not the per-entry one", () => {
+    const figures = figuresFor(group(), "per_day");
+    expect(figures.min).toEqual({ value: 100, change: 0 });
+    expect(figures.min.value).not.toBe(50);
+  });
+
+  it("takes the total, Days and entries from the group in either mode", () => {
+    for (const mode of ["per_day", "per_entry"] as const) {
+      expect(figuresFor(group(), mode)).toMatchObject({ days: 3, entries: 5, total: { value: 1000, change: 60 }, isNew: false });
+    }
   });
 
   it("has no changes for a new group", () => {

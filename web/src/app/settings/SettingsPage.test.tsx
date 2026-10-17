@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { Puzzle } from "lucide-react";
 import type { ModuleManifest } from "../module-manifest";
 import { createAppRouter } from "../router";
-import { DEFAULT_CORE } from "./core-sections";
+import { DEFAULT_CORE } from "@/api/settings";
 
 const timeModule: ModuleManifest = {
   id: "time",

@@ -1,8 +1,6 @@
-import { type CoreSettings, useSettings } from "@/api/settings";
-import { DEFAULT_CORE } from "./core-sections";
+import { type CoreSettings, coreWithDefaults, useSettings } from "@/api/settings";
 
-/** Core settings, falling back to the defaults while loading or if the server is down. */
+/** Core settings, with defaults for anything not loaded: while loading, if the server is down, or a field is missing. */
 export function useCoreSettings(): CoreSettings {
-  const { data } = useSettings();
-  return data?.core ?? DEFAULT_CORE;
+  return coreWithDefaults(useSettings().data?.core);
 }

@@ -1,9 +1,11 @@
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import type { ModuleManifest } from "@/app/module-manifest";
-import { ReportsPage } from "./reports/ReportsPage";
 import { parseReportSearch, toSearchParams } from "./reports/reportSearch";
-import { TimePage } from "./TimePage";
+
+// Pages load on first visit; Reports brings the charting library with it.
+const TimePage = lazyRouteComponent(() => import("./TimePage"), "TimePage");
+const ReportsPage = lazyRouteComponent(() => import("./reports/ReportsPage"), "ReportsPage");
 
 /** The Time Module: Toggl Time Entries and computer Activity. */
 export const timeModule: ModuleManifest = {

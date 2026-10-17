@@ -10,7 +10,7 @@ export const springs = {
   gentle: { type: "spring", stiffness: 120, damping: 20 },
 } as const satisfies Record<string, Transition>;
 
-/** The one hover/press interaction; spread onto any `motion.*` element. */
+/** The one hover/press interaction; spread onto any `m.*` element. */
 export const pressable = {
   whileHover: { scale: 1.04 },
   whileTap: { scale: 0.95 },

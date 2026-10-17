@@ -137,6 +137,20 @@ export default tseslint.config(
     rules: { "no-console": "error" },
   },
   {
+    // `motion.*` bundles every Motion feature into the entry chunk; `m.*` takes them
+    // from LazyMotion (see design/motion/MotionProvider.tsx).
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ImportDeclaration[source.value='motion/react'] > ImportSpecifier[imported.name='motion']",
+          message: 'Use `m` from "motion/react" (LazyMotion), not `motion`, to keep the entry chunk small.',
+        },
+      ],
+    },
+  },
+  {
     files: ["eslint.config.js"],
     ...tseslint.configs.disableTypeChecked,
   },

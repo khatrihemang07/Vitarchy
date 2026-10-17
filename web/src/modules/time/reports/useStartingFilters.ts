@@ -8,8 +8,8 @@ import type { ReportSearch } from "./reportSearch";
 const log = createLogger("time");
 
 /**
- * When the URL names no filters, the remembered ones (or the first-visit
- * default) apply. They are used at once and written to the URL once, so the
+ * When the URL names no filters, the remembered ones apply (a first visit
+ * has none, so it is unfiltered). They are used at once and written to the URL once, so the
  * first Report is requested with them rather than without.
  */
 export function useStartingFilters(

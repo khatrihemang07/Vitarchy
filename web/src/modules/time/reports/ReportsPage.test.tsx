@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ReportsPage } from "./ReportsPage";
 import { parseReportSearch, toSearchParams } from "./reportSearch";
 import { disconnected, jsonResponse, stubApi, synced } from "../test-utils";
@@ -71,5 +72,32 @@ describe("ReportsPage", () => {
     renderPage();
     expect(await screen.findByText("Toggl is not connected yet.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Connect Toggl/ })).toHaveAttribute("href", "/time");
+  });
+
+  it("shows the default week start with a Try again that reloads Settings", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    let up = false;
+    stubApi({ ...api(() => jsonResponse(200, report([group("Standup")]))), "GET /api/settings": () => (up ? jsonResponse(200, settings) : jsonResponse(500, { title: "boom" })) });
+    renderPage();
+    expect(await screen.findByText(/Using the default week start/)).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Standup/ })).toBeInTheDocument();
+    up = true;
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => { expect(screen.queryByText(/Using the default week start/)).not.toBeInTheDocument(); });
+  });
+
+  it("shows no Settings notice when Settings load", async () => {
+    stubApi(api(() => jsonResponse(200, report([group("Standup")]))));
+    renderPage();
+    await screen.findByRole("button", { name: /Standup/ });
+    expect(screen.queryByText(/Using the default week start/)).not.toBeInTheDocument();
+  });
+
+  it("opens unfiltered on a first visit, with no project chosen for the person", async () => {
+    const fetchMock = stubApi(api(() => jsonResponse(200, report([group("Standup")]))));
+    renderPage("/time/reports");
+    await screen.findByRole("button", { name: /Standup/ });
+    const sent = fetchMock.mock.calls.map(([r]) => new URL(r.url)).find((u) => u.pathname === "/api/time/report");
+    expect(sent?.searchParams.getAll("project")).toEqual([]);
   });
 });

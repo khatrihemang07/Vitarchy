@@ -97,3 +97,72 @@ fn bad_dates_are_refused() {
     );
     assert!(Period::new(PeriodKind::Custom, date(2026, 1, 1), date(2026, 12, 31), tz).is_ok());
 }
+
+#[test]
+fn a_366_day_period_is_accepted_and_a_367_day_one_is_not() {
+    let tz = chrono_tz::UTC;
+    // 2028 is a leap year: 366 Days.
+    let ok = Period::new(PeriodKind::Custom, date(2028, 1, 1), date(2028, 12, 31), tz).unwrap();
+    assert_eq!(ok.days().len(), 366);
+    let err = Period::new(PeriodKind::Custom, date(2028, 1, 1), date(2029, 1, 1), tz).unwrap_err();
+    assert_eq!(err, PeriodError::TooLong);
+}
+
+#[test]
+fn a_month_must_be_a_whole_calendar_month_including_leap_february() {
+    let tz = chrono_tz::UTC;
+    let month = |from, to| Period::new(PeriodKind::Month, from, to, tz);
+    assert!(month(date(2028, 2, 1), date(2028, 2, 29)).is_ok());
+    assert_eq!(
+        month(date(2028, 2, 1), date(2028, 2, 28)).unwrap_err(),
+        PeriodError::KindMismatch
+    );
+    assert!(month(date(2027, 2, 1), date(2027, 2, 28)).is_ok());
+    assert_eq!(
+        month(date(2027, 2, 1), date(2027, 3, 1)).unwrap_err(),
+        PeriodError::KindMismatch
+    );
+}
+
+#[test]
+fn the_previous_period_of_a_leap_march_is_a_29_day_february() {
+    let march = period(PeriodKind::Month, date(2028, 3, 1), date(2028, 3, 31)).previous();
+    assert_eq!(
+        (march.from, march.to),
+        (date(2028, 2, 1), date(2028, 2, 29))
+    );
+    let march_2027 = period(PeriodKind::Month, date(2027, 3, 1), date(2027, 3, 31)).previous();
+    assert_eq!(
+        (march_2027.from, march_2027.to),
+        (date(2027, 2, 1), date(2027, 2, 28))
+    );
+}
+
+#[test]
+fn the_previous_period_crosses_the_year_for_every_kind() {
+    let span = |p: Period| (p.from, p.to);
+    let day = period(PeriodKind::Day, date(2026, 1, 1), date(2026, 1, 1)).previous();
+    assert_eq!(span(day), (date(2025, 12, 31), date(2025, 12, 31)));
+    let week = period(PeriodKind::Week, date(2026, 1, 5), date(2026, 1, 11)).previous();
+    assert_eq!(span(week), (date(2025, 12, 29), date(2026, 1, 4)));
+    let month = period(PeriodKind::Month, date(2026, 1, 1), date(2026, 1, 31)).previous();
+    assert_eq!(span(month), (date(2025, 12, 1), date(2025, 12, 31)));
+    let custom = period(PeriodKind::Custom, date(2026, 1, 2), date(2026, 1, 4)).previous();
+    assert_eq!(span(custom), (date(2025, 12, 30), date(2026, 1, 1)));
+}
+
+#[test]
+fn the_previous_period_keeps_the_kind_and_time_zone() {
+    let tz: Tz = "Asia/Kolkata".parse().unwrap();
+    let p = Period::new(PeriodKind::Week, date(2026, 10, 12), date(2026, 10, 18), tz).unwrap();
+    let before = p.previous();
+    assert_eq!((before.kind, before.tz), (PeriodKind::Week, tz));
+    // Its range ends where this Period's begins, so no instant is in both.
+    assert_eq!(before.utc_range().1, p.utc_range().0);
+}
+
+#[test]
+fn a_custom_previous_period_of_a_365_day_stretch_is_the_365_days_before() {
+    let p = period(PeriodKind::Custom, date(2026, 1, 1), date(2026, 12, 31)).previous();
+    assert_eq!((p.from, p.to), (date(2025, 1, 1), date(2025, 12, 31)));
+}

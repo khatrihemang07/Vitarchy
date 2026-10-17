@@ -9,7 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { Wallet } from "lucide-react";
 import type { ModuleManifest } from "./module-manifest";
 import { createAppRouter } from "./router";
-import { DEFAULT_CORE } from "./settings/core-sections";
+import { DEFAULT_CORE } from "@/api/settings";
 
 const timeModule: ModuleManifest = {
   id: "time",

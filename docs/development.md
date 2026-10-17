@@ -118,7 +118,8 @@ A new Core setting touches exactly these places:
 
 1. `crates/settings/src/core_settings.rs`: add the field to `CoreSettings` (and an enum for it if it is a choice), and one line for it in `CoreSettings::from_stored`. Add a test in `crates/settings/tests/core_settings.rs`.
 2. `make gen-api`: regenerates `web/src/api/schema.d.ts`, so TypeScript now knows the field.
-3. `web/src/app/settings/core-sections.ts`: add the field to a section, with its default and options. `DEFAULT_CORE`, the Settings page and the valid theme and motion lists are all derived from this file.
+3. `web/src/app/settings/core-sections.ts`: add the field to a section, with its options and `default: DEFAULT_CORE.<key>`. The Settings page and the valid theme and motion lists derive from this file.
+3a. `web/src/api/coreDefaults.ts`: add the field to `DEFAULT_CORE`, copying the Rust default. It is the one web copy of the defaults, used by Settings and by Modules while settings load or fail (`coreWithDefaults`).
 
 Only if it is a new theme or motion value: also add it to the lists in `web/public/appearance-boot.js`. `appearance-boot.test.ts` fails until you do. Anything that should act on the new setting reads it with `useCoreSettings()`.
 
@@ -174,6 +175,7 @@ design/brand     LogoMark (same artwork as public/favicon.svg)
   - Pure logic goes in tested functions.
 - **Themes:** `tokens.css` defines both palettes, selected with `[data-theme]` on `<html>`. Add any new colour to both.
 - **Module accent:** the shell sets `--module-accent` from the active route, so `text-module`, `bg-module/20`, primary buttons and focus rings all follow the active Module.
+- **Motion:** animated elements are `m.*` from `motion/react`, never `motion.*` (ESLint refuses it): `MotionProvider` supplies the features through `LazyMotion`.
 - **Showcase:** `/design` shows every primitive with sample data, in dev builds only.
 
 ## Checks
@@ -183,6 +185,12 @@ make check        # clippy, cargo test, typecheck, lint, vitest (on stage)
 make gen-api      # after changing any Rust API type
 cd web && pnpm build
 ```
+
+### Bundle size
+
+- **Lazy routes:** pages load on first visit (`lazyRouteComponent`), so Recharts only loads with Reports. `vite.config.ts` gives react, tanstack, radix and motion their own vendor chunks.
+- **`sideEffects` in `web/package.json`:** it lets the build drop unused exports of the `@/design` barrel. The barrel and `design/theme/*` hold the CSS and font imports, so they are listed as having side effects. Without that the stylesheet disappears from the build.
+- **Look inside:** `ANALYZE=1 pnpm exec vite build --outDir <somewhere>` writes a treemap to `web/node_modules/.vite/bundle-stats.html`.
 
 Rust tests need the stage Postgres, which `make test` and `make check` start. See Environments.
 

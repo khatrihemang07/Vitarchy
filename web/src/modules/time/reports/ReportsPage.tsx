@@ -12,6 +12,7 @@ import { ReportBody } from "./ReportBody";
 import { buildReportQuery } from "./reportQuery";
 import { hasAnyFilter } from "./reportActions";
 import { rangeOf } from "./reportSearch";
+import { SettingsFallbackNotice } from "./SettingsFallbackNotice";
 import { StatModeToggle } from "./StatModeToggle";
 import { useDisplaySettings } from "./useDisplaySettings";
 import { useReportHandlers } from "./useReportHandlers";
@@ -42,6 +43,7 @@ export function ReportsPage() {
         <h1 className="font-display text-4xl font-bold tracking-tight">Reports</h1>
         <p className="text-muted-foreground">Where your Time Entries went, compared with the Previous Period.</p>
       </header>
+      {settings.failed ? <SettingsFallbackNotice onRetry={settings.retry} /> : null}
       <div className="flex flex-col gap-3">
         <PeriodPicker kind={search.kind} range={range} isCurrent={search.kind !== "custom" && containsDay(range, today)} onKind={handlers.onKind} onShift={handlers.onShift} onToday={handlers.onToday} onCustom={handlers.onCustom} />
         <FilterBar facets={facets.data} search={search} active={hasAnyFilter(search)} onFacet={handlers.onFacet} onSearch={handlers.onSearch} onClear={handlers.onClear} />

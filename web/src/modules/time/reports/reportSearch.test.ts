@@ -55,6 +55,48 @@ describe("parseReportSearch", () => {
   });
 });
 
+describe("parseReportSearch on odd URLs", () => {
+  it("treats empty and missing lists the same", () => {
+    const parsed = parseReportSearch({ project: [], tag: [], client: undefined });
+    expect(parsed).toMatchObject({ project: [], tag: [], client: [] });
+  });
+
+  it("drops duplicate ids and names", () => {
+    const parsed = parseReportSearch({ project: [1, 1, 2, 1], client: [4, 4], tag: ["a", "b", "a"] });
+    expect(parsed).toMatchObject({ project: [1, 2], client: [4], tag: ["a", "b"] });
+  });
+
+  it("drops an empty tag, alone or among others", () => {
+    expect(parseReportSearch({ tag: "" }).tag).toEqual([]);
+    expect(parseReportSearch({ tag: ["", "a"] }).tag).toEqual(["a"]);
+  });
+
+  it("refuses negative, zero, fractional and non-numeric ids", () => {
+    expect(parseReportSearch({ project: [-3] }).project).toEqual([]);
+    expect(parseReportSearch({ project: [0, 1.5, "7", null, 8] }).project).toEqual([8]);
+  });
+
+  it("caps the search text at 200 characters", () => {
+    expect(parseReportSearch({ q: "x".repeat(250) }).q).toHaveLength(200);
+    expect(parseReportSearch({ q: "x".repeat(200) }).q).toHaveLength(200);
+  });
+
+  it("reads a search that is not text as none", () => {
+    expect(parseReportSearch({ q: ["a"] }).q).toBe("");
+    expect(parseReportSearch({ q: undefined }).q).toBe("");
+  });
+
+  it("leaves a blank search for the query to trim, but does not call it a filter", () => {
+    const parsed = parseReportSearch({ q: "   " });
+    expect(parsed.q).toBe("   ");
+    expect(toSearchParams({ ...parsed, q: "" })).toEqual({});
+  });
+
+  it("ignores from and to unless the kind is custom", () => {
+    expect(parseReportSearch({ kind: "week", from: "2026-10-01", to: "2026-10-09" })).not.toHaveProperty("from");
+  });
+});
+
 describe("toSearchParams", () => {
   it("leaves defaults out so the URL stays short", () => {
     expect(toSearchParams(parseReportSearch({}))).toEqual({});

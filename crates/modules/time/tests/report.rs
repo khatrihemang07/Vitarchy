@@ -141,3 +141,122 @@ async fn facets_list_only_what_has_entries_newest_first() {
     assert_eq!(reply.json["clients"][0]["archived"], true);
     db.drop().await;
 }
+
+fn daily_seconds(json: &serde_json::Value) -> Vec<i64> {
+    json["daily"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p["seconds"].as_i64().unwrap())
+        .collect()
+}
+
+#[tokio::test]
+async fn the_time_zone_decides_which_day_an_entry_lands_on() {
+    let db = time_db("report_zone_days").await;
+    seed(&db).await;
+    let app = time_app(&db, &FakeToggl::new());
+    let week = |tz: &str| {
+        format!("/api/time/report?kind=week&from=2026-10-12&to=2026-10-18&tz={tz}&client=2")
+    };
+
+    // 23:00Z-01:00Z crosses midnight in UTC: two Days, one hour each.
+    let utc = call(&app, "GET", &week("UTC"), None).await;
+    assert_eq!(daily_seconds(&utc.json), [0, 0, 3600, 3600, 0, 0, 0]);
+    assert_eq!(utc.json["groups"][0]["stats"]["days"], 2);
+
+    // 04:30-06:30 on the 15th in Kolkata: one Day, whole.
+    let kolkata = call(&app, "GET", &week("Asia/Kolkata"), None).await;
+    assert_eq!(kolkata.status, 200, "{}", kolkata.text);
+    assert_eq!(daily_seconds(&kolkata.json), [0, 0, 0, 7200, 0, 0, 0]);
+    assert_eq!(kolkata.json["groups"][0]["stats"]["days"], 1);
+
+    // 16:00-18:00 on the 14th in Los Angeles (UTC-7).
+    let la = call(&app, "GET", &week("America%2FLos_Angeles"), None).await;
+    assert_eq!(la.status, 200, "{}", la.text);
+    assert_eq!(daily_seconds(&la.json), [0, 0, 7200, 0, 0, 0, 0]);
+    assert_eq!(la.json["groups"][0]["stats"]["days"], 1);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn the_time_zone_moves_which_entries_the_period_reads() {
+    let db = time_db("report_zone_range").await;
+    // 19:00Z on the 11th: still the 11th in UTC, already 00:30 on the 12th in Kolkata.
+    sqlx::query(
+        "INSERT INTO time.time_entries
+           (toggl_id, workspace_id, project_id, description, tags, start, stop, duration_s, raw)
+         VALUES (1, 7, NULL, 'Edge', '{}', '2026-10-11T19:00Z', '2026-10-11T20:00Z', 3600, '{}')",
+    )
+    .execute(&db.pool)
+    .await
+    .unwrap();
+    let app = time_app(&db, &FakeToggl::new());
+    let total =
+        |tz: &str| format!("/api/time/report?kind=week&from=2026-10-12&to=2026-10-18&tz={tz}");
+
+    let utc = call(&app, "GET", &total("UTC"), None).await;
+    assert_eq!(utc.json["overview"]["total_s"], 0);
+    // ... and it is the Previous Period's in UTC.
+    assert_eq!(utc.json["overview"]["change"]["total_s"], -3600);
+
+    let kolkata = call(&app, "GET", &total("Asia%2FKolkata"), None).await;
+    assert_eq!(kolkata.json["overview"]["total_s"], 3600);
+    assert_eq!(daily_seconds(&kolkata.json), [3600, 0, 0, 0, 0, 0, 0]);
+    assert_eq!(kolkata.json["overview"]["change"]["total_s"], 3600);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn an_entry_across_the_boundary_is_counted_once_in_each_period() {
+    let db = time_db("report_boundary").await;
+    // 22:00Z on the 11th to 03:00Z on the 12th: 2h before the boundary, 3h after.
+    sqlx::query(
+        "INSERT INTO time.time_entries
+           (toggl_id, workspace_id, project_id, description, tags, start, stop, duration_s, raw)
+         VALUES (1, 7, NULL, 'Spans', '{}', '2026-10-11T22:00Z', '2026-10-12T03:00Z', 18000, '{}')",
+    )
+    .execute(&db.pool)
+    .await
+    .unwrap();
+    let app = time_app(&db, &FakeToggl::new());
+
+    let reply = call(&app, "GET", &format!("/api/time/report?{WEEK}"), None).await;
+
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    assert_eq!(reply.json["overview"]["total_s"], 3 * 3600);
+    assert_eq!(
+        reply.json["groups"][0]["entries"][0]["duration_s"],
+        3 * 3600
+    );
+    assert_eq!(reply.json["groups"][0]["change"]["total_s"], 3600);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn a_blank_search_and_empty_filter_values_are_ignored() {
+    let db = time_db("report_blank_filters").await;
+    seed(&db).await;
+    let app = time_app(&db, &FakeToggl::new());
+    let plain = call(&app, "GET", &format!("/api/time/report?{WEEK}"), None).await;
+
+    let blank = call(
+        &app,
+        "GET",
+        &format!("/api/time/report?{WEEK}&q=%20%20&tag=&project="),
+        None,
+    )
+    .await;
+
+    assert_eq!(blank.status, 200, "{}", blank.text);
+    assert_eq!(blank.json["overview"], plain.json["overview"]);
+    let negative = call(
+        &app,
+        "GET",
+        &format!("/api/time/report?{WEEK}&project=-1"),
+        None,
+    )
+    .await;
+    assert_eq!(negative.status, 400);
+    db.drop().await;
+}

@@ -65,3 +65,63 @@ fn the_kind_must_fit_the_dates() {
     let err = ReportQuery::parse(&with(&[("kind", "day")])).unwrap_err();
     assert_eq!(err, QueryError::Period(PeriodError::KindMismatch));
 }
+
+#[test]
+fn a_blank_search_means_no_search() {
+    for blank in ["", "   ", "\t "] {
+        let q = ReportQuery::parse(&with(&[("q", blank)])).unwrap();
+        assert_eq!(q.filter.search, None, "{blank:?}");
+    }
+}
+
+#[test]
+fn a_search_is_trimmed() {
+    let q = ReportQuery::parse(&with(&[("q", "  stand ")])).unwrap();
+    assert_eq!(q.filter.search.as_deref(), Some("stand"));
+}
+
+#[test]
+fn empty_list_values_are_ignored() {
+    let q = ReportQuery::parse(&with(&[
+        ("tag", ""),
+        ("tag", "focus"),
+        ("project", ""),
+        ("client", ""),
+    ]))
+    .unwrap();
+    assert_eq!(q.filter.tags.len(), 1);
+    assert!(q.filter.tags.contains("focus"));
+    assert!(q.filter.projects.is_empty() && q.filter.clients.is_empty());
+}
+
+#[test]
+fn an_empty_tag_alone_is_no_tag_filter() {
+    let q = ReportQuery::parse(&with(&[("tag", "")])).unwrap();
+    assert!(q.filter.tags.is_empty());
+}
+
+#[test]
+fn duplicate_ids_and_tags_collapse() {
+    let q = ReportQuery::parse(&with(&[
+        ("project", "3"),
+        ("project", "3"),
+        ("tag", "a"),
+        ("tag", "a"),
+    ]))
+    .unwrap();
+    assert_eq!((q.filter.projects.len(), q.filter.tags.len()), (1, 1));
+}
+
+#[test]
+fn a_repeated_single_value_keeps_the_last() {
+    let q = ReportQuery::parse(&with(&[("group1", "tag"), ("group1", "project")])).unwrap();
+    assert_eq!(q.group1, Grouping::Project);
+}
+
+#[test]
+fn negative_and_zero_ids_are_refused() {
+    let err = |extra: &[(&str, &str)]| ReportQuery::parse(&with(extra)).unwrap_err();
+    assert_eq!(err(&[("project", "-1")]), QueryError::Invalid("project"));
+    assert_eq!(err(&[("client", "-7")]), QueryError::Invalid("client"));
+    assert_eq!(err(&[("project", "0")]), QueryError::Invalid("project"));
+}

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import type { ComponentType } from "react";
 import { accentScope, cn, Pressable, springs } from "@/design";
 
@@ -31,7 +31,7 @@ export function NavItem({ to, label, icon: Icon, active, accent }: NavItemProps)
           )}
         >
           {active ? (
-            <motion.span
+            <m.span
               layoutId={INDICATOR_ID}
               transition={springs.smooth}
               className="absolute inset-0 rounded-full bg-accent ring-1 ring-module/40"

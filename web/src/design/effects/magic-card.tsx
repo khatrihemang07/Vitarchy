@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react"
 import {
-  motion,
+  m,
   useMotionTemplate,
   useMotionValue,
   useSpring,
@@ -143,7 +143,7 @@ export function MagicCard(props: MagicCardProps) {
   }, [reset])
 
   return (
-    <motion.div
+    <m.div
       className={cn(
         "group relative isolate overflow-hidden rounded-[inherit] border border-transparent",
         className
@@ -165,7 +165,7 @@ export function MagicCard(props: MagicCardProps) {
       <div className="bg-background absolute inset-px z-20 rounded-[inherit]" />
 
       {mode === "gradient" && (
-        <motion.div
+        <m.div
           suppressHydrationWarning
           className="pointer-events-none absolute inset-px z-30 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           style={{
@@ -181,7 +181,7 @@ export function MagicCard(props: MagicCardProps) {
       )}
 
       {mode === "orb" && (
-        <motion.div
+        <m.div
           suppressHydrationWarning
           aria-hidden="true"
           className="pointer-events-none absolute z-30"
@@ -203,6 +203,6 @@ export function MagicCard(props: MagicCardProps) {
         />
       )}
       <div className="relative z-40">{children}</div>
-    </motion.div>
+    </m.div>
   )
 }

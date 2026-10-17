@@ -1,23 +1,17 @@
+import { DEFAULT_CORE } from "@/api/settings";
 import { dateFormatLabel } from "../format/datetime";
 import {
   appearanceSection,
   coreSections,
-  DEFAULT_CORE,
   DISPLAY_NAME_MAX_LENGTH,
   generalSection,
 } from "./core-sections";
 import { optionValues } from "./schema";
 
 describe("core sections", () => {
-  it("derive the defaults of a fresh install", () => {
-    expect(DEFAULT_CORE).toEqual({
-      display_name: "",
-      theme: "system",
-      motion: "system",
-      week_start: "monday",
-      clock: "system",
-      date_format: "system",
-    });
+  it("take each field's default from DEFAULT_CORE", () => {
+    const defaults = Object.fromEntries(coreSections.flatMap((s) => s.fields).map((f) => [f.key, f.default]));
+    expect(defaults).toEqual(DEFAULT_CORE);
   });
 
   it("are scoped to the core settings", () => {

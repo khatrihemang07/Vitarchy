@@ -1,7 +1,7 @@
 import { Palette, SlidersHorizontal } from "lucide-react";
-import { CORE_SCOPE, type CoreSettings } from "@/api/settings";
+import { CORE_SCOPE, type CoreSettings, DEFAULT_CORE } from "@/api/settings";
 import { dateFormatLabel } from "../format/datetime";
-import { type SettingsSection, withDefaults } from "./schema";
+import type { SettingsSection } from "./schema";
 
 /** Longest display name, in Unicode code points. Mirrors the server's limit. */
 export const DISPLAY_NAME_MAX_LENGTH = 50;
@@ -22,14 +22,14 @@ export const generalSection: SettingsSection = {
       label: "Display name",
       description: "How Vitarchy greets you.",
       placeholder: "Your name",
-      default: "",
+      default: DEFAULT_CORE.display_name,
       maxLength: DISPLAY_NAME_MAX_LENGTH,
     },
     {
       kind: "select",
       key: "week_start",
       label: "Week starts on",
-      default: "monday",
+      default: DEFAULT_CORE.week_start,
       options: [
         { value: "monday", label: "Monday" },
         { value: "sunday", label: "Sunday" },
@@ -39,7 +39,7 @@ export const generalSection: SettingsSection = {
       kind: "select",
       key: "clock",
       label: "Clock",
-      default: "system",
+      default: DEFAULT_CORE.clock,
       options: [
         { value: "system", label: "System" },
         { value: "h12", label: "12-hour" },
@@ -50,7 +50,7 @@ export const generalSection: SettingsSection = {
       kind: "select",
       key: "date_format",
       label: "Date format",
-      default: "system",
+      default: DEFAULT_CORE.date_format,
       options: DATE_FORMATS.map((value) => ({ value, label: dateFormatLabel(value) })),
     },
   ],
@@ -68,7 +68,7 @@ export const appearanceSection: SettingsSection = {
       key: "theme",
       label: "Theme",
       description: "System follows your device.",
-      default: "system",
+      default: DEFAULT_CORE.theme,
       options: [
         { value: "system", label: "System" },
         { value: "light", label: "Light" },
@@ -80,7 +80,7 @@ export const appearanceSection: SettingsSection = {
       key: "motion",
       label: "Motion",
       description: "Reduced stops springs and decorative animation.",
-      default: "system",
+      default: DEFAULT_CORE.motion,
       options: [
         { value: "system", label: "System" },
         { value: "reduced", label: "Reduced" },
@@ -92,12 +92,3 @@ export const appearanceSection: SettingsSection = {
 
 /** Every Core settings section, in page order. */
 export const coreSections: readonly SettingsSection[] = [generalSection, appearanceSection];
-
-/**
- * The core settings of a fresh install, derived from the declared defaults so
- * they cannot drift. Used until the server answers.
- */
-export const DEFAULT_CORE = withDefaults(
-  { fields: coreSections.flatMap((section) => section.fields) },
-  undefined,
-) as unknown as CoreSettings;

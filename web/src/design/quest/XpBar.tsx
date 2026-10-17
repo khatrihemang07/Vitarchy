@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { m } from "motion/react";
 import { cn } from "../lib/utils";
 import { springs } from "../motion/springs";
 import { xpProgress } from "./xp";
@@ -27,7 +27,7 @@ export function XpBar({ value, max, label, className }: XpBarProps) {
         className,
       )}
     >
-      <motion.div
+      <m.div
         className="h-full rounded-full bg-linear-to-r from-xp-from to-xp-to"
         initial={{ width: "0%" }}
         animate={{ width: `${String(progress.percent)}%` }}

@@ -61,16 +61,21 @@ fn enum_value<T: for<'de> Deserialize<'de>>(
     T::deserialize(StrDeserializer::<ValueError>::new(text)).map_err(|_| QueryError::Invalid(name))
 }
 
+/// Toggl ids: positive whole numbers. Empty values (`project=`) are skipped, like an empty tag.
 fn numbers(name: &'static str, values: &[&str]) -> Result<BTreeSet<i64>, QueryError> {
     values
         .iter()
-        .map(|v| v.parse().map_err(|_| QueryError::Invalid(name)))
+        .filter(|v| !v.is_empty())
+        .map(|v| match v.parse::<i64>() {
+            Ok(id) if id > 0 => Ok(id),
+            _ => Err(QueryError::Invalid(name)),
+        })
         .collect()
 }
 
 impl ReportQuery {
     /// Reads `kind`, `from`, `to`, `tz`, repeated `project`/`tag`/`client`, `q`, `group1`
-    /// and `group2`. Unknown names are ignored; a repeated single-value name keeps its last.
+    /// and `group2`. Unknown names and empty list values are ignored; a repeated single-value name keeps its last; `q` is trimmed.
     pub fn parse(pairs: &[(String, String)]) -> Result<Self, QueryError> {
         let all = |name: &str| -> Vec<&str> {
             pairs
@@ -98,8 +103,16 @@ impl ReportQuery {
         let filter = Filter {
             projects: numbers("project", &all("project"))?,
             clients: numbers("client", &all("client"))?,
-            tags: all("tag").into_iter().map(str::to_owned).collect(),
-            search: one("q").map(str::to_owned),
+            tags: all("tag")
+                .into_iter()
+                .filter(|t| !t.is_empty())
+                .map(str::to_owned)
+                .collect(),
+            // A blank search would match every description with a space in it.
+            search: one("q")
+                .map(str::trim)
+                .filter(|q| !q.is_empty())
+                .map(str::to_owned),
         };
         Ok(Self {
             period,
