@@ -1,3 +1,5 @@
+-- Numbered 20260407: versions 20260404-20260406 belonged to migrations removed in 065bbb8
+-- that are still recorded in live databases, so they must never be reused.
 -- Activity from several Sources (Toggl, Clockify) in one table. Each row is stored as
 -- its Source recorded it; combining happens only on read (ADR 0010).
 ALTER TABLE time.activities
