@@ -141,6 +141,7 @@ async fn suggestions_offer_the_recurring_chain_and_ignore_sleep_over_midnight() 
         !found.iter().any(|s| s["steps"] == json!(["sleep", "bath"])),
         "sleep must not link to the next Day's bath: {found:?}"
     );
+    db.drop().await;
 }
 
 #[tokio::test]
@@ -162,11 +163,12 @@ async fn a_saved_routine_stops_being_suggested() {
             .unwrap()
             .is_empty()
     );
+    db.drop().await;
 }
 
 #[tokio::test]
 async fn analysis_routes_reject_a_bad_zone_with_a_code() {
-    let (_db, app) = app("routines_bad_zone").await;
+    let (db, app) = app("routines_bad_zone").await;
     for uri in [
         "/api/time/routines/suggestions?from=2026-05-01&to=2026-05-02&tz=Nowhere",
         "/api/time/routines/occurrences?from=2026-05-01&to=2026-05-02&tz=Nowhere",
@@ -178,6 +180,7 @@ async fn analysis_routes_reject_a_bad_zone_with_a_code() {
             "{uri}"
         );
     }
+    db.drop().await;
 }
 
 #[tokio::test]
@@ -222,11 +225,12 @@ async fn routines_are_created_listed_replaced_and_deleted() {
         (status, body["code"].as_str()),
         (404, Some("routine_not_found"))
     );
+    db.drop().await;
 }
 
 #[tokio::test]
 async fn invalid_routines_are_coded_problems() {
-    let (_db, app) = app("routines_validation").await;
+    let (db, app) = app("routines_validation").await;
     let one = json!([{"label": "a", "kind": "description", "value": "b"}]);
     let nine: Vec<Value> = (0..9).map(|_| one[0].clone()).collect();
     let cases = [
@@ -271,11 +275,12 @@ async fn invalid_routines_are_coded_problems() {
             .unwrap()
             .is_empty()
     );
+    db.drop().await;
 }
 
 #[tokio::test]
 async fn names_are_unique_ignoring_case_and_missing_routines_are_404() {
-    let (_db, app) = app("routines_names").await;
+    let (db, app) = app("routines_names").await;
     let (_, first) = create(&app, "Office", office_steps()).await;
     let (status, clash) = create(&app, "office", office_steps()).await;
     assert_eq!(
@@ -314,6 +319,7 @@ async fn names_are_unique_ignoring_case_and_missing_routines_are_404() {
         (status, body["code"].as_str()),
         (404, Some("routine_not_found"))
     );
+    db.drop().await;
 }
 
 #[tokio::test]
@@ -358,6 +364,7 @@ async fn occurrences_split_complete_and_incomplete_days_with_stats() {
     assert_eq!(figures["door_to_door"]["median_seconds"], 10 * 3600);
     assert_eq!(figures["steps"][1]["days"], 4);
     assert_eq!(body["routine"]["name"], "Office");
+    db.drop().await;
 }
 
 #[tokio::test]
@@ -382,17 +389,51 @@ async fn an_entry_belongs_to_the_day_it_starts_in_across_midnight() {
         body["stats"]["steps"][1]["duration"]["median_seconds"],
         8 * 3600
     );
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn a_step_logged_after_midnight_finishes_the_evening_even_at_the_edge_of_the_period() {
+    let (db, app) = app("routines_spill").await;
+    let at = |day: u32, t: &str| format!("2026-05-{day:02}T{t}:00Z");
+    for d in 4..=6 {
+        store(&db, None, "dinner", &at(d, "19:00"), &at(d, "20:00")).await;
+        store(&db, None, "bath", &at(d, "22:30"), &at(d, "22:50")).await;
+        store(&db, None, "sleep", &at(d + 1, "00:10"), &at(d + 1, "07:00")).await;
+    }
+    // A morning entry that starts after the cutoff is a new Day's, not the evening's.
+    store(&db, None, "sleep", &at(8, "07:00"), &at(8, "08:00")).await;
+    let steps = json!([
+        {"label": "Dinner", "kind": "description", "value": "dinner"},
+        {"label": "Bath", "kind": "description", "value": "bath"},
+        {"label": "Sleep", "kind": "description", "value": "sleep"},
+    ]);
+    create(&app, "Evening", steps).await;
+    // The Period ends on the 6th: its sleep starts on the 7th, outside the Period.
+    let uri = "/api/time/routines/occurrences?from=2026-05-04&to=2026-05-06&tz=UTC";
+    let (_, all) = request(&app, "GET", uri, None).await;
+    let body = &all["routines"][0];
+    assert_eq!(body["stats"]["complete_days"], 3, "{body}");
+    assert_eq!(body["stats"]["incomplete_days"], 0);
+    // The 7th's own view does not count the sleep that belongs to the evening of the 6th.
+    let uri = "/api/time/routines/occurrences?from=2026-05-07&to=2026-05-08&tz=UTC";
+    let (_, all) = request(&app, "GET", uri, None).await;
+    let days = all["routines"][0]["occurrences"].as_array().unwrap();
+    assert_eq!(days.len(), 1, "{days:?}");
+    assert_eq!(days[0]["date"], "2026-05-08");
+    db.drop().await;
 }
 
 #[tokio::test]
 async fn a_routine_with_no_matching_days_has_empty_occurrences() {
-    let (_db, app) = app("routines_empty").await;
+    let (db, app) = app("routines_empty").await;
     create(&app, "Office", office_steps()).await;
     let (status, all) = request(&app, "GET", &batch_uri(), None).await;
     assert_eq!(status, 200);
     let body = &all["routines"][0];
     assert!(body["occurrences"].as_array().unwrap().is_empty());
     assert!(body["stats"]["door_to_door"].is_null());
+    db.drop().await;
 }
 
 #[tokio::test]
@@ -417,16 +458,18 @@ async fn every_routine_comes_back_in_one_request_by_name() {
     assert_eq!(routines[0]["occurrences"].as_array().unwrap().len(), 0);
     assert_eq!(routines[1]["occurrences"].as_array().unwrap().len(), 2);
     assert_eq!(routines[1]["routine"]["steps"].as_array().unwrap().len(), 3);
+    db.drop().await;
 }
 
 #[tokio::test]
 async fn no_routines_is_an_empty_list() {
-    let (_db, app) = app("routines_batch_none").await;
+    let (db, app) = app("routines_batch_none").await;
     let (status, all) = request(&app, "GET", &batch_uri(), None).await;
     assert_eq!(
         (status, all["routines"].as_array().map(Vec::len)),
         (200, Some(0))
     );
+    db.drop().await;
 }
 
 #[tokio::test]
@@ -451,4 +494,5 @@ async fn a_step_can_match_entries_that_have_no_description() {
         all["routines"][0]["occurrences"].as_array().unwrap().len(),
         1
     );
+    db.drop().await;
 }

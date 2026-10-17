@@ -102,9 +102,19 @@ pub fn description_stats(period: &Period, entries: &[LifeEntry]) -> Vec<Descript
     stats
 }
 
-/// How many Days the occurrences fall on. When the starts cluster around midnight (the
-/// circle is cut between 06:00 and 18:00) a start before the cut belongs to the previous Day.
+/// How many Days the occurrences fall on (see [`attributed_days`]).
 fn distinct_days(dates: &[NaiveDate], starts: &[f64]) -> usize {
+    attributed_days(dates, starts)
+        .into_iter()
+        .collect::<BTreeSet<_>>()
+        .len()
+}
+
+/// The Day each occurrence counts for, given the local date and start minute of each. When the
+/// starts cluster around midnight (the circle is cut between 06:00 and 18:00) a start before the
+/// cut belongs to the previous Day. Everything that counts Days of a habit uses this.
+#[must_use]
+pub fn attributed_days(dates: &[NaiveDate], starts: &[f64]) -> Vec<NaiveDate> {
     let cut = cut_point(starts);
     let by_night = (MIDNIGHT_CLUSTER_CUTS.0..=MIDNIGHT_CLUSTER_CUTS.1).contains(&cut);
     dates
@@ -114,8 +124,7 @@ fn distinct_days(dates: &[NaiveDate], starts: &[f64]) -> usize {
             Some(before) if by_night && *minute < cut => before,
             _ => *date,
         })
-        .collect::<BTreeSet<_>>()
-        .len()
+        .collect()
 }
 
 #[cfg(test)]

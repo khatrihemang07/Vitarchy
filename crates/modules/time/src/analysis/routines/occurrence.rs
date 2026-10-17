@@ -5,13 +5,20 @@
 //! it that also match (a trip logged in two pieces is one Step). A Step with no match is missing
 //! and the search for the next Step carries on from the same place, so a Day without the first
 //! trip still shows the rest. Days where no Step happened are not Occurrences.
+//!
+//! The Steps still missing after a Day's own entries may be finished by the next Day's entries that
+//! start before [`SPILL_UNTIL`](super::SPILL_UNTIL) (see [`spill`](super::spill)). Those entries are then
+//! used up: they never count toward the next Day's Occurrence.
+//! Days run in order, so the earlier Day claims them first.
 
-use std::collections::BTreeMap;
+use std::collections::HashSet;
 
 use chrono::{DateTime, NaiveDate, Utc};
+use chrono_tz::Tz;
 use serde::Serialize;
 use utoipa::ToSchema;
 
+use super::spill::{Slot, by_day, dates, is_early, next_day};
 use super::{Step, StepMatcher};
 use crate::analysis::Period;
 use crate::analysis::lifelog::LifeEntry;
@@ -45,43 +52,96 @@ pub struct Occurrence {
 }
 
 /// The Routine's Occurrences in the Period, earliest Day first.
+///
+/// `entries` should reach past the Period (see [`load_window`](super::load_window)): the Day
+/// before and after it decide which early entries belong to the Days at its edges.
 #[must_use]
 pub fn occurrences(period: &Period, steps: &[Step], entries: &[LifeEntry]) -> Vec<Occurrence> {
     let matchers: Vec<StepMatcher> = steps.iter().map(Step::matcher).collect();
-    let mut days: BTreeMap<NaiveDate, Vec<&LifeEntry>> = BTreeMap::new();
-    for entry in entries {
-        if entry.start >= period.start() && entry.start < period.end() {
-            let date = entry.start.with_timezone(&period.tz()).date_naive();
-            days.entry(date).or_default().push(entry);
+    let days = by_day(period, entries.iter().enumerate());
+    let (first, last) = dates(period);
+    let mut used: HashSet<usize> = HashSet::new();
+    let mut found = Vec::new();
+    for (date, slots) in days.range(..=last) {
+        let own: Vec<Slot> = slots
+            .iter()
+            .filter(|s| !used.contains(&s.index))
+            .copied()
+            .collect();
+        let mut matched = match_steps(&matchers, &own);
+        if matched.iter().any(Option::is_some) {
+            let next = days.get(&next_day(*date)).map_or(&[][..], Vec::as_slice);
+            spill_into(period.tz(), &matchers, &mut matched, next, &mut used);
+            if *date >= first {
+                found.push(build(
+                    *date,
+                    matched.into_iter().map(|m| m.map(|m| m.span)).collect(),
+                ));
+            }
         }
     }
-    days.into_iter()
-        .filter_map(|(date, mut day)| {
-            day.sort_by_key(|e| e.start);
-            let spans = match_steps(&matchers, &day);
-            spans
-                .iter()
-                .any(Option::is_some)
-                .then(|| build(date, spans))
-        })
-        .collect()
+    found
+}
+
+/// A Step's span and the entries (by position) that made it up.
+struct Matched {
+    span: StepSpan,
+    used: Vec<usize>,
+}
+
+/// Fills the Steps after the last one that happened from the next Day's early entries that no
+/// earlier Occurrence used, marking the entries it takes as used.
+fn spill_into(
+    tz: Tz,
+    steps: &[StepMatcher],
+    matched: &mut [Option<Matched>],
+    next_day: &[Slot],
+    used: &mut HashSet<usize>,
+) {
+    let done = matched
+        .iter()
+        .rposition(Option::is_some)
+        .map_or(0, |i| i + 1);
+    if done == steps.len() {
+        return;
+    }
+    let early: Vec<Slot> = next_day
+        .iter()
+        .filter(|s| !used.contains(&s.index) && is_early(tz, s.entry))
+        .copied()
+        .collect();
+    for (slot, spilled) in matched[done..]
+        .iter_mut()
+        .zip(match_steps(&steps[done..], &early))
+    {
+        if let Some(found) = &spilled {
+            used.extend(&found.used);
+        }
+        *slot = spilled;
+    }
 }
 
 /// Each Step's span in one Day's entries (in start order), or `None` when it did not happen.
-fn match_steps(steps: &[StepMatcher], day: &[&LifeEntry]) -> Vec<Option<StepSpan>> {
+fn match_steps(steps: &[StepMatcher], day: &[Slot]) -> Vec<Option<Matched>> {
     let mut cursor = 0;
     steps
         .iter()
         .map(|step| {
-            let first = cursor + day[cursor..].iter().position(|e| step.matches(e))?;
-            let run = day[first..].iter().take_while(|e| step.matches(e)).count();
+            let first = cursor + day[cursor..].iter().position(|s| step.matches(s.entry))?;
+            let run = day[first..]
+                .iter()
+                .take_while(|s| step.matches(s.entry))
+                .count();
             cursor = first + run;
-            let end = day[first..cursor].iter().map(|e| e.end).max()?;
-            let start = day[first].start;
-            Some(StepSpan {
-                start,
-                end,
-                seconds: (end - start).num_seconds(),
+            let end = day[first..cursor].iter().map(|s| s.entry.end).max()?;
+            let start = day[first].entry.start;
+            Some(Matched {
+                span: StepSpan {
+                    start,
+                    end,
+                    seconds: (end - start).num_seconds(),
+                },
+                used: day[first..cursor].iter().map(|s| s.index).collect(),
             })
         })
         .collect()
@@ -225,7 +285,7 @@ mod tests {
         let entries = vec![
             e("to", 4, "20:00", "21:00"),
             entry("p", "in", "2026-05-04T21:15:00Z", "2026-05-05T05:00:00Z"),
-            e("from", 5, "05:10", "06:00"),
+            e("from", 5, "07:10", "08:00"),
         ];
         let found = occurrences(&period(), &office_steps(), &entries);
         assert_eq!(found.len(), 2);

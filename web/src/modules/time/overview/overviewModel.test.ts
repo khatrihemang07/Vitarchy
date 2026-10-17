@@ -1,5 +1,5 @@
-import type { ActivityTotals, LifeLogDaySplit } from "@/api/time";
-import { describeChange, topApps, topContexts, unloggedShare } from "./overviewModel";
+import type { ActivityTotals, DayTotal, LifeLogDaySplit } from "@/api/time";
+import { describeChange, topApps, unloggedShare } from "./overviewModel";
 
 const context = (name: string, seconds: number) => ({ name, seconds, titles: [] });
 const totals: ActivityTotals = {
@@ -20,32 +20,19 @@ describe("topApps", () => {
   });
 });
 
-describe("topContexts", () => {
-  it("lists the longest Contexts across apps, leaving out those that only repeat their app", () => {
-    expect(topContexts(totals, 3).map((c) => c.name)).toEqual(["vitarchy", "YouTube", "Other pages"]);
-  });
-
-  it("adds up a Context that appears under two apps", () => {
-    const twice: ActivityTotals = {
-      total_seconds: 0,
-      apps: [
-        { app: "Brave", seconds: 0, contexts: [context("Docs", 100)] },
-        { app: "Firefox", seconds: 0, contexts: [context("Docs", 250)] },
-      ],
-    };
-    expect(topContexts(twice, 5)).toEqual([{ name: "Docs", seconds: 350 }]);
-  });
-});
-
 describe("describeChange", () => {
-  it("says how much more or less time there was than before", () => {
-    expect(describeChange(3 * 3600, 2 * 3600)).toEqual({ direction: "up", text: "1 h more than the previous Period (+50%)" });
-    expect(describeChange(2700, 3600)).toEqual({ direction: "down", text: "15 min less than the previous Period (-25%)" });
+  const days = (...hours: number[]): DayTotal[] => hours.map((h, i) => ({ date: `2026-05-${String(i + 1).padStart(2, "0")}`, seconds: h * 3600 }));
+
+  it("compares the average per finished Day, so a Period part way through is not set against a whole one", () => {
+    // Two Days of 1.5 h against seven of 2 h: less per day, though 3 h is nothing like 14 h.
+    expect(describeChange(days(1.5, 1.5), days(2, 2, 2, 2, 2, 2, 2))).toEqual({ direction: "down", text: "30 min less per day than the previous Period (-25%)" });
+    expect(describeChange(days(3, 3), days(2, 2, 2))).toEqual({ direction: "up", text: "1 h more per day than the previous Period (+50%)" });
   });
 
-  it("says when nothing changed, and when there is nothing to compare with", () => {
-    expect(describeChange(3600, 3600)).toEqual({ direction: "same", text: "Same as the previous Period" });
-    expect(describeChange(3600, 0)).toBeNull();
+  it("says when nothing changed, and when either Period has no Day to compare", () => {
+    expect(describeChange(days(1, 1), days(1, 1, 1))).toEqual({ direction: "same", text: "Same per day as the previous Period" });
+    expect(describeChange(days(1), [])).toBeNull();
+    expect(describeChange([], days(1))).toBeNull();
   });
 });
 

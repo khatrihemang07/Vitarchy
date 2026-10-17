@@ -1,14 +1,18 @@
 //! Routines: ordered Steps the person goes through in a Day, found in their Time Entries.
 //!
-//! Everything here is pure. A Routine lives inside one Day, so an entry belongs to the Day it
+//! Everything here is pure. A Routine belongs to one Day, so an entry belongs to the Day it
 //! **starts** in (never its per-Day portions): a night's sleep from 23:00 is one entry of the
-//! Day it began, and its second half never starts a sequence on the next Day.
+//! Day it began, and its second half never starts a sequence on the next Day. The later Steps of
+//! a Routine may run past midnight, into the early hours of the next Day (see [`spill`]).
 
 mod chains;
 mod draft;
 mod occurrence;
+#[cfg(test)]
+mod occurrence_spill;
 mod redundancy;
 mod routine;
+mod spill;
 mod stats;
 mod step;
 mod suggest;
@@ -16,6 +20,7 @@ mod suggest;
 pub use draft::{RoutineDraft, RoutineError};
 pub use occurrence::{Occurrence, StepSpan, occurrences};
 pub use routine::Routine;
+pub use spill::{SPILL_UNTIL, load_window};
 pub use stats::{RoutineStats, StepStat, WeekdayStat, routine_stats};
 pub use step::{MatchKind, Step, StepMatcher};
 pub use suggest::{MAX_SUGGESTED_STEPS, MAX_SUGGESTIONS, Suggestion, suggest};

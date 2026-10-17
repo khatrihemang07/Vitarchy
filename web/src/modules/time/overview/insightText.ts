@@ -11,6 +11,8 @@ const WEEKDAYS = ["Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "
 interface Words {
   insight: Insight;
   clock: Clock;
+  /** Days in each window a change compares. */
+  windowDays: number;
 }
 
 const span = (minutes: number) => formatSpan(minutes * 60);
@@ -33,20 +35,24 @@ interface LengthPhrases {
   usually: (name: string, amount: string) => string;
   /** "Office takes 12 min less", in the past or the present. */
   gap: (name: string, amount: string, more: boolean, past: boolean, startsSentence: boolean) => string;
-  /** The label before an extreme Day's date. */
+  /** The label before an extreme Day's date ("Longest Commute", never "Longest Commute day"). */
   extreme: (name: string, longest: boolean) => string;
 }
 
 const taking: LengthPhrases = {
   usually: (name, amount) => `${name} usually takes ${amount}`,
   gap: (name, amount, more, past) => `${name} ${past ? "took" : "takes"} ${amount} ${more ? "longer" : "less"}`,
-  extreme: (name, longest) => `${longest ? "Longest" : "Shortest"} ${name} day`,
+  extreme: (name, longest) => `${longest ? "Longest" : "Shortest"} ${name}`,
 };
 
 const LENGTH_PHRASES: Record<InsightSubjectKind, LengthPhrases> = {
   routine_step: taking,
   description: taking,
-  routine_total: { ...taking, usually: (name, amount) => `${name} usually takes ${amount} door to door` },
+  routine_total: {
+    ...taking,
+    usually: (name, amount) => `${name} usually takes ${amount} door to door`,
+    extreme: (name, longest) => `${longest ? "Longest" : "Shortest"} door to door for ${name}`,
+  },
   app: screenTime(),
   context: screenTime(),
 };
@@ -60,7 +66,18 @@ function screenTime(): LengthPhrases {
 }
 
 const phrases = ({ insight }: Words) => LENGTH_PHRASES[insight.subject.kind];
-const name = ({ insight }: Words) => insight.subject.name;
+/** A Step is named with its Routine, so two Routines with the same Step label stay apart. */
+const name = ({ insight }: Words) => {
+  const { kind, name: label, routine } = insight.subject;
+  return kind === "routine_step" && routine ? `${label} (${routine.name})` : label;
+};
+
+/** "4 weeks", "2 weeks", "week", "10 days": the window a change compares, from its length in days. */
+function windowPhrase(days: number): string {
+  if (days % 7 !== 0) return days === 1 ? "day" : `${String(days)} days`;
+  const weeks = days / 7;
+  return weeks === 1 ? "week" : `${String(weeks)} weeks`;
+}
 
 function typicalTime(words: Words): string {
   return `You usually ${verb(words)} ${name(words)} at ${clockTime(words, words.insight.numbers.value)}${range(words)}`;
@@ -82,7 +99,7 @@ function weekdayDifference(words: Words): string {
 
 function change(words: Words): string {
   const amount = delta(words);
-  return `${phrases(words).gap(name(words), span(Math.abs(amount)), amount > 0, true, true)} than in the previous 4 weeks`;
+  return `${phrases(words).gap(name(words), span(Math.abs(amount)), amount > 0, true, true)} than in the previous ${windowPhrase(words.windowDays)}`;
 }
 
 const CLOCK_EXTREMES = {
@@ -111,7 +128,7 @@ const TEMPLATES: Record<InsightKind, (words: Words) => string> = {
   outlier,
 };
 
-/** The sentence for `insight`, with times written on the person's `clock`. */
-export function describeInsight(insight: Insight, clock: Clock): string {
-  return TEMPLATES[insight.kind]({ insight, clock });
+/** The sentence for `insight`, with times on the person's `clock` and changes over `windowDays`-day windows. */
+export function describeInsight(insight: Insight, clock: Clock, windowDays: number): string {
+  return TEMPLATES[insight.kind]({ insight, clock, windowDays });
 }

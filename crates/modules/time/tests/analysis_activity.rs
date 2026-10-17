@@ -131,6 +131,32 @@ async fn totals_rank_apps_contexts_and_titles_and_split_at_midnight() {
 }
 
 #[tokio::test]
+async fn the_overview_ranks_contexts_and_lists_each_finished_day_with_activity() {
+    let (db, app) = seeded("act_ranked").await;
+    let overview = part(&app, UTC_WEEK, "top_contexts").await;
+    let names: Vec<&str> = overview
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(names.first(), Some(&"vitarchy"));
+    // An app that is its own Context is already in the apps list.
+    assert!(!names.contains(&"Spotify"));
+    let days = part(&app, UTC_WEEK, "day_totals").await;
+    let days = days.as_array().unwrap();
+    assert!(!days.is_empty() && days.len() <= 7);
+    let total: i64 = days.iter().map(seconds_of).sum();
+    assert_eq!(
+        total,
+        part(&app, UTC_WEEK, "totals").await["total_seconds"]
+            .as_i64()
+            .unwrap()
+    );
+    db.drop().await;
+}
+
+#[tokio::test]
 async fn totals_follow_the_requested_time_zone() {
     let (db, app) = seeded("act_tz").await;
     // 22:00Z on the 5th is 03:30 on the 6th in Kolkata, so the whole row is on the 6th there.

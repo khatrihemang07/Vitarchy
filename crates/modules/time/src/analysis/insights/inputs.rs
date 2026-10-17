@@ -3,10 +3,11 @@
 use chrono::NaiveDate;
 
 use super::insight::{Measure, Subject};
+use crate::analysis::lifelog::MIN_DAYS;
 
-/// Fewest Days a typical value, a weekday comparison or an outlier needs. Matches the Life
-/// log's habit threshold (`lifelog::MIN_DAYS`), so a description is a habit in both places.
-pub const MIN_SAMPLES: usize = 5;
+/// Fewest Days a typical value, a weekday comparison or an outlier needs: the Life log's habit
+/// threshold, so a description is a habit in both places.
+pub const MIN_SAMPLES: usize = MIN_DAYS;
 
 /// An inclusive stretch of local dates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -105,6 +106,7 @@ pub(super) mod fixtures {
             subject: Subject {
                 kind: SubjectKind::RoutineStep,
                 name: "office".into(),
+                routine: None,
             },
             measure,
             points: points

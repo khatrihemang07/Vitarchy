@@ -1,5 +1,5 @@
 /** The figures the Overview summaries show, derived from analysis responses. Pure. */
-import type { ActivityTotals, LifeLogDaySplit } from "@/api/time";
+import type { ActivityTotals, DayTotal, LifeLogDaySplit } from "@/api/time";
 import { formatSpan } from "../shared/duration";
 
 /** A name and the seconds spent on it. */
@@ -13,40 +13,34 @@ export function topApps(totals: ActivityTotals, limit: number): NamedSeconds[] {
   return totals.apps.slice(0, limit).map((app) => ({ name: app.app, seconds: app.seconds }));
 }
 
-/**
- * The `limit` longest-used Contexts across apps. A Context that only repeats its app's name (any
- * app that is neither an editor nor a browser) is left out, since the apps list already shows it.
- */
-export function topContexts(totals: ActivityTotals, limit: number): NamedSeconds[] {
-  const byName = new Map<string, number>();
-  for (const app of totals.apps) {
-    for (const context of app.contexts) {
-      if (context.name !== app.app) byName.set(context.name, (byName.get(context.name) ?? 0) + context.seconds);
-    }
-  }
-  return [...byName]
-    .map(([name, seconds]) => ({ name, seconds }))
-    .sort((a, b) => b.seconds - a.seconds || a.name.localeCompare(b.name))
-    .slice(0, limit);
-}
-
 /** How a Period's screen time compares with the one before. */
 export interface Change {
   direction: "up" | "down" | "same";
   text: string;
 }
 
-/** "1 h more than the previous Period (+50%)"; null when the previous Period had nothing to compare with. */
-export function describeChange(current: number, previous: number): Change | null {
-  if (previous <= 0) return null;
-  const difference = current - previous;
-  if (Math.round(Math.abs(difference) / 60) === 0) return { direction: "same", text: "Same as the previous Period" };
-  const percent = Math.round((difference / previous) * 100);
+/** The average of the Days' seconds; null when there are no Days. */
+function averagePerDay(days: readonly DayTotal[]): number | null {
+  return days.length === 0 ? null : days.reduce((sum, day) => sum + day.seconds, 0) / days.length;
+}
+
+/**
+ * "1 h more per day than the previous Period (+50%)". Compares the average per finished Day with
+ * Activity, so a Period part way through (few Days so far) is not set against a whole one. Null
+ * when either Period has no Day to average.
+ */
+export function describeChange(current: readonly DayTotal[], previous: readonly DayTotal[]): Change | null {
+  const now = averagePerDay(current);
+  const before = averagePerDay(previous);
+  if (now === null || before === null || before <= 0) return null;
+  const difference = now - before;
+  if (Math.round(Math.abs(difference) / 60) === 0) return { direction: "same", text: "Same per day as the previous Period" };
+  const percent = Math.round((difference / before) * 100);
   const sign = difference > 0 ? "+" : "-";
   const more = difference > 0 ? "more" : "less";
   return {
     direction: difference > 0 ? "up" : "down",
-    text: `${formatSpan(Math.abs(difference))} ${more} than the previous Period (${sign}${String(Math.abs(percent))}%)`,
+    text: `${formatSpan(Math.abs(difference))} ${more} per day than the previous Period (${sign}${String(Math.abs(percent))}%)`,
   };
 }
 

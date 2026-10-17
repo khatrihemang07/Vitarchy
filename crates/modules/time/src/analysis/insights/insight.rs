@@ -38,6 +38,15 @@ pub enum SubjectKind {
     Context,
 }
 
+/// The saved Routine a Step or a total belongs to.
+#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RoutineRef {
+    /// Its identifier, which tells apart two Routines with the same name or Step labels.
+    pub id: i64,
+    /// Its name.
+    pub name: String,
+}
+
 /// The thing an Insight is about.
 #[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct Subject {
@@ -45,6 +54,8 @@ pub struct Subject {
     pub kind: SubjectKind,
     /// Its name as the person knows it.
     pub name: String,
+    /// The Routine it belongs to (for a Routine Step or a Routine's total).
+    pub routine: Option<RoutineRef>,
 }
 
 /// Which quantity of the subject the Insight measures.

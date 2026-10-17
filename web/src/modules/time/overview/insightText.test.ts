@@ -12,7 +12,8 @@ function insight(parts: Partial<Insight> & Pick<Insight, "kind">, numbers: Parti
   };
 }
 
-const text = (i: Insight) => describeInsight(i, "h24");
+const WINDOW = 28;
+const text = (i: Insight) => describeInsight(i, "h24", WINDOW);
 
 describe("describeInsight", () => {
   it("says when a Step usually starts or finishes, with the range most Days fall in", () => {
@@ -23,7 +24,7 @@ describe("describeInsight", () => {
 
   it("follows the clock setting", () => {
     const numbers = { value: 17 * 60 + 5, p25: 17 * 60, p75: 17 * 60 + 10 };
-    expect(describeInsight(insight({ kind: "typical_time", measure: "end" }, numbers), "h12")).toContain("5:05 PM (5:00 PM – 5:10 PM)");
+    expect(describeInsight(insight({ kind: "typical_time", measure: "end" }, numbers), "h12", WINDOW)).toContain("5:05 PM (5:00 PM – 5:10 PM)");
   });
 
   it("describes a usual length for each kind of subject", () => {
@@ -56,8 +57,8 @@ describe("describeInsight", () => {
 
   it("names the Day of the longest or shortest length", () => {
     const base = { kind: "outlier" as const, days: ["2026-05-12"] };
-    expect(text(insight(base, { value: 612, reference: 480, delta: 132 }))).toBe("Longest Office day: Tue, May 12, 10 h 12 min");
-    expect(text(insight(base, { value: 300, reference: 480, delta: -180 }))).toBe("Shortest Office day: Tue, May 12, 5 h");
+    expect(text(insight(base, { value: 612, reference: 480, delta: 132 }))).toBe("Longest Office: Tue, May 12, 10 h 12 min");
+    expect(text(insight(base, { value: 300, reference: 480, delta: -180 }))).toBe("Shortest Office: Tue, May 12, 5 h");
     expect(text(insight({ ...base, subject: { kind: "context", name: "YouTube" } }, { value: 300, delta: 120 }))).toBe("Most time in YouTube: Tue, May 12, 5 h");
   });
 
@@ -65,5 +66,26 @@ describe("describeInsight", () => {
     const base = { kind: "outlier" as const, days: ["2026-05-12"] };
     expect(text(insight({ ...base, measure: "start" }, { value: 600, reference: 540, delta: 60 }))).toBe("Latest start of Office: Tue, May 12, 10:00 (usually 09:00)");
     expect(text(insight({ ...base, measure: "end" }, { value: 960, reference: 1020, delta: -60 }))).toBe("Earliest finish of Office: Tue, May 12, 16:00 (usually 17:00)");
+  });
+
+  it("names a Step's Routine so two Routines with the same Step labels are told apart", () => {
+    const step = { kind: "routine_step" as const, name: "Commute", routine: { id: 2, name: "Office day" } };
+    expect(text(insight({ kind: "typical_duration", subject: step }, { value: 30 }))).toBe("Commute (Office day) usually takes 30 min");
+    expect(text(insight({ kind: "typical_time", measure: "start", subject: step }, { value: 540 }))).toBe("You usually start Commute (Office day) at 09:00");
+  });
+
+  it("never writes 'day day' for a Routine whose name already ends in day", () => {
+    const total = { kind: "routine_total" as const, name: "Office day", routine: { id: 2, name: "Office day" } };
+    const base = { kind: "outlier" as const, subject: total, days: ["2026-05-12"] };
+    expect(text(insight(base, { value: 612, delta: 132 }))).toBe("Longest door to door for Office day: Tue, May 12, 10 h 12 min");
+    expect(text(insight(base, { value: 300, delta: -180 }))).toBe("Shortest door to door for Office day: Tue, May 12, 5 h");
+  });
+
+  it("writes the length of the comparison window from the figure the server gives", () => {
+    const change = insight({ kind: "change" }, { delta: 12 });
+    expect(describeInsight(change, "h24", 28)).toBe("Office took 12 min longer than in the previous 4 weeks");
+    expect(describeInsight(change, "h24", 14)).toBe("Office took 12 min longer than in the previous 2 weeks");
+    expect(describeInsight(change, "h24", 7)).toBe("Office took 12 min longer than in the previous week");
+    expect(describeInsight(change, "h24", 10)).toBe("Office took 12 min longer than in the previous 10 days");
   });
 });

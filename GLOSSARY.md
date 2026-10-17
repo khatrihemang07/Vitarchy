@@ -83,7 +83,7 @@ One part of a Routine, matched to a Time Entry description or project.
 _Avoid_: Stage, task
 
 **Occurrence**:
-One Day on which a Routine happened. It is complete when every Step happened, and incomplete when some are missing. An incomplete Occurrence still counts for the Steps that happened, but not for the whole Routine's total time.
+One Day on which a Routine happened. It is complete when every Step happened, and incomplete when some are missing. A Routine's later Steps may run past midnight into the early hours. An incomplete Occurrence still counts for the Steps that happened, but not for the whole Routine's total time.
 _Avoid_: Instance, run
 
 **Insight**:

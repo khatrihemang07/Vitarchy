@@ -17,8 +17,8 @@ mod typical_time;
 mod weekday_difference;
 
 pub use gather::{Sources, gather, reach_period, windows};
-pub use inputs::{DateRange, Inputs, Point, Series};
-pub use insight::{Insight, InsightKind, Measure, Numbers, Subject, SubjectKind};
+pub use inputs::{CHANGE_WINDOW_DAYS, DateRange, Inputs, Point, Series};
+pub use insight::{Insight, InsightKind, Measure, Numbers, RoutineRef, Subject, SubjectKind};
 
 /// The most Insights one request returns.
 pub const MAX_INSIGHTS: usize = 20;
@@ -47,6 +47,7 @@ pub fn insights(inputs: &Inputs) -> Vec<Insight> {
         b.score
             .total_cmp(&a.score)
             .then_with(|| a.subject.name.cmp(&b.subject.name))
+            .then_with(|| a.subject.routine.cmp(&b.subject.routine))
             .then_with(|| a.kind.cmp(&b.kind))
             .then_with(|| a.measure.cmp(&b.measure))
     });

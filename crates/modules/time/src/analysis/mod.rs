@@ -10,4 +10,4 @@ pub mod period;
 pub mod routines;
 
 pub use day_split::{DayPortion, split_by_day};
-pub use period::{Day, MAX_DAYS, Period, PeriodError};
+pub use period::{Day, MAX_DAYS, Period, PeriodError, last_finished_date};

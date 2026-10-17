@@ -4,14 +4,19 @@ use axum::{
     Json,
     extract::{Query, State},
 };
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use vitarchy_core::AppState;
 
 use super::load;
 use crate::{
-    analysis::activity::{
-        DayBound, Heatmap, Totals, Trend, WeekStart, day_bounds, heatmap, totals, trend,
+    analysis::{
+        activity::{
+            DayBound, DayTotal, Heatmap, RankedContext, TOP_SUBJECTS, Totals, Trend, WeekStart,
+            day_bounds, day_totals, heatmap, top_contexts, totals, trend,
+        },
+        last_finished_date,
     },
     error::{ProblemBody, TimeError},
     routes::analysis::params::PeriodQuery,
@@ -47,6 +52,11 @@ pub struct Overview {
     pub bounds: Vec<DayBound>,
     /// Weekly seconds for the busiest apps.
     pub trend: Trend,
+    /// The busiest Contexts across apps, longest first.
+    pub top_contexts: Vec<RankedContext>,
+    /// Screen time of each finished Day that has Activity, earliest first: what an average per
+    /// Day is made of.
+    pub day_totals: Vec<DayTotal>,
 }
 
 /// Totals, heatmap, Day bounds and weekly trend for a Period.
@@ -72,8 +82,12 @@ pub async fn get_overview(
     }
     .period()?;
     let rows = load(&state.pool, &period).await?;
+    let all = totals(&period, &rows);
+    let through = last_finished_date(period.tz(), Utc::now());
     Ok(Json(Overview {
-        totals: totals(&period, &rows),
+        top_contexts: top_contexts(&all, TOP_SUBJECTS),
+        day_totals: day_totals(&period, &rows, through),
+        totals: all,
         heatmap: heatmap(&period, &rows),
         bounds: day_bounds(&period, &rows),
         trend: trend(&period, &rows, query.week_start),

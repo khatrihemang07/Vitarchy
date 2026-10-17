@@ -132,8 +132,10 @@ export interface paths {
         };
         /**
          * Typical times and durations, weekday differences, changes and outliers, computed from one
-         *     load of Time Entries, Activity and Routines. Changes always compare the last four weeks ending
-         *     on the Period's last Day with the four before, however short the Period is.
+         *     load of Time Entries, Activity and Routines. Changes always compare the last `change_window_days`
+         *     ending on the Period's last finished Day with the same number before, however short the Period
+         *     is. Only finished Days are measured. Typical times, weekday differences and outliers look at
+         *     the Period's own Days.
          */
         get: operations["get_insights"];
         put?: never;
@@ -261,7 +263,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Sequences of descriptions that recur in order within a Day, over at least five Days. */
+        /**
+         * Sequences of descriptions that recur in order within a Day (the early hours of the next Day
+         *     included), over at least five Days.
+         */
         get: operations["get_suggestions"];
         put?: never;
         post?: never;
@@ -547,6 +552,19 @@ export interface components {
             /** @description Spans in time order. */
             spans: components["schemas"]["Span"][];
         };
+        /** @description One Day's screen time. */
+        DayTotal: {
+            /**
+             * Format: date
+             * @description Local date.
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description Seconds of Activity on it.
+             */
+            seconds: number;
+        };
         /**
          * @description Whether Postgres answered the ping.
          * @enum {string}
@@ -676,6 +694,11 @@ export interface components {
         InsightKind: "typical_time" | "typical_duration" | "weekday_difference" | "change" | "outlier";
         /** @description The most notable Insights for a Period. */
         Insights: {
+            /**
+             * Format: int64
+             * @description Days in each window a change compares (the last such Days against the same number before).
+             */
+            change_window_days: number;
             /** @description Most notable first. */
             insights: components["schemas"]["Insight"][];
         };
@@ -822,8 +845,15 @@ export interface components {
         Overview: {
             /** @description First and last Activity of each Day that has any, earliest first. */
             bounds: components["schemas"]["DayBound"][];
+            /**
+             * @description Screen time of each finished Day that has Activity, earliest first: what an average per
+             *     Day is made of.
+             */
+            day_totals: components["schemas"]["DayTotal"][];
             /** @description Seconds by weekday and hour. */
             heatmap: components["schemas"]["Heatmap"];
+            /** @description The busiest Contexts across apps, longest first. */
+            top_contexts: components["schemas"]["RankedContext"][];
             /** @description Screen time by app, Context and title. */
             totals: components["schemas"]["Totals"];
             /** @description Weekly seconds for the busiest apps. */
@@ -916,6 +946,16 @@ export interface components {
              */
             seconds: number;
         };
+        /** @description A Context and the seconds spent in it, across apps. */
+        RankedContext: {
+            /** @description The Context's name. */
+            name: string;
+            /**
+             * Format: int64
+             * @description Seconds in it, summed over every app it appears under.
+             */
+            seconds: number;
+        };
         /** @description A Routine the person confirmed or created. */
         Routine: {
             /**
@@ -951,6 +991,16 @@ export interface components {
             routine: components["schemas"]["Routine"];
             /** @description The usual times and lengths. */
             stats: components["schemas"]["RoutineStats"];
+        };
+        /** @description The saved Routine a Step or a total belongs to. */
+        RoutineRef: {
+            /**
+             * Format: int64
+             * @description Its identifier, which tells apart two Routines with the same name or Step labels.
+             */
+            id: number;
+            /** @description Its name. */
+            name: string;
         };
         /** @description Body of `POST /routines` and `PUT /routines/{id}`. */
         RoutineRequest: {
@@ -1066,6 +1116,7 @@ export interface components {
             kind: components["schemas"]["SubjectKind"];
             /** @description Its name as the person knows it. */
             name: string;
+            routine?: components["schemas"]["RoutineRef"] | null;
         };
         /**
          * @description What an Insight is about.

@@ -3,7 +3,7 @@
 use super::measure::{Span, series_of};
 use crate::analysis::{
     Period,
-    insights::{Measure, Point, Series, Subject, SubjectKind},
+    insights::{Measure, Point, RoutineRef, Series, Subject, SubjectKind},
     lifelog::LifeEntry,
     routines::{Routine, occurrences},
 };
@@ -14,21 +14,22 @@ pub(super) fn series(reach: &Period, routines: &[Routine], entries: &[LifeEntry]
     let mut all = Vec::new();
     for routine in routines {
         let found = occurrences(reach, &routine.steps, entries);
+        let reference = RoutineRef {
+            id: routine.id,
+            name: routine.name.clone(),
+        };
         for (index, step) in routine.steps.iter().enumerate() {
             let spans: Vec<Span> = found
                 .iter()
                 .filter_map(|o| {
                     let span = o.steps[index].as_ref()?;
-                    Some(Span {
-                        date: o.date,
-                        start: span.start,
-                        end: span.end,
-                    })
+                    Some(Span::continuous(o.date, span.start, span.end))
                 })
                 .collect();
             let subject = Subject {
                 kind: SubjectKind::RoutineStep,
                 name: step.label.clone(),
+                routine: Some(reference.clone()),
             };
             all.extend(series_of(&subject, tz, &spans));
         }
@@ -45,6 +46,7 @@ pub(super) fn series(reach: &Period, routines: &[Routine], entries: &[LifeEntry]
             let subject = Subject {
                 kind: SubjectKind::RoutineTotal,
                 name: routine.name.clone(),
+                routine: Some(reference),
             };
             all.push(Series {
                 subject,
@@ -193,6 +195,25 @@ mod tests {
                 .points
                 .len(),
             3
+        );
+    }
+
+    #[test]
+    fn steps_and_totals_name_the_routine_they_belong_to() {
+        let entries: Vec<_> = [4, 5].into_iter().flat_map(day).collect();
+        let all = series(
+            &reach(),
+            &[routine(vec![step("Commute", "to"), step("Office", "in")])],
+            &entries,
+        );
+        let reference = RoutineRef {
+            id: 1,
+            name: "Office day".into(),
+        };
+        assert!(!all.is_empty());
+        assert!(
+            all.iter()
+                .all(|s| s.subject.routine.as_ref() == Some(&reference))
         );
     }
 

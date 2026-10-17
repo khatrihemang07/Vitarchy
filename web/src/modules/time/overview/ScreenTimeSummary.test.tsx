@@ -14,18 +14,32 @@ const totals = (seconds: number) => ({
   ],
 });
 
+/** `count` finished Days of `seconds` each. */
+const days = (count: number, seconds: number) => Array.from({ length: count }, (_, i) => ({ date: `2026-05-${String(i + 1).padStart(2, "0")}`, seconds }));
+
+interface Figures { seconds: number; days: number }
+
 /** Answers by the `from` date, so the current and previous Period differ. */
-const byPeriod = (current: number, before: number) => (request: Request) =>
-  jsonResponse(200, overviewBody({ totals: totals(new URL(request.url).searchParams.get("from") === period.from ? current : before) }));
+const byPeriod = (current: Figures, before: Figures) => (request: Request) => {
+  const figures = new URL(request.url).searchParams.get("from") === period.from ? current : before;
+  return jsonResponse(
+    200,
+    overviewBody({
+      totals: totals(figures.seconds),
+      top_contexts: figures.seconds === 0 ? [] : [{ name: "vitarchy", seconds: figures.seconds * 0.6 }],
+      day_totals: days(figures.days, figures.days === 0 ? 0 : figures.seconds / figures.days),
+    }),
+  );
+};
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ScreenTimeSummary", () => {
   it("shows the total, the change against the previous Period, and the top apps and Contexts", async () => {
-    stubApi({ [OVERVIEW]: byPeriod(3 * 3600, 2 * 3600) });
+    stubApi({ [OVERVIEW]: byPeriod({ seconds: 3 * 3600, days: 2 }, { seconds: 14 * 3600, days: 7 }) });
     renderWithClient(<ScreenTimeSummary period={period} previous={previous} />);
     expect(await screen.findByText("3 h")).toBeInTheDocument();
-    expect(await screen.findByText("1 h more than the previous Period (+50%)")).toBeInTheDocument();
+    expect(await screen.findByText("30 min less per day than the previous Period (-25%)")).toBeInTheDocument();
     const apps = screen.getByRole("list", { name: "Top apps" });
     expect(within(apps).getByText("Code")).toBeInTheDocument();
     expect(within(apps).getByText("Slack")).toBeInTheDocument();
@@ -34,15 +48,25 @@ describe("ScreenTimeSummary", () => {
     expect(within(contexts).queryByText("Slack")).not.toBeInTheDocument();
   });
 
+  it("lists the Contexts the server ranked, without working them out again", async () => {
+    stubApi({
+      [OVERVIEW]: () => jsonResponse(200, overviewBody({ totals: totals(3600), top_contexts: [{ name: "Ranked by server", seconds: 100 }], day_totals: days(1, 3600) })),
+    });
+    renderWithClient(<ScreenTimeSummary period={period} previous={previous} />);
+    const contexts = await screen.findByRole("list", { name: "Top Contexts" });
+    expect(within(contexts).getByText("Ranked by server")).toBeInTheDocument();
+    expect(within(contexts).queryByText("vitarchy")).not.toBeInTheDocument();
+  });
+
   it("leaves out the comparison when the previous Period had no Activity", async () => {
-    stubApi({ [OVERVIEW]: byPeriod(3600, 0) });
+    stubApi({ [OVERVIEW]: byPeriod({ seconds: 3600, days: 1 }, { seconds: 0, days: 0 }) });
     renderWithClient(<ScreenTimeSummary period={period} previous={previous} />);
     await screen.findByText("1 h");
     expect(screen.queryByText(/previous Period/)).not.toBeInTheDocument();
   });
 
   it("says so when there is no Activity, and explains a failure", async () => {
-    stubApi({ [OVERVIEW]: byPeriod(0, 0) });
+    stubApi({ [OVERVIEW]: byPeriod({ seconds: 0, days: 0 }, { seconds: 0, days: 0 }) });
     const { unmount } = renderWithClient(<ScreenTimeSummary period={period} previous={previous} />);
     expect(await screen.findByText("No Activity in this Period.")).toBeInTheDocument();
     unmount();

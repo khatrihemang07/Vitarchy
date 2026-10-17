@@ -8,6 +8,8 @@ export function overviewBody(parts: Record<string, unknown> = {}) {
     heatmap: { seconds: Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0)) },
     bounds: [],
     trend: { weeks: [], series: [], other: [] },
+    top_contexts: [],
+    day_totals: [],
     ...parts,
   };
 }

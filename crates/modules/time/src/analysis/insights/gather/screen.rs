@@ -2,11 +2,11 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::NaiveDate;
 
 use crate::analysis::{
     Period,
-    activity::{ActivityRow, totals},
+    activity::{ActivityRow, TOP_SUBJECTS, day_totals, top_contexts, totals},
     insights::{Measure, Point, Series, Subject, SubjectKind},
     split_by_day,
 };
@@ -14,25 +14,21 @@ use crate::analysis::{
 /// Milliseconds per Day, per app or Context name.
 type PerDay = HashMap<String, BTreeMap<NaiveDate, i64>>;
 
-/// Apps, and Contexts, measured: the busiest of each over the report.
-pub(super) const TOP_SUBJECTS: usize = 5;
-
 /// Screen-time series over the reach for the busiest apps and Contexts of `report`. Only Days
-/// that finished and have some Activity count, so a Day with no import is not a run of zeros.
+/// up to `through` that have some Activity count (see [`day_totals`]), so a Day with no import
+/// is not a run of zeros.
 pub(super) fn series(
     report: &Period,
     reach: &Period,
     rows: &[ActivityRow],
-    now: DateTime<Utc>,
+    through: NaiveDate,
 ) -> Vec<Series> {
     let (apps, contexts) = busiest(report, rows);
     let mut per_app = PerDay::new();
     let mut per_context = PerDay::new();
-    let mut day_total: BTreeMap<NaiveDate, i64> = BTreeMap::new();
     for row in rows {
         for portion in split_by_day(reach, row.start, row.end) {
             let ms = portion.millis();
-            *day_total.entry(portion.date).or_default() += ms;
             if apps.contains(&row.app) {
                 *per_app
                     .entry(row.app.clone())
@@ -49,10 +45,8 @@ pub(super) fn series(
             }
         }
     }
-    let counted: Vec<NaiveDate> = reach
-        .days()
-        .iter()
-        .filter(|day| day.end <= now && day_total.get(&day.date).is_some_and(|ms| *ms > 0))
+    let counted: Vec<NaiveDate> = day_totals(reach, rows, through)
+        .into_iter()
         .map(|day| day.date)
         .collect();
     [
@@ -63,7 +57,11 @@ pub(super) fn series(
     .flat_map(|(kind, named)| {
         let counted = &counted;
         named.into_iter().map(move |(name, days)| Series {
-            subject: Subject { kind, name },
+            subject: Subject {
+                kind,
+                name,
+                routine: None,
+            },
             measure: Measure::Length,
             points: counted
                 .iter()
@@ -77,8 +75,7 @@ pub(super) fn series(
     .collect()
 }
 
-/// The names of the [`TOP_SUBJECTS`] longest-used apps, and of the longest-used Contexts that
-/// differ from their app's name (those would only repeat the app).
+/// The names of the busiest apps, and of the busiest Contexts (see [`top_contexts`]).
 fn busiest(report: &Period, rows: &[ActivityRow]) -> (HashSet<String>, HashSet<String>) {
     let all = totals(report, rows);
     let apps = all
@@ -87,20 +84,11 @@ fn busiest(report: &Period, rows: &[ActivityRow]) -> (HashSet<String>, HashSet<S
         .take(TOP_SUBJECTS)
         .map(|a| a.app.clone())
         .collect();
-    let mut contexts: HashMap<&str, i64> = HashMap::new();
-    for app in &all.apps {
-        for context in app.contexts.iter().filter(|c| c.name != app.app) {
-            *contexts.entry(&context.name).or_default() += context.seconds;
-        }
-    }
-    let mut ranked: Vec<(&str, i64)> = contexts.into_iter().collect();
-    ranked.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
-    let names = ranked
+    let contexts = top_contexts(&all, TOP_SUBJECTS)
         .into_iter()
-        .take(TOP_SUBJECTS)
-        .map(|(name, _)| name.to_owned())
+        .map(|c| c.name)
         .collect();
-    (apps, names)
+    (apps, contexts)
 }
 
 // A Day's milliseconds are far inside f64's exact range.
@@ -127,8 +115,8 @@ mod tests {
         Period::parse("2026-05-01", "2026-05-31", "UTC").unwrap()
     }
 
-    fn now() -> DateTime<Utc> {
-        "2026-06-01T12:00:00Z".parse().unwrap()
+    fn through() -> NaiveDate {
+        "2026-05-31".parse().unwrap()
     }
 
     fn find<'a>(all: &'a [Series], kind: SubjectKind, name: &str) -> &'a Series {
@@ -154,7 +142,7 @@ mod tests {
             row("Slack", "", 4, "10:00", "10:30"),
             row("Slack", "", 5, "10:00", "10:30"),
         ];
-        let all = series(&period(), &period(), &rows, now());
+        let all = series(&period(), &period(), &rows, through());
         let brave = find(&all, SubjectKind::App, "Brave");
         assert_eq!(brave.measure, Measure::Length);
         // 5 May has Activity (Slack), so Brave counts 0 there.
@@ -167,7 +155,7 @@ mod tests {
             row("Brave", "", 4, "09:00", "10:00"),
             row("Brave", "", 6, "09:00", "10:00"),
         ];
-        let all = series(&period(), &period(), &rows, now());
+        let all = series(&period(), &period(), &rows, through());
         assert_eq!(
             minutes(find(&all, SubjectKind::App, "Brave")),
             [(4, 60.0), (6, 60.0)]
@@ -180,8 +168,8 @@ mod tests {
             row("Brave", "", 4, "09:00", "10:00"),
             row("Brave", "", 5, "09:00", "10:00"),
         ];
-        let midday: DateTime<Utc> = "2026-05-05T12:00:00Z".parse().unwrap();
-        let all = series(&period(), &period(), &rows, midday);
+        let yesterday: NaiveDate = "2026-05-04".parse().unwrap();
+        let all = series(&period(), &period(), &rows, yesterday);
         assert_eq!(minutes(find(&all, SubjectKind::App, "Brave")), [(4, 60.0)]);
     }
 
@@ -191,7 +179,7 @@ mod tests {
             row("Code", "main.rs \u{2014} vitarchy", 4, "09:00", "11:00"),
             row("Slack", "", 4, "11:00", "11:30"),
         ];
-        let all = series(&period(), &period(), &rows, now());
+        let all = series(&period(), &period(), &rows, through());
         assert_eq!(
             minutes(find(&all, SubjectKind::Context, "vitarchy")),
             [(4, 120.0)]
@@ -216,7 +204,7 @@ mod tests {
                 )
             })
             .collect();
-        let all = series(&period(), &period(), &rows, now());
+        let all = series(&period(), &period(), &rows, through());
         let apps = all
             .iter()
             .filter(|s| s.subject.kind == SubjectKind::App)

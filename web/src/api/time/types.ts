@@ -29,6 +29,10 @@ export type ActivityTimeline = components["schemas"]["DayTimeline"];
 export type ActivitySpan = components["schemas"]["Span"];
 /** Weekly screen time for the busiest apps. */
 export type ActivityTrend = components["schemas"]["Trend"];
+/** One Context and its seconds, across apps. */
+export type ActivityRankedContext = components["schemas"]["RankedContext"];
+/** One finished Day's screen time. */
+export type DayTotal = components["schemas"]["DayTotal"];
 /** Everything the Activity tab draws for a Period, from one response. */
 export type ActivityOverview = components["schemas"]["Overview"];
 /** Which weekday a week starts on. */
@@ -72,6 +76,8 @@ export type RoutineStats = components["schemas"]["RoutineStats"];
 
 /** One plain statement found in the person's own data, ranked by notability. */
 export type Insight = components["schemas"]["Insight"];
+/** The Insights for a Period and the length of the windows a change compares. */
+export type InsightsResult = components["schemas"]["Insights"];
 /** What kind of statement an Insight makes. */
 export type InsightKind = components["schemas"]["InsightKind"];
 /** What an Insight is about: a Routine Step, a Routine, a description, an app or a Context. */

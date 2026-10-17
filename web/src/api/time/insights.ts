@@ -4,12 +4,11 @@ import { api } from "../client";
 import type { ActivityPeriod } from "./activityAnalysis";
 import { insightsKey } from "./keys";
 
-/** The most notable Insights for a Period, most notable first. */
+/** The most notable Insights for a Period, most notable first, with the comparison window's length. */
 export function useInsights(period: ActivityPeriod) {
   return useQuery({
     queryKey: insightsKey(period),
     queryFn: () => callApi(() => api.GET("/api/time/analysis/insights", { params: { query: period } })),
-    select: (body) => body.insights,
     retry: false,
   });
 }

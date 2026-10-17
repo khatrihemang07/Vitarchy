@@ -399,4 +399,54 @@ mod tests {
         assert!(chains.contains(&vec!["a", "b"]));
         assert!(!chains.contains(&vec!["a", "b", "c"]));
     }
+
+    /// dinner and bath on day `d`, then `sleep` starting `sleep_at` on day `d` + 1.
+    fn nights(count: u32, sleep_at: &str) -> Vec<LifeEntry> {
+        (1..=count)
+            .flat_map(|d| {
+                vec![
+                    entry("p", "dinner", &at(d, "21:00"), &at(d, "21:45")),
+                    entry("p", "bath", &at(d, "23:20"), &at(d, "23:35")),
+                    entry("p", "sleep", &at(d + 1, sleep_at), &at(d + 1, "07:00")),
+                ]
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_step_that_runs_past_midnight_still_links_to_the_evening() {
+        let found = suggest(&period(), &nights(6, "00:10"), &[]);
+        assert_eq!(found.len(), 1);
+        assert_eq!(
+            (steps(&found[0]), found[0].days),
+            (vec!["dinner", "bath", "sleep"], 6)
+        );
+    }
+
+    #[test]
+    fn a_step_before_midnight_links_the_same_way() {
+        let found = suggest(&period(), &nights(6, "23:50"), &[]);
+        assert_eq!(steps(&found[0]), ["dinner", "bath", "sleep"]);
+    }
+
+    #[test]
+    fn a_step_in_the_small_hours_of_the_next_day_links_but_one_after_the_cutoff_does_not() {
+        let chain = |last: &str| -> Vec<Vec<String>> {
+            let entries: Vec<LifeEntry> = (1..=6)
+                .flat_map(|d| {
+                    vec![
+                        entry("p", "a", &at(d, "21:00"), &at(d, "23:59")),
+                        entry("p", "b", &at(d + 1, "02:30"), &at(d + 1, "04:00")),
+                        entry("p", "x", &at(d + 1, last), &at(d + 1, "07:30")),
+                    ]
+                })
+                .collect();
+            suggest(&period(), &entries, &[])
+                .into_iter()
+                .map(|s| s.steps)
+                .collect()
+        };
+        assert!(chain("05:30").iter().any(|s| s == &["a", "b", "x"]));
+        assert!(!chain("06:30").iter().any(|s| s == &["a", "b", "x"]));
+    }
 }

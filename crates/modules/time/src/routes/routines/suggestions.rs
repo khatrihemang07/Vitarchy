@@ -12,7 +12,7 @@ use crate::{
     analysis::routines::{MatchKind, Suggestion, suggest},
     error::{ProblemBody, TimeError},
     repo::routines,
-    routes::analysis::{lifelog::load, params::PeriodQuery},
+    routes::analysis::{lifelog::load_for_routines, params::PeriodQuery},
 };
 
 /// Recurring sequences the person has not saved as Routines.
@@ -22,7 +22,8 @@ pub struct Suggestions {
     pub suggestions: Vec<Suggestion>,
 }
 
-/// Sequences of descriptions that recur in order within a Day, over at least five Days.
+/// Sequences of descriptions that recur in order within a Day (the early hours of the next Day
+/// included), over at least five Days.
 #[utoipa::path(
     get,
     path = "/routines/suggestions",
@@ -39,8 +40,10 @@ pub async fn get_suggestions(
     Query(query): Query<PeriodQuery>,
 ) -> Result<Json<Suggestions>, TimeError> {
     let period = query.period()?;
-    let (listed, entries) =
-        tokio::try_join!(routines::list(&state.pool), load(&state.pool, &period))?;
+    let (listed, entries) = tokio::try_join!(
+        routines::list(&state.pool),
+        load_for_routines(&state.pool, &period)
+    )?;
     let saved: Vec<Vec<String>> = listed
         .into_iter()
         .map(|routine| {

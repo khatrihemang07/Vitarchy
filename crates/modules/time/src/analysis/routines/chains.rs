@@ -9,6 +9,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 
+use super::spill::{by_day, dates, is_early, next_day};
 use crate::analysis::Period;
 use crate::analysis::lifelog::LifeEntry;
 
@@ -27,6 +28,8 @@ struct Run<'a> {
     key: &'a str,
     start: DateTime<Utc>,
     end: DateTime<Utc>,
+    /// Starts on the next Day, in the early hours (see [`spill`](super::spill)).
+    spilled: bool,
 }
 
 /// The described entries that start inside the Period.
@@ -54,18 +57,28 @@ pub(super) fn days_per_chain<'a>(
     counts
 }
 
-/// Each Day's described entries in start order, merged into runs. An entry belongs to the Day it starts in.
+/// Each Day's described entries in start order, merged into runs. An entry belongs to the Day it
+/// starts in, and the next Day's early-hours entries follow as `spilled` runs, so an evening
+/// that ends after midnight is one chain.
 fn runs_by_day<'a>(period: &Period, entries: &'a [LifeEntry]) -> BTreeMap<NaiveDate, Vec<Run<'a>>> {
-    let mut days: BTreeMap<NaiveDate, Vec<&LifeEntry>> = BTreeMap::new();
-    for entry in described_in(period, entries) {
-        let date = entry.start.with_timezone(&period.tz()).date_naive();
-        days.entry(date).or_default().push(entry);
-    }
-    days.into_iter()
-        .map(|(date, mut day)| {
-            day.sort_by_key(|e| e.start);
+    let tz = period.tz();
+    let (first, last) = dates(period);
+    let days = by_day(
+        period,
+        entries
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| !e.description.is_empty()),
+    );
+    days.range(first..=last)
+        .map(|(date, own)| {
+            let next = days.get(&next_day(*date)).map_or(&[][..], Vec::as_slice);
+            let early = next
+                .iter()
+                .filter(|s| is_early(tz, s.entry))
+                .map(|s| (s.entry, true));
             let mut runs: Vec<Run> = vec![];
-            for entry in day {
+            for (entry, spilled) in own.iter().map(|s| (s.entry, false)).chain(early) {
                 match runs.last_mut() {
                     Some(run) if run.key == entry.description_key => {
                         run.end = run.end.max(entry.end);
@@ -74,18 +87,21 @@ fn runs_by_day<'a>(period: &Period, entries: &'a [LifeEntry]) -> BTreeMap<NaiveD
                         key: &entry.description_key,
                         start: entry.start,
                         end: entry.end,
+                        spilled,
                     }),
                 }
             }
-            (date, runs)
+            (*date, runs)
         })
         .collect()
 }
 
 /// Every linked sequence of 2 to [`MAX_SUGGESTED_STEPS`] distinct descriptions in one Day's runs.
+/// A chain must begin on the Day itself, so one made only of next-morning runs counts for that
+/// morning's Day and never twice.
 fn day_chains<'a>(runs: &[Run<'a>]) -> HashSet<Chain<'a>> {
     let mut found = HashSet::new();
-    for first in 0..runs.len() {
+    for first in (0..runs.len()).filter(|i| !runs[*i].spilled) {
         extend(runs, &[first], &mut found);
     }
     found

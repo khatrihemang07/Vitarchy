@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type ActivityPeriod, useInsights } from "@/api/time";
+import { type ActivityPeriod, type Insight, useInsights } from "@/api/time";
 import { Button } from "@/design";
 import { ChartPanel } from "../shared/ChartPanel";
 import { InsightItem } from "./InsightItem";
@@ -7,6 +7,10 @@ import type { InsightTarget } from "./insightTarget";
 
 /** How many Insights lead the Overview before "Show all". */
 export const HEADLINE_INSIGHTS = 5;
+
+/** A key that tells Insights apart even when two Routines share a Step label; the index is the last resort. */
+const insightKey = (insight: Insight, index: number) =>
+  [insight.kind, insight.subject.kind, insight.subject.routine?.id ?? "", insight.subject.name, insight.measure, index].join("-");
 
 interface InsightListProps {
   period: ActivityPeriod;
@@ -22,14 +26,14 @@ export function InsightList({ period, onOpen }: InsightListProps) {
       title="Insights"
       description="Plain statistics from your own Time Entries and Activity, most notable first."
       query={query}
-      isEmpty={(insights) => insights.length === 0}
+      isEmpty={(result) => result.insights.length === 0}
       emptyMessage="Nothing stands out yet. Insights appear once there are enough Days of Time Entries or Activity."
     >
-      {(insights) => (
+      {({ insights, change_window_days: windowDays }) => (
         <>
           <ul className="flex flex-col">
-            {(all ? insights : insights.slice(0, HEADLINE_INSIGHTS)).map((insight) => (
-              <InsightItem key={`${insight.kind}-${insight.subject.kind}-${insight.subject.name}-${insight.measure}`} insight={insight} onOpen={onOpen} />
+            {(all ? insights : insights.slice(0, HEADLINE_INSIGHTS)).map((insight, index) => (
+              <InsightItem key={insightKey(insight, index)} insight={insight} windowDays={windowDays} onOpen={onOpen} />
             ))}
           </ul>
           {insights.length > HEADLINE_INSIGHTS ? (

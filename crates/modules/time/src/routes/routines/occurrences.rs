@@ -12,7 +12,7 @@ use crate::{
     analysis::routines::{Occurrence, Routine, RoutineStats, occurrences, routine_stats},
     error::{ProblemBody, TimeError},
     repo::routines,
-    routes::analysis::{lifelog::load, params::PeriodQuery},
+    routes::analysis::{lifelog::load_for_routines, params::PeriodQuery},
 };
 
 /// How one Routine went over a Period.
@@ -51,8 +51,10 @@ pub async fn get_occurrences(
     Query(query): Query<PeriodQuery>,
 ) -> Result<Json<AllRoutineOccurrences>, TimeError> {
     let period = query.period()?;
-    let (saved, entries) =
-        tokio::try_join!(routines::list(&state.pool), load(&state.pool, &period))?;
+    let (saved, entries) = tokio::try_join!(
+        routines::list(&state.pool),
+        load_for_routines(&state.pool, &period)
+    )?;
     let found: Vec<RoutineOccurrences> = saved
         .into_iter()
         .map(|routine| {

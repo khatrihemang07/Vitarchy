@@ -104,6 +104,13 @@ impl Period {
     }
 }
 
+/// The latest local date in `tz` that is over at `now`: the day before today.
+#[must_use]
+pub fn last_finished_date(tz: Tz, now: DateTime<Utc>) -> NaiveDate {
+    let today = now.with_timezone(&tz).date_naive();
+    today.pred_opt().unwrap_or(today)
+}
+
 fn parse_date(text: &str) -> Result<NaiveDate, PeriodError> {
     NaiveDate::parse_from_str(text, "%Y-%m-%d").map_err(|_| PeriodError::InvalidDate)
 }
@@ -134,6 +141,20 @@ mod tests {
 
     fn utc(text: &str) -> DateTime<Utc> {
         text.parse().unwrap()
+    }
+
+    #[test]
+    fn the_last_finished_date_is_yesterday_in_the_zone() {
+        // 23:30 UTC on the 9th is already the 10th in Kolkata, so the 9th is finished there.
+        let now = utc("2026-01-09T23:30:00Z");
+        assert_eq!(
+            last_finished_date(chrono_tz::Asia::Kolkata, now).to_string(),
+            "2026-01-09"
+        );
+        assert_eq!(
+            last_finished_date(chrono_tz::UTC, now).to_string(),
+            "2026-01-08"
+        );
     }
 
     #[test]

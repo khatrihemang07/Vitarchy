@@ -108,13 +108,16 @@ fn find<'a>(body: &'a Value, kind: &str, name: &str, measure: &str) -> &'a Value
 
 #[tokio::test]
 async fn every_kind_is_found_in_a_realistic_month_and_ranked_by_score() {
-    let (_db, app) = seeded("insights_all").await;
+    let (db, app) = seeded("insights_all").await;
     let (status, body) = get(&app, &format!("/api/time/analysis/insights?{MAY}")).await;
     assert_eq!(status, 200, "{body}");
 
     let steady = find(&body, "typical_time", "To office", "start");
     assert_eq!(steady["numbers"]["value"], 480);
     assert_eq!(steady["subject"]["kind"], "routine_step");
+    assert_eq!(steady["subject"]["routine"]["name"], "Office day");
+    assert!(steady["subject"]["routine"]["id"].is_i64());
+    assert_eq!(body["change_window_days"], 28);
 
     assert_eq!(
         find(&body, "typical_duration", "To office", "length")["numbers"]["value"],
@@ -150,11 +153,12 @@ async fn every_kind_is_found_in_a_realistic_month_and_ranked_by_score() {
         .collect();
     assert!(scores.windows(2).all(|w| w[0] >= w[1]), "{scores:?}");
     assert!(scores.len() <= 20);
+    db.drop().await;
 }
 
 #[tokio::test]
 async fn a_short_period_still_compares_the_last_four_weeks_with_the_four_before() {
-    let (_db, app) = seeded("insights_short").await;
+    let (db, app) = seeded("insights_short").await;
     let (status, body) = get(
         &app,
         "/api/time/analysis/insights?from=2026-05-29&to=2026-05-29&tz=UTC",
@@ -165,11 +169,40 @@ async fn a_short_period_still_compares_the_last_four_weeks_with_the_four_before(
         find(&body, "change", "Brave", "length")["numbers"]["delta"],
         60
     );
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn a_short_period_still_gets_changes_for_a_habit_of_the_whole_reach() {
+    let db = time_db("insights_short_habit").await;
+    let app = time_app(&db, &FakeToggl::new());
+    // A stretch every day: 20 minutes until May 3, 40 minutes after.
+    for day in weekdays("2026-04-06", "2026-05-29") {
+        let long = day >= "2026-05-04".parse().unwrap();
+        let stop = if long { "07:40" } else { "07:20" };
+        entry(
+            &db,
+            "stretch",
+            &format!("{day}T07:00:00Z"),
+            &format!("{day}T{stop}:00Z"),
+        )
+        .await;
+    }
+    let (status, body) = get(
+        &app,
+        "/api/time/analysis/insights?from=2026-05-29&to=2026-05-29&tz=UTC",
+    )
+    .await;
+    assert_eq!(status, 200, "{body}");
+    let change = find(&body, "change", "stretch", "length");
+    assert_eq!(change["numbers"]["delta"], 20);
+    assert_eq!(change["subject"]["routine"], Value::Null);
+    db.drop().await;
 }
 
 #[tokio::test]
 async fn an_empty_period_has_no_insights() {
-    let (_db, app) = seeded("insights_empty").await;
+    let (db, app) = seeded("insights_empty").await;
     let (status, body) = get(
         &app,
         "/api/time/analysis/insights?from=2020-01-01&to=2020-01-31&tz=UTC",
@@ -177,11 +210,12 @@ async fn an_empty_period_has_no_insights() {
     .await;
     assert_eq!(status, 200, "{body}");
     assert_eq!(body["insights"], json!([]));
+    db.drop().await;
 }
 
 #[tokio::test]
 async fn a_bad_zone_is_a_coded_bad_request() {
-    let (_db, app) = seeded("insights_bad_zone").await;
+    let (db, app) = seeded("insights_bad_zone").await;
     let (status, body) = get(
         &app,
         "/api/time/analysis/insights?from=2026-05-01&to=2026-05-31&tz=Nowhere/Land",
@@ -189,4 +223,5 @@ async fn a_bad_zone_is_a_coded_bad_request() {
     .await;
     assert_eq!(status, 400);
     assert_eq!(body["code"], "unknown_time_zone");
+    db.drop().await;
 }
