@@ -7,14 +7,17 @@ use utoipa::ToSchema;
 
 use super::run_info::RunInfo;
 use crate::{
-    activity::SnapshotFile,
-    repo::{activities, runs},
+    activity::{SnapshotFile, Snapshots, Source},
+    repo::{
+        activities::{self, Stats},
+        runs::{self, RunRow},
+    },
 };
 
-/// Activity figures for the status page.
+/// One Source's Activity figures for the status page.
 #[derive(Serialize, ToSchema)]
 pub struct ActivityStatus {
-    /// Activity rows stored.
+    /// Activity rows stored for this Source.
     pub activity_count: i64,
     /// Start of the earliest stored Activity.
     pub oldest: Option<DateTime<Utc>>,
@@ -28,15 +31,53 @@ pub struct ActivityStatus {
     pub last_import: Option<RunInfo>,
 }
 
-/// Stored Activity, the Snapshot's age and the latest Import.
-pub async fn load(pool: &PgPool, snapshot: &SnapshotFile) -> Result<ActivityStatus, sqlx::Error> {
-    let stored = activities::stats(pool).await?;
-    Ok(ActivityStatus {
+/// [`ActivityStatus`] naming the Source it describes.
+#[derive(Serialize, ToSchema)]
+pub struct SourceActivityStatus {
+    /// Which Source.
+    pub source: Source,
+    /// Its figures.
+    #[serde(flatten)]
+    pub status: ActivityStatus,
+}
+
+/// Every Source's status, in descriptor order.
+pub async fn load_all(
+    pool: &PgPool,
+    snapshots: &Snapshots,
+) -> Result<Vec<SourceActivityStatus>, sqlx::Error> {
+    let mut statuses = Vec::new();
+    for source in Source::all() {
+        statuses.push(SourceActivityStatus {
+            source,
+            status: load(pool, source, snapshots.get(source)).await?,
+        });
+    }
+    Ok(statuses)
+}
+
+/// One Source's stored Activity, its Snapshot's age and its latest Import.
+async fn load(
+    pool: &PgPool,
+    source: Source,
+    snapshot: &SnapshotFile,
+) -> Result<ActivityStatus, sqlx::Error> {
+    let stored = activities::stats(pool, source).await?;
+    let last_import = runs::latest(pool, "import", Some(source)).await?;
+    Ok(assemble(&stored, snapshot.taken_at().await, last_import))
+}
+
+fn assemble(
+    stored: &Stats,
+    snapshot_taken_at: Option<DateTime<Utc>>,
+    last_import: Option<RunRow>,
+) -> ActivityStatus {
+    ActivityStatus {
         activity_count: stored.count,
         oldest: stored.oldest,
         newest: stored.newest,
         app_count: stored.app_count,
-        snapshot_taken_at: snapshot.taken_at().await,
-        last_import: runs::latest(pool, "import").await?.map(RunInfo::from),
-    })
+        snapshot_taken_at,
+        last_import: last_import.map(RunInfo::from),
+    }
 }

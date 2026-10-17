@@ -16,3 +16,4 @@ The helper must be started by launchd, not by the server. macOS attributes prote
 - Replacing the signing identity invalidates the FDA grant, so `make signing-setup` refuses to recreate it without `--force`.
 - Reinstalling the helper under the same identity and path keeps the grant.
 - A Snapshot is at most 8 hours old, and its file modification time is its age.
+- The helper also copies Clockify Desktop's data (the newest `Clockify_*.sqlite`), which needs no Full Disk Access but is scheduled for the same age and retention. See [ADR 0010](0010-activity-from-several-sources.md).

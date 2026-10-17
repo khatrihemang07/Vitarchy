@@ -10,5 +10,9 @@ export type SyncCounts = components["schemas"]["SyncCounts"];
 /** What an Import did. */
 export type ImportCounts = components["schemas"]["ImportCounts"];
 
-/** Imported Activity, the Snapshot and the latest Import. */
+/** One Source's stored Activity, Snapshot and latest Import. */
 export type ActivityStatus = components["schemas"]["ActivityStatus"];
+/** An Activity Source: a tracking app whose Activity is Imported. */
+export type Source = components["schemas"]["Source"];
+/** [`ActivityStatus`] naming its Source. */
+export type SourceActivityStatus = components["schemas"]["SourceActivityStatus"];

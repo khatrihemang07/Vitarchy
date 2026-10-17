@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
-import type { ActivityStatus, TimeStatus } from "@/api/time";
+import type { Source, SourceActivityStatus, TimeStatus } from "@/api/time";
 
 /** A `Response` carrying JSON (problem documents use the problem content type). */
 export function jsonResponse(status: number, body: unknown): Response {
@@ -11,14 +11,19 @@ export function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
-/** Activity figures of a person who has imported nothing and has no Snapshot. */
-export const noActivity: ActivityStatus = { activity_count: 0, app_count: 0 };
+/** One Source's figures for a person who has imported nothing and has no Snapshot. */
+export function noActivity(source: Source): SourceActivityStatus {
+  return { source, activity_count: 0, app_count: 0 };
+}
+
+/** Every Source with nothing imported, in the server's order. */
+export const noActivities: SourceActivityStatus[] = [noActivity("toggl"), noActivity("clockify")];
 
 /** Status of a person who has not connected Toggl. */
 export const disconnected: TimeStatus = {
   connected: false,
   time_entry_count: 0,
-  activity: noActivity,
+  activity: noActivities,
 };
 
 /** Status of a connected person who has synced once. */
@@ -26,7 +31,7 @@ export const synced: TimeStatus = {
   connected: true,
   workspace_name: "My Workspace",
   time_entry_count: 2,
-  activity: noActivity,
+  activity: noActivities,
   oldest_entry: "2026-04-01T10:00:00Z",
   newest_entry: "2026-04-05T10:00:00Z",
   last_sync: {

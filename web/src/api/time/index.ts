@@ -3,4 +3,12 @@ export { useDisconnect, useSetConnection } from "./connection";
 export { failureFromCode, toTimeFailure, type TimeFailure } from "./failure";
 export { useTimeStatus } from "./status";
 export { useSyncTime } from "./sync";
-export type { ActivityStatus, ImportCounts, SyncCounts, TimeRun, TimeStatus } from "./types";
+export type {
+  ActivityStatus,
+  ImportCounts,
+  Source,
+  SourceActivityStatus,
+  SyncCounts,
+  TimeRun,
+  TimeStatus,
+} from "./types";

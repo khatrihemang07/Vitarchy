@@ -79,7 +79,7 @@ impl ProblemBody {
         let (status, detail) = match error {
             ActivityError::NoSnapshot => (
                 StatusCode::NOT_FOUND,
-                "There is no Snapshot yet. Install the helper to take one.",
+                "There is no Snapshot yet. Run `make helper-install`.",
             ),
             ActivityError::Unreadable => (
                 StatusCode::UNPROCESSABLE_ENTITY,

@@ -37,19 +37,23 @@ A span of time the person deliberately recorded in Toggl Track, usually with a d
 _Avoid_: Log, record
 
 **Activity**:
-What the Toggl Track app passively noticed on this computer: which app and window was in use, and when. It is separate from Time Entries and is analysed separately.
+What a tracking app passively noticed on this computer: which app and window was in use, and when. Each piece of Activity comes from exactly one Source. It is separate from Time Entries and is analysed separately.
 _Avoid_: Timeline, tracking
+
+**Source**:
+A tracking app whose local data Vitarchy Imports Activity from, such as Toggl Track or Clockify Desktop. Each Source's Activity is kept as that Source recorded it; Activity from several Sources is combined only when it is read.
+_Avoid_: Tracker, provider, integration
 
 **Sync**:
 Bringing the person's Time Entries from Toggl into Vitarchy so the copy matches Toggl, including deletions. The person starts it with a button.
 _Avoid_: Refresh, pull, update
 
 **Import**:
-Adding Activity from the latest Snapshot to Vitarchy. It only adds, so Vitarchy keeps Activity that Toggl later discards. The person starts it with a button.
+Adding Activity from one Source's latest Snapshot to Vitarchy. It only adds, so Vitarchy keeps Activity that the Source later discards. The person starts it with a button.
 _Avoid_: Sync, load
 
 **Snapshot**:
-A consistent copy of the Toggl Track app's local data, taken on a schedule, from which Activity is Imported. Its age is when it was taken.
+A consistent copy of one Source's local data, taken on a schedule, from which Activity is Imported. Its age is when it was taken.
 _Avoid_: Backup, export, dump
 
 **Toggl connection**:

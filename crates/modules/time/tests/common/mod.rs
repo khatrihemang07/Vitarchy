@@ -1,9 +1,14 @@
 //! Fixtures: a stage database with the Time schema, a fake Toggl and a request helper.
 #![allow(dead_code)]
 
+pub mod activity;
+pub mod clockify_snapshot;
 pub mod snapshot;
 
-use std::sync::{Arc, Mutex};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 use axum::{Router, body::Body, http::Request};
@@ -11,12 +16,12 @@ use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 use vitarchy_core::{AppState, test_db::TestDb};
-use vitarchy_time::SnapshotFile;
 use vitarchy_time::toggl::{
     api::{TogglApi, TogglFactory},
     error::TogglError,
     types::{EntryQuery, Me, Raw, TogglClient, TogglEntry, TogglProject, TogglTag, Workspace},
 };
+use vitarchy_time::{SnapshotFile, Snapshots, Source};
 
 pub const TOKEN: &str = "SECRETTOKEN123";
 
@@ -181,19 +186,24 @@ pub async fn time_db(label: &str) -> TestDb {
 
 /// The Time routes over `db`, using `fake`, mounted as the server mounts them.
 pub fn time_app(db: &TestDb, fake: &FakeToggl) -> Router {
-    time_app_with_snapshot(
-        db,
-        fake,
-        SnapshotFile::at("/nonexistent/vitarchy/latest.sqlite"),
-    )
+    time_app_with_snapshots(db, fake, [])
 }
 
-/// Like [`time_app`], reading Activity from `snapshot`.
-pub fn time_app_with_snapshot(db: &TestDb, fake: &FakeToggl, snapshot: SnapshotFile) -> Router {
+/// Like [`time_app`], with each `(Source, Snapshot)` pointed at its fixture. Sources not
+/// listed have no Snapshot.
+pub fn time_app_with_snapshots(
+    db: &TestDb,
+    fake: &FakeToggl,
+    files: impl IntoIterator<Item = (Source, SnapshotFile)>,
+) -> Router {
+    let snapshots = files.into_iter().fold(
+        Snapshots::resolve(Some(Path::new("/nonexistent/vitarchy")), |_| None),
+        |snapshots, (source, file)| snapshots.with(source, file),
+    );
     let (router, _) = utoipa_axum::router::OpenApiRouter::new()
         .nest(
             "/api/time",
-            vitarchy_time::router_with(fake.factory(), snapshot),
+            vitarchy_time::router_with(fake.factory(), snapshots),
         )
         .split_for_parts();
     router.with_state(AppState::new(db.pool.clone()))

@@ -1,14 +1,24 @@
-//! Activity Import: bringing Activity from the latest Snapshot into Vitarchy.
-//! Append-only, so Vitarchy keeps Activity that Toggl later discards.
+//! Activity Import: bringing Activity from each Source's latest Snapshot into Vitarchy.
+//! Append-only, so Vitarchy keeps Activity that a Source later discards. Each row is kept
+//! exactly as its Source recorded it; combining Sources is left to whatever reads them.
 
+mod clockify;
+mod core_data;
 mod counts;
+mod dedupe;
 mod error;
 mod import;
-pub(crate) mod parse;
-mod read;
+mod model;
+mod read_snapshot;
 mod snapshot_path;
+mod snapshots;
+mod source;
+mod toggl;
 
 pub use counts::ImportCounts;
 pub use error::ActivityError;
 pub use import::run_import;
+pub use model::Activity;
 pub use snapshot_path::SnapshotFile;
+pub use snapshots::Snapshots;
+pub use source::Source;

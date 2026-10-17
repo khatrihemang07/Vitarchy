@@ -3,13 +3,15 @@
 mod common;
 
 use common::{
-    FakeToggl, TOKEN, call, connect,
+    FakeToggl, TOKEN, call,
+    clockify_snapshot::{ClockifyFixture, Item},
+    connect,
     snapshot::{Fixture, Row},
-    stopped_entry, time_app, time_app_with_snapshot, time_db,
+    stopped_entry, time_app, time_app_with_snapshots, time_db,
 };
 use serde_json::Value;
 use vitarchy_core::log_capture::capture_logs;
-use vitarchy_time::toggl::error::TogglError;
+use vitarchy_time::{Source, toggl::error::TogglError};
 
 fn lines_with(logs: &str, message: &str) -> Vec<Value> {
     logs.lines()
@@ -81,24 +83,48 @@ async fn a_rejected_token_is_not_logged() {
 }
 
 #[tokio::test]
-async fn an_import_logs_counts_and_duration_but_not_titles_or_app_names() {
+async fn an_import_logs_source_counts_and_duration_but_not_titles_apps_or_urls() {
     let db = time_db("logimport").await;
-    let snap = Fixture::new();
+    let toggl = Fixture::new();
     let mut row = Row::new(1, 0.0, 60.0);
     row.app = "SECRETAPPNAME";
     row.title = "SECRETWINDOWTITLE";
-    snap.write(&[row]);
-    let app = time_app_with_snapshot(&db, &FakeToggl::new(), snap.file());
+    toggl.write(&[row]);
+    let clockify = ClockifyFixture::new();
+    let mut item = Item::new("a", 0, 60);
+    item.name = "SECRETCLOCKIFYAPP";
+    item.url = "https://secret.example/page";
+    clockify.write(&[item]);
+    let app = time_app_with_snapshots(
+        &db,
+        &FakeToggl::new(),
+        [
+            (Source::Toggl, toggl.file()),
+            (Source::Clockify, clockify.file()),
+        ],
+    );
 
-    let (_, logs) = capture_logs(call(&app, "POST", "/api/time/activity/import", None)).await;
+    let ((), logs) = capture_logs(async {
+        call(&app, "POST", "/api/time/activity/toggl/import", None).await;
+        call(&app, "POST", "/api/time/activity/clockify/import", None).await;
+    })
+    .await;
 
     let finished = lines_with(&logs, "activity import finished");
-    assert_eq!(finished.len(), 1, "{logs}");
+    let sources: Vec<_> = finished
+        .iter()
+        .map(|l| l["fields"]["source"].clone())
+        .collect();
+    assert_eq!(sources, ["toggl", "clockify"], "{logs}");
     assert_eq!(finished[0]["fields"]["inserted"], 1);
     assert!(finished[0]["fields"]["duration_ms"].is_number());
-    assert!(
-        !logs.contains("SECRETAPPNAME") && !logs.contains("SECRETWINDOWTITLE"),
-        "{logs}"
-    );
+    for secret in [
+        "SECRETAPPNAME",
+        "SECRETWINDOWTITLE",
+        "SECRETCLOCKIFYAPP",
+        "secret.example",
+    ] {
+        assert!(!logs.contains(secret), "{secret} leaked: {logs}");
+    }
     db.drop().await;
 }

@@ -7,11 +7,11 @@ use utoipa::ToSchema;
 use vitarchy_core::{ApiError, AppState, Problem};
 
 use super::{
-    activity_status::{self, ActivityStatus},
+    activity_status::{self, SourceActivityStatus},
     run_info::RunInfo,
 };
 use crate::{
-    activity::SnapshotFile,
+    activity::Snapshots,
     repo::{connection, entries, runs},
 };
 
@@ -30,8 +30,8 @@ pub struct TimeStatus {
     pub oldest_entry: Option<DateTime<Utc>>,
     /// Start of the latest stored entry.
     pub newest_entry: Option<DateTime<Utc>>,
-    /// Imported Activity, the Snapshot and the latest Import.
-    pub activity: ActivityStatus,
+    /// Imported Activity, Snapshot and latest Import for each Source, in a fixed order.
+    pub activity: Vec<SourceActivityStatus>,
 }
 
 /// Connection, latest runs and how much has been mirrored.
@@ -47,7 +47,7 @@ pub struct TimeStatus {
 #[tracing::instrument(skip_all)]
 pub async fn get_status(
     State(state): State<AppState>,
-    Extension(snapshot): Extension<SnapshotFile>,
+    Extension(snapshots): Extension<Snapshots>,
 ) -> Result<Json<TimeStatus>, ApiError> {
     let pool = &state.pool;
     let connection = connection::get(pool).await?;
@@ -55,10 +55,10 @@ pub async fn get_status(
     Ok(Json(TimeStatus {
         connected: connection.is_some(),
         workspace_name: connection.map(|c| c.workspace_name),
-        last_sync: runs::latest(pool, "sync").await?.map(RunInfo::from),
+        last_sync: runs::latest(pool, "sync", None).await?.map(RunInfo::from),
         time_entry_count: mirrored.count,
         oldest_entry: mirrored.oldest,
         newest_entry: mirrored.newest,
-        activity: activity_status::load(pool, &snapshot).await?,
+        activity: activity_status::load_all(pool, &snapshots).await?,
     }))
 }

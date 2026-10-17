@@ -1,8 +1,8 @@
-import { ActivityImportCard } from "./ActivityImportCard";
+import { ActivityImports } from "./ActivityImports";
 import { ConnectionCard } from "./ConnectionCard";
 import { SyncCard } from "./SyncCard";
 
-/** `/time`: connect Toggl, Sync Time Entries, and (soon) Import Activity. */
+/** `/time`: connect Toggl, Sync Time Entries, and Import Activity from Toggl and Clockify. */
 export function TimePage() {
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -12,7 +12,7 @@ export function TimePage() {
       </header>
       <ConnectionCard />
       <SyncCard />
-      <ActivityImportCard />
+      <ActivityImports />
     </div>
   );
 }

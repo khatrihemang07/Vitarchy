@@ -125,29 +125,32 @@ See ADR 0006 for why settings are stored as one JSON document per scope.
 
 ## Time module
 
-Time keeps two things apart: **Time Entries** (what you record in Toggl, brought in by **Sync**) and **Activity** (what the Toggl Track app noticed, brought in by **Import**). Open Time in the app; both run from buttons.
+Time keeps two things apart: **Time Entries** (what you record in Toggl, brought in by **Sync**) and **Activity** (what tracking apps noticed on this computer, brought in by **Import**). Activity has two **Sources**, Toggl Track and Clockify Desktop, each with its own Snapshot and Import button; rows live in one table keyed by Source ([ADR 0010](adr/0010-activity-from-several-sources.md)). Open Time in the app; all of it runs from buttons.
 
 - **Connect Toggl:** paste your Toggl API token (Toggl profile > API token) into the Connect card. The server checks it, stores it, and never shows or logs it again. Disconnect forgets it but keeps synced entries. Connecting a different Toggl user or workspace clears the old one's entries, projects, clients and tags (they are Toggl's, and the next Sync fetches the new ones); Activity is never cleared.
 - **Sync now:** brings the last 3 months of Time Entries and keeps the copy matching Toggl (a deleted entry disappears here too). The first Sync, a reconnect, or one after 80+ days away reads the whole window and also removes entries Toggl no longer lists; a later Sync reads only changes. Only one Sync runs at a time. Entries of other workspaces are ignored, and running timers wait for a later Sync (one that was synced and is now running leaves the copy until it stops). A Toggl rate limit shows when it resets.
-- **Import activity:** reads the latest Snapshot (see [Activity snapshot helper](#activity-snapshot-helper)) and only adds or refreshes rows, never deletes, so Vitarchy keeps Activity that Toggl later discards. A repeat Import changes nothing. An ongoing activity gets its later end on the next Import. Rows with an unreadable id or impossible times are skipped and counted.
-- **Stage and tests:** `TIME_ACTIVITY_SNAPSHOT` points the server at another Snapshot file. Tests build a synthetic one in a temporary folder.
+- **Import activity:** one button per Source (`POST /api/time/activity/{source}/import`, `toggl` or `clockify`). It reads that Source's latest Snapshot (see [Activity snapshot helper](#activity-snapshot-helper)) and only adds or refreshes rows, never deletes, so Vitarchy keeps Activity that the Source later discards. A repeat Import changes nothing. Each row is stored as its Source recorded it: Clockify rows also carry the page address and idle seconds (its icons are dropped), Toggl rows carry the device and idle flag. An ongoing activity gets its later end on the next Import. Rows with an unreadable id or impossible times are skipped and counted.
+- **Stage and tests:** `TIME_ACTIVITY_SNAPSHOT` (Toggl) and `TIME_CLOCKIFY_SNAPSHOT` (Clockify) point the server at other Snapshot files. Tests build synthetic ones in temporary folders.
+- **Adding a Source:** a row in the descriptor table in `activity/source.rs`, a reader and parser under `activity/<source>/`, a job in the helper's `jobs.rs`, a copy entry in `web/src/modules/time/sourceCopy.ts`, and a migration widening the `source` checks.
 - **Troubleshooting:**
   - "No Snapshot yet": the helper has not run. `make helper-install`, grant Full Disk Access, then `make helper-run`.
-  - "The Snapshot could not be read": the file is damaged or not Toggl's database. `make helper-run` takes a fresh one.
+  - "The Snapshot could not be read": the file is damaged or not that Source's database. `make helper-run` takes a fresh one.
   - Snapshot looks old: it is at most 8 hours old by design. `make helper-run` takes one now.
-  - Server logs: `activity import finished` carries `read`, `inserted`, `updated`, `unchanged`, `skipped`, `duration_ms` and the request id. Titles and app names are never logged.
+  - Server logs: `activity import finished` carries `source`, `read`, `inserted`, `updated`, `unchanged`, `skipped`, `duration_ms` and the request id. Titles and app names are never logged.
 
 ## Activity snapshot helper
 
 Toggl Track's Activity lives in a macOS-protected folder. `crates/helpers/activity-snapshot` is a small signed binary, run by launchd, that copies it into `~/Library/Application Support/Vitarchy/activity/latest.sqlite` (the Snapshot). It has its own Full Disk Access grant, so the terminal and editor need none. Why: [ADR 0009](adr/0009-activity-via-signed-snapshot-helper.md).
 
+The same run also copies Clockify Desktop's newest `Clockify_*.sqlite` (from `~/Library/Application Support/Clockify Desktop`, the file for whichever account is signed in) into `~/Library/Application Support/Vitarchy/clockify/latest.sqlite`. It logs one line per Source and exits non-zero if any failed, but a failing Source never blocks the other.
+
 - **Install:**
   1. `make signing-setup` once. It creates the self-signed `Vitarchy Dev` identity in its own keychain, and refuses to run again without `scripts/setup-signing.sh --force`, because a new identity revokes the Full Disk Access grant.
   2. `make helper-install` builds, signs and verifies the binary, installs it to `~/Library/Application Support/Vitarchy/bin/activity-snapshot`, registers the launchd agent (every 8 hours and at login), and opens System Settings.
 - **Grant Full Disk Access:** in Privacy & Security > Full Disk Access, click `+`, press Cmd+Shift+G, paste the binary path that `make helper-install` printed, and switch it on.
-- **Verify:** `make helper-run`, then `tail -n 3 ~/Library/Logs/Vitarchy/activity-snapshot.log`. A good run logs `outcome=ok bytes=... duration_ms=...`, and `latest.sqlite` exists. Its modification time is the Snapshot time. A failure logs `outcome=error kind=...` (never database content), and `kind=sqlite` usually means the grant is missing.
+- **Verify:** `make helper-run`, then `tail -n 4 ~/Library/Logs/Vitarchy/activity-snapshot.log`. A good run logs one `source=toggl outcome=ok bytes=... duration_ms=...` line and one `source=clockify` line, and each `latest.sqlite` exists. Its modification time is the Snapshot time. A failure logs `source=... outcome=error kind=...` (never database content), and `kind=sqlite` usually means the grant is missing.
 - **Uninstall:** `make helper-uninstall` removes the agent and binary but keeps Snapshots. Remove the Full Disk Access entry by hand.
-- **Tests and stage:** `ACTIVITY_SNAPSHOT_SOURCE` and `ACTIVITY_SNAPSHOT_DEST_DIR` override the source database and destination folder. Never run the helper by hand from a terminal to test Full Disk Access: launchd (`make helper-run`) is what macOS attributes the access to.
+- **Tests and stage:** `ACTIVITY_SNAPSHOT_SOURCE` and `ACTIVITY_SNAPSHOT_DEST_DIR` override Toggl's source database and destination folder; `CLOCKIFY_SNAPSHOT_SOURCE` and `CLOCKIFY_SNAPSHOT_DEST_DIR` do the same for Clockify. Never run the helper by hand from a terminal to test Full Disk Access: launchd (`make helper-run`) is what macOS attributes the access to.
 
 ## Design system
 

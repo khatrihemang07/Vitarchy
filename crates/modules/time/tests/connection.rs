@@ -117,8 +117,8 @@ async fn synced_with_activity(
     connect(&app).await;
     call(&app, "POST", "/api/time/sync", None).await;
     sqlx::query(
-        "INSERT INTO time.activities (toggl_id, app, title, start_at, end_at, idle, raw)
-         VALUES (gen_random_uuid(), 'App', 'T', now(), now(), false, '{}')",
+        "INSERT INTO time.activities (source, source_id, app, title, start_at, end_at, idle, raw)
+         VALUES ('toggl', gen_random_uuid()::text, 'App', 'T', now(), now(), false, '{}')",
     )
     .execute(&db.pool)
     .await

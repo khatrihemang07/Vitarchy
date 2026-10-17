@@ -60,7 +60,7 @@ pub async fn run_sync(
             "sync failed"
         ),
     }
-    runs::record(pool, "sync", started_at, &outcome).await;
+    runs::record(pool, "sync", None, started_at, &outcome).await;
     outcome
 }
 

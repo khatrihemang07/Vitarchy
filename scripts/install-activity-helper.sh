@@ -92,8 +92,10 @@ Installed. One manual step is left: give the helper Full Disk Access.
 
   2. Make sure its switch is on.
   3. Run: make helper-run
-  4. Check the log, which should say outcome=ok:  tail -n 3 "$HELPER_LOG"
-     The Snapshot appears at:                     $HELPER_SNAPSHOT
+  4. Check the log, which should say outcome=ok for source=toggl and source=clockify:
+       tail -n 4 "$HELPER_LOG"
+     The Snapshots appear at:                     $HELPER_SNAPSHOT
+                                                  $HELPER_CLOCKIFY_SNAPSHOT
 
 MSG
 open "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles" || true

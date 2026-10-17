@@ -95,27 +95,32 @@ unset START_ADDR
 [ "$(make_addr LIVE_ENV="$root/.env" START_ADDR=127.0.0.1:7600)" = "BIND_ADDR=127.0.0.1:7600" ] && ok || bad "START_ADDR make argument"
 
 # --- the helper's names and paths agree across Rust and shell ----------------
-# The helper crate, the time Module and scripts/lib/helper.sh each write the Snapshot
-# path (crates cannot depend on each other), and the crate name is the helper's name.
+# The helper crate, the time Module and scripts/lib/helper.sh each write every Source's
+# Snapshot path (crates cannot depend on each other), and the crate name is the helper's name.
 # snapshot_paths_agree HELPER_SH TIME_RS PATHS_RS CARGO_TOML prints each disagreement.
 snapshot_paths_agree() {
   local helper_sh=$1 time_rs=$2 paths_rs=$3 cargo_toml=$4
-  local sh_path sh_name time_path dir file crate
-  sh_path=$( . "$helper_sh"; printf '%s' "${HELPER_SNAPSHOT#"$HOME"/}" )
+  local sh_name crate file status=0
   sh_name=$( . "$helper_sh"; printf '%s' "$HELPER_NAME" )
-  time_path=$(sed -n 's/^const DEFAULT_RELATIVE: &str = "\(.*\)";$/\1/p' "$time_rs")
-  dir=$(sed -n 's/^const DEST_DIR_RELATIVE: &str = "\(.*\)";$/\1/p' "$paths_rs")
-  file=$(sed -n 's/^pub const SNAPSHOT_FILE: &str = "\(.*\)";$/\1/p' "$paths_rs")
   crate=$(sed -n 's/^name = "\(.*\)"$/\1/p' "$cargo_toml" | head -1)
-  local status=0
-  [ -n "$sh_path" ] && [ "$sh_path" = "$time_path" ] || { echo "snapshot path: helper.sh '$sh_path' vs time Module '$time_path'"; status=1; }
-  [ "$sh_path" = "$dir/$file" ] || { echo "snapshot path: helper.sh '$sh_path' vs helper crate '$dir/$file'"; status=1; }
+  file=$(sed -n 's/^pub const SNAPSHOT_FILE: &str = "\(.*\)";$/\1/p' "$paths_rs")
+  # label, helper.sh variable, time Module const, helper crate const
+  local row label sh_var time_const dir_const sh_path time_path dir
+  for row in "toggl HELPER_SNAPSHOT TOGGL_RELATIVE TOGGL_DEST_DIR_RELATIVE" \
+             "clockify HELPER_CLOCKIFY_SNAPSHOT CLOCKIFY_RELATIVE CLOCKIFY_DEST_DIR_RELATIVE"; do
+    read -r label sh_var time_const dir_const <<<"$row"
+    sh_path=$( . "$helper_sh"; v=${!sh_var}; printf '%s' "${v#"$HOME"/}" )
+    time_path=$(sed -n "s/^const $time_const: &str = \"\(.*\)\";\$/\1/p" "$time_rs")
+    dir=$(sed -n "s/^pub const $dir_const: &str = \"\(.*\)\";\$/\1/p" "$paths_rs")
+    [ -n "$sh_path" ] && [ "$sh_path" = "$time_path" ] || { echo "$label snapshot path: helper.sh '$sh_path' vs time Module '$time_path'"; status=1; }
+    [ "$sh_path" = "$dir/$file" ] || { echo "$label snapshot path: helper.sh '$sh_path' vs helper crate '$dir/$file'"; status=1; }
+  done
   [ -n "$sh_name" ] && [ "$sh_name" = "$crate" ] || { echo "helper name: helper.sh '$sh_name' vs Cargo package '$crate'"; status=1; }
   return $status
 }
 helper_files=(
   "$here/scripts/lib/helper.sh"
-  "$here/crates/modules/time/src/activity/snapshot_path.rs"
+  "$here/crates/modules/time/src/activity/source.rs"
   "$here/crates/helpers/activity-snapshot/src/paths.rs"
   "$here/crates/helpers/activity-snapshot/Cargo.toml"
 )
@@ -125,6 +130,11 @@ sed -i.bak 's#latest.sqlite#other.sqlite#' "$tmp/paths.rs"
 expect_status "a drifted helper path is caught" nonzero \
   snapshot_paths_agree "${helper_files[0]}" "${helper_files[1]}" "$tmp/paths.rs" "${helper_files[3]}"
 expect_out "the drift is named" "helper crate"
+cp "${helper_files[1]}" "$tmp/source.rs"
+sed -i.bak 's#Vitarchy/clockify/#Vitarchy/clockify2/#' "$tmp/source.rs"
+expect_status "a drifted Clockify path in the time Module is caught" nonzero \
+  snapshot_paths_agree "${helper_files[0]}" "$tmp/source.rs" "${helper_files[2]}" "${helper_files[3]}"
+expect_out "the Clockify drift is named" "clockify snapshot path"
 
 echo "guards: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

@@ -16,11 +16,12 @@ async fn before_connecting_the_status_is_empty() {
     assert!(reply.json["last_sync"].is_null());
     assert_eq!(reply.json["time_entry_count"], 0);
     assert!(reply.json["oldest_entry"].is_null());
-    let activity = &reply.json["activity"];
-    assert_eq!(activity["activity_count"], 0);
-    assert_eq!(activity["app_count"], 0);
-    assert!(activity["oldest"].is_null() && activity["snapshot_taken_at"].is_null());
-    assert!(activity["last_import"].is_null());
+    for activity in reply.json["activity"].as_array().unwrap() {
+        assert_eq!(activity["activity_count"], 0);
+        assert_eq!(activity["app_count"], 0);
+        assert!(activity["oldest"].is_null() && activity["snapshot_taken_at"].is_null());
+        assert!(activity["last_import"].is_null());
+    }
     db.drop().await;
 }
 

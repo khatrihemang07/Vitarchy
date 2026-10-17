@@ -1,4 +1,4 @@
-//! Copies the source database with `SQLite`'s online backup API.
+//! Copies a source database with `SQLite`'s online backup API.
 //!
 //! The backup API reads through `SQLite` itself, so rows still sitting in the
 //! write-ahead log are captured, which a plain file copy would miss.
@@ -28,7 +28,7 @@ pub struct Snapshot {
 /// Why a Snapshot could not be taken.
 #[derive(Debug, thiserror::Error)]
 pub enum SnapshotError {
-    /// The source database does not exist (the Toggl app is not installed, or the path is wrong).
+    /// The source database does not exist (the tracking app is not installed, or the path is wrong).
     #[error("source database not found at {}", .0.display())]
     SourceMissing(PathBuf),
     /// `SQLite` failed while opening or copying. Usually missing Full Disk Access.
@@ -123,19 +123,15 @@ fn remove_if_present(path: &Path) -> Result<(), SnapshotError> {
 
 #[cfg(test)]
 mod tests {
-    use std::ffi::OsString;
-
     use tempfile::TempDir;
 
     use super::*;
 
     fn paths_in(dir: &TempDir) -> Paths {
-        let root = dir.path().to_path_buf();
-        Paths::resolve(&root, |name| match name {
-            crate::paths::SOURCE_ENV => Some(root.join("source.sqlite").into_os_string()),
-            crate::paths::DEST_DIR_ENV => Some(OsString::from(root.join("out"))),
-            _ => None,
-        })
+        Paths {
+            source: dir.path().join("source.sqlite"),
+            dest_dir: dir.path().join("out"),
+        }
     }
 
     /// A WAL-mode database whose latest rows are still only in the WAL. The

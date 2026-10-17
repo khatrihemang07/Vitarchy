@@ -1,29 +1,24 @@
-//! Entry point: take one Snapshot, log one structured line, exit non-zero on failure.
+//! Entry point: take one Snapshot per Source, log one structured line each, exit non-zero if any failed.
 
 use std::env;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::time::Instant;
 
-use activity_snapshot::paths::Paths;
-use activity_snapshot::{report, snapshot};
+use activity_snapshot::{jobs::resolve_jobs_on_disk, run::run_all};
 
 fn main() -> ExitCode {
     let Some(home) = env::var_os("HOME").map(PathBuf::from) else {
         eprintln!("level=error msg=\"snapshot failed\" outcome=error kind=no_home");
         return ExitCode::FAILURE;
     };
-    let paths = Paths::resolve(&home, |name| env::var_os(name));
-
-    let started = Instant::now();
-    match snapshot::take(&paths) {
-        Ok(taken) => {
-            eprintln!("{}", report::success_line(&taken, started.elapsed()));
-            ExitCode::SUCCESS
-        }
-        Err(error) => {
-            eprintln!("{}", report::failure_line(&error, started.elapsed()));
-            ExitCode::FAILURE
-        }
+    let jobs = resolve_jobs_on_disk(&home, |name| env::var_os(name));
+    let outcome = run_all(&jobs);
+    for line in &outcome.lines {
+        eprintln!("{line}");
+    }
+    if outcome.all_ok {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::FAILURE
     }
 }

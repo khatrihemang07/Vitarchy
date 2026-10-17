@@ -7,6 +7,7 @@ It runs entirely on your own machine. Your data stays in a local database. The a
 ## Features
 
 - **Modular.** Each area of life is a self-contained Module. None are built yet; Time and Finance come first.
+- **Activity from Toggl Track and Clockify.** The Time page can Import what each app noticed on this computer (apps, windows and, for Clockify, page addresses and idle time). Each Source has its own Import button, and a small signed helper keeps a fresh copy of each app's data (see [docs/development.md](docs/development.md#activity-snapshot-helper)).
 - **Settings in one place.** Theme (light, dark or system), motion, your name, week start, clock and date format. Modules add their own sections.
 - **Chroma + Quest design.** Each Module has its own accent colour, with springy motion and game touches like XP, levels and streaks.
 - **Private by default.** The server listens only on `127.0.0.1`, and the browser loads nothing from the internet.

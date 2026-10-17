@@ -1,13 +1,15 @@
-//! Pure: turns Snapshot rows into [`Activity`], counting what it must leave out.
+//! Pure: turns Toggl Snapshot rows into [`Activity`], counting what it must leave out.
 
-use std::{collections::HashMap, fmt::Write};
+use std::fmt::Write;
 
-use chrono::{DateTime, Utc};
 use serde_json::{Value, json};
 
-/// Seconds from the Unix epoch to Core Data's reference date (2001-01-01T00:00:00Z).
-const CORE_DATA_EPOCH_UNIX_SECS: i64 = 978_307_200;
-const MICROS: f64 = 1_000_000.0;
+use crate::activity::{
+    core_data::core_data_time,
+    dedupe::dedupe_latest_end,
+    model::{Activity, Extras, Parsed},
+    source::Source,
+};
 
 /// One `ZMANAGEDACTIVITY` row exactly as stored.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -36,52 +38,6 @@ pub struct RawRow {
     pub id: Option<Vec<u8>>,
 }
 
-/// An Activity ready to store.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Activity {
-    /// Toggl's id for it, as a UUID string (primary key).
-    pub toggl_id: String,
-    /// The device that recorded it, when readable.
-    pub client_id: Option<String>,
-    /// App name.
-    pub app: String,
-    /// Window title (may be empty).
-    pub title: String,
-    /// When it began.
-    pub start_at: DateTime<Utc>,
-    /// When it ended so far.
-    pub end_at: DateTime<Utc>,
-    /// Whether the computer was idle.
-    pub idle: bool,
-    /// Every source column.
-    pub raw: Value,
-}
-
-/// The result of parsing a whole Snapshot.
-#[derive(Debug, Default, PartialEq)]
-pub struct Parsed {
-    /// Distinct, valid Activity.
-    pub activities: Vec<Activity>,
-    /// Rows left out.
-    pub skipped: usize,
-}
-
-/// Seconds since the Core Data reference date as a UTC time, or `None` if not finite or out of range.
-#[must_use]
-pub fn core_data_time(secs: f64) -> Option<DateTime<Utc>> {
-    if !secs.is_finite() {
-        return None;
-    }
-    let micros = (secs * MICROS).round();
-    // Bounded well inside i64 (about +-292k years) before the cast.
-    if micros.abs() > 1.0e17 {
-        return None;
-    }
-    #[allow(clippy::cast_possible_truncation)]
-    let micros = micros as i64;
-    DateTime::from_timestamp_micros(micros.checked_add(CORE_DATA_EPOCH_UNIX_SECS * 1_000_000)?)
-}
-
 /// A 16-byte blob as a hyphenated lowercase UUID string.
 #[must_use]
 pub fn uuid_string(bytes: &[u8]) -> Option<String> {
@@ -100,7 +56,7 @@ pub fn uuid_string(bytes: &[u8]) -> Option<String> {
 /// One row to an Activity, or `None` when its id, times or span are unusable.
 #[must_use]
 pub fn parse_row(row: &RawRow) -> Option<Activity> {
-    let toggl_id = uuid_string(row.id.as_deref()?)?;
+    let source_id = uuid_string(row.id.as_deref()?)?;
     let client_id = row.client.as_deref().and_then(uuid_string);
     let start_at = core_data_time(row.start?)?;
     let end_at = core_data_time(row.end?)?;
@@ -108,14 +64,18 @@ pub fn parse_row(row: &RawRow) -> Option<Activity> {
         return None;
     }
     Some(Activity {
-        raw: raw_json(row, &toggl_id, client_id.as_deref()),
-        toggl_id,
-        client_id,
+        source: Source::Toggl,
+        raw: raw_json(row, &source_id, client_id.as_deref()),
+        source_id,
         app: row.app.clone().unwrap_or_default(),
         title: row.title.clone().unwrap_or_default(),
         start_at,
         end_at,
-        idle: row.is_idle.unwrap_or(0) != 0,
+        extras: Extras {
+            client_id,
+            idle: Some(row.is_idle.unwrap_or(0) != 0),
+            ..Extras::default()
+        },
     })
 }
 
@@ -129,31 +89,10 @@ fn raw_json(row: &RawRow, id: &str, client: Option<&str>) -> Value {
     })
 }
 
-/// Parses every row. A repeated id keeps the row that ends latest; the others count as skipped.
+/// Parses every row; see [`dedupe_latest_end`] for repeated ids.
 #[must_use]
 pub fn parse_all(rows: &[RawRow]) -> Parsed {
-    let mut position: HashMap<String, usize> = HashMap::new();
-    let mut activities: Vec<Activity> = Vec::new();
-    let mut skipped = 0;
-    for row in rows {
-        let Some(activity) = parse_row(row) else {
-            skipped += 1;
-            continue;
-        };
-        if let Some(&at) = position.get(&activity.toggl_id) {
-            skipped += 1;
-            if activity.end_at > activities[at].end_at {
-                activities[at] = activity;
-            }
-        } else {
-            position.insert(activity.toggl_id.clone(), activities.len());
-            activities.push(activity);
-        }
-    }
-    Parsed {
-        activities,
-        skipped,
-    }
+    dedupe_latest_end(rows.iter().map(parse_row))
 }
 
 #[cfg(test)]
@@ -183,28 +122,6 @@ mod tests {
     }
 
     #[test]
-    fn the_core_data_reference_date_is_2001_01_01() {
-        assert_eq!(
-            core_data_time(0.0).unwrap().to_rfc3339(),
-            "2001-01-01T00:00:00+00:00"
-        );
-    }
-
-    #[test]
-    fn fractional_seconds_convert_exactly_to_microseconds() {
-        let time = core_data_time(800_000_000.123_456).unwrap();
-        assert_eq!(time.timestamp(), 1_778_307_200);
-        assert_eq!(time.timestamp_subsec_micros(), 123_456);
-    }
-
-    #[test]
-    fn non_finite_or_absurd_times_are_rejected() {
-        assert!(core_data_time(f64::NAN).is_none());
-        assert!(core_data_time(f64::INFINITY).is_none());
-        assert!(core_data_time(1.0e300).is_none());
-    }
-
-    #[test]
     fn sixteen_bytes_make_a_hyphenated_uuid() {
         assert_eq!(
             uuid_string(&id(0xff)).unwrap(),
@@ -217,7 +134,7 @@ mod tests {
     fn a_row_keeps_an_empty_title_and_its_original_reals_in_raw() {
         let activity = parse_row(&row(1)).unwrap();
         assert_eq!(activity.title, "");
-        assert!(!activity.idle);
+        assert_eq!(activity.extras.idle, Some(false));
         assert_eq!(activity.raw["ZEND"], 90.5);
         assert_eq!(activity.raw["ZID"], "12345678-9abc-def0-0102-030405060701");
     }
@@ -226,7 +143,7 @@ mod tests {
     fn an_idle_flag_marks_the_activity_idle() {
         let mut idle = row(1);
         idle.is_idle = Some(1);
-        assert!(parse_row(&idle).unwrap().idle);
+        assert_eq!(parse_row(&idle).unwrap().extras.idle, Some(true));
     }
 
     #[test]
@@ -246,7 +163,7 @@ mod tests {
     fn an_unreadable_client_does_not_reject_the_row() {
         let mut odd = row(1);
         odd.client = Some(vec![9]);
-        assert_eq!(parse_row(&odd).unwrap().client_id, None);
+        assert_eq!(parse_row(&odd).unwrap().extras.client_id, None);
     }
 
     #[test]

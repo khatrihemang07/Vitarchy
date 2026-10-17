@@ -2,7 +2,7 @@
 # Names and paths shared by the activity-helper scripts (single source of truth).
 # Sourced, not run. See docs/adr/0009-activity-via-signed-snapshot-helper.md.
 #
-# HELPER_NAME and HELPER_SNAPSHOT are also written in Rust (crates cannot share them:
+# HELPER_NAME, HELPER_SNAPSHOT and HELPER_CLOCKIFY_SNAPSHOT are also written in Rust (crates cannot share them:
 # helpers depend on nothing, modules only on core). scripts/test-guards.sh fails when
 # they disagree, so change them in all places together.
 
@@ -21,6 +21,7 @@ HELPER_LOG_DIR="$HOME/Library/Logs/Vitarchy"
 HELPER_LOG="$HELPER_LOG_DIR/$HELPER_NAME.log"
 HELPER_INTERVAL_SECONDS=28800 # every 8 hours, and at login (RunAtLoad)
 HELPER_SNAPSHOT="$HOME/Library/Application Support/Vitarchy/activity/latest.sqlite"
+HELPER_CLOCKIFY_SNAPSHOT="$HOME/Library/Application Support/Vitarchy/clockify/latest.sqlite"
 
 # True if the signing identity is in a keychain on the search list.
 # No -v: it reports 0 identities for a self-signed certificate, which codesign uses fine.

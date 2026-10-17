@@ -72,7 +72,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/time/activity/import": {
+    "/api/time/activity/{source}/import": {
         parameters: {
             query?: never;
             header?: never;
@@ -81,7 +81,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Runs an Import now and returns what it did. */
+        /** Runs an Import of `source` now and returns what it did. */
         post: operations["post_import"];
         delete?: never;
         options?: never;
@@ -148,11 +148,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** @description Activity figures for the status page. */
+        /** @description One Source's Activity figures for the status page. */
         ActivityStatus: {
             /**
              * Format: int64
-             * @description Activity rows stored.
+             * @description Activity rows stored for this Source.
              */
             activity_count: number;
             /**
@@ -351,6 +351,16 @@ export interface components {
             started_at: string;
         };
         /**
+         * @description A tracking app whose Activity Vitarchy Imports.
+         * @enum {string}
+         */
+        Source: "toggl" | "clockify";
+        /** @description [`ActivityStatus`] naming the Source it describes. */
+        SourceActivityStatus: components["schemas"]["ActivityStatus"] & {
+            /** @description Which Source. */
+            source: components["schemas"]["Source"];
+        };
+        /**
          * @description Overall server health.
          * @enum {string}
          */
@@ -405,8 +415,8 @@ export interface components {
         Theme: "system" | "light" | "dark";
         /** @description Body of `GET /api/time/status`. */
         TimeStatus: {
-            /** @description Imported Activity, the Snapshot and the latest Import. */
-            activity: components["schemas"]["ActivityStatus"];
+            /** @description Imported Activity, Snapshot and latest Import for each Source, in a fixed order. */
+            activity: components["schemas"]["SourceActivityStatus"][];
             /** @description Whether a Toggl token is stored. */
             connected: boolean;
             last_sync?: components["schemas"]["RunInfo"] | null;
@@ -574,7 +584,10 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description Which Source to Import */
+                source: components["schemas"]["Source"];
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -588,7 +601,7 @@ export interface operations {
                     "application/json": components["schemas"]["ImportCounts"];
                 };
             };
-            /** @description No Snapshot yet (`no_snapshot`) */
+            /** @description Unknown Source, or no Snapshot yet (`no_snapshot`) */
             404: {
                 headers: {
                     [name: string]: unknown;
