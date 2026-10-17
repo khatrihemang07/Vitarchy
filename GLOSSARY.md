@@ -59,3 +59,21 @@ _Avoid_: Backup, export, dump
 **Toggl connection**:
 The person's link between Vitarchy and their Toggl Track account, made by entering their Toggl API token. The token is never shown again.
 _Avoid_: Integration, login, account
+
+## Analysing time
+
+**Day**:
+One calendar day in the person's own time zone, from midnight to midnight. A Time Entry that spans midnight counts toward each Day it touches, only for the part inside that Day.
+_Avoid_: Date, 24 hours
+
+**Period**:
+The stretch of Days a Report covers: one Day, a week, a month, or a custom stretch of Days. Weeks start on the Core week-start Setting.
+_Avoid_: Timeframe, window
+
+**Report**:
+A summary of the Time Entries in one Period, filtered and grouped the way the person chooses, and compared with the Previous Period.
+_Avoid_: Analysis, dashboard, insights
+
+**Previous Period**:
+The Period of the same kind just before the one being looked at: yesterday, last week, last month, or the same-length stretch just before a custom one.
+_Avoid_: Last period, baseline

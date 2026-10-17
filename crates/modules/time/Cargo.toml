@@ -16,6 +16,8 @@ serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 chrono.workspace = true
+chrono-tz.workspace = true
+url.workspace = true
 reqwest.workspace = true
 async-trait.workspace = true
 # Reads the Snapshot. 0.39 matches the helper and sqlx's libsqlite3-sys.

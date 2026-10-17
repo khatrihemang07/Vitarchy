@@ -5,6 +5,7 @@
 mod activity;
 mod error;
 mod repo;
+mod report;
 mod routes;
 mod saturating;
 mod sync;

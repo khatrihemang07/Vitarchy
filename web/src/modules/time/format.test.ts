@@ -1,4 +1,4 @@
-import { formatAge, formatCount, formatDay, formatDuration } from "./format";
+import { formatAge, formatCount, formatDay, formatDuration, formatSpan } from "./format";
 
 const now = new Date("2026-04-10T12:00:00Z");
 const ago = (secs: number) => new Date(now.getTime() - secs * 1000);
@@ -44,5 +44,28 @@ describe("formatCount", () => {
 
   it("leaves small counts as they are", () => {
     expect(formatCount(7)).toBe("7");
+  });
+});
+
+describe("formatSpan", () => {
+  it("writes hours and minutes", () => {
+    expect(formatSpan(3900)).toBe("1h 5m");
+    expect(formatSpan(7200)).toBe("2h");
+    expect(formatSpan(1500)).toBe("25m");
+  });
+
+  it("shows seconds only for under a minute", () => {
+    expect(formatSpan(40)).toBe("40s");
+    expect(formatSpan(0)).toBe("0m");
+  });
+
+  it("rounds to the nearest minute without spilling into 60m", () => {
+    expect(formatSpan(3570)).toBe("1h");
+    expect(formatSpan(89)).toBe("1m");
+    expect(formatSpan(90)).toBe("2m");
+  });
+
+  it("drops the sign", () => {
+    expect(formatSpan(-3900)).toBe("1h 5m");
   });
 });

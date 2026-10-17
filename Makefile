@@ -14,7 +14,7 @@ START_ADDR := $(shell . scripts/lib/db-url.sh; a=$$(env_value "$(LIVE_ENV)" STAR
 endif
 
 .PHONY: help setup start dev stage web-build db db-stop stage-db stage-db-stop \
-	test smoke check gen-api backup restore backup-stage restore-stage \
+	stage-seed test smoke check gen-api backup restore backup-stage restore-stage \
 	signing-setup helper-install helper-uninstall helper-run
 
 help: ## List targets (addresses and ports are in .env and .env.stage)
@@ -86,6 +86,9 @@ backup-stage: stage-db ## [stage] Back up the stage database (for testing the ba
 restore-stage: stage-db ## [stage] Restore a backup into stage, no prompt: make restore-stage FILE=backups/stage/...
 	@[ -n "$(FILE)" ] || { echo "usage: make restore-stage FILE=backups/stage/vitarchy-<time>.sql.gz"; exit 2; }
 	scripts/restore.sh stage "$(FILE)"
+
+stage-seed: stage-db ## [stage] Fill stage with fake Time data for the Reports page (run `make stage` once first)
+	scripts/stage-seed.sh
 
 check: stage-db ## [stage] Lint, typecheck and test everything (the Definition of done gate)
 	scripts/test-guards.sh

@@ -30,3 +30,14 @@ export function formatDuration(secs: number): string {
   if (secs < HOUR) return `${String(Math.ceil(secs / MINUTE))} min`;
   return `${String(Math.ceil(secs / HOUR))} h`;
 }
+
+/** "1h 5m", "25m", "40s": how long something took, to the minute (seconds only under a minute). Sign is ignored. */
+export function formatSpan(secs: number): string {
+  const abs = Math.abs(secs);
+  if (abs > 0 && abs < MINUTE) return `${String(Math.round(abs))}s`;
+  const minutes = Math.round(abs / MINUTE);
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${String(m)}m`;
+  return m === 0 ? `${String(h)}h` : `${String(h)}h ${String(m)}m`;
+}

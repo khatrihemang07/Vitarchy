@@ -110,6 +110,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Projects, tags and clients that have Time Entries, newest use first, for the filter pickers. */
+        get: operations["get_facets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/time/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Report for one Period: overview, daily totals and groups, compared with the Previous Period. */
+        get: operations["get_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time/status": {
         parameters: {
             query?: never;
@@ -186,6 +220,23 @@ export interface components {
                 [key: string]: Record<string, never>;
             };
         };
+        /** @description A client with at least one Time Entry (through its projects). */
+        ClientFacet: {
+            /** @description True once the client was archived in Toggl. */
+            archived: boolean;
+            /**
+             * Format: int64
+             * @description Toggl's id.
+             */
+            id: number;
+            /**
+             * Format: date-time
+             * @description Start of the latest entry under it.
+             */
+            last_used: string;
+            /** @description Name. */
+            name: string;
+        };
         /**
          * @description 12- or 24-hour clock.
          * @enum {string}
@@ -237,6 +288,19 @@ export interface components {
              */
             week_start: components["schemas"]["WeekStart"];
         };
+        /** @description Seconds tracked on one Day. */
+        DailyPoint: {
+            /**
+             * Format: date
+             * @description The local Day.
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description Seconds tracked that Day; 0 when nothing was.
+             */
+            seconds: number;
+        };
         /**
          * @description How dates are written.
          * @enum {string}
@@ -247,6 +311,38 @@ export interface components {
          * @enum {string}
          */
         DbStatus: "ok" | "down";
+        /** @description Body of `GET /api/time/facets`; each list is sorted by `last_used`, newest first. */
+        Facets: {
+            /** @description Clients with entries (archived ones included). */
+            clients: components["schemas"]["ClientFacet"][];
+            /** @description Projects with entries (archived ones included). */
+            projects: components["schemas"]["ProjectFacet"][];
+            /** @description Tags with entries. */
+            tags: components["schemas"]["TagFacet"][];
+        };
+        /** @description One row of the summary: a description, project or tag, with its numbers. */
+        Group: {
+            change?: components["schemas"]["StatsChange"] | null;
+            /** @description Second-level groups, when a second grouping was asked for. Empty otherwise. */
+            children: components["schemas"]["Group"][];
+            /** @description One point per Day of the Period, 0 where the group has no time. */
+            daily: components["schemas"]["DailyPoint"][];
+            /** @description The entries, only on bottom-level groups (empty on groups that have children). */
+            entries: components["schemas"]["ReportEntry"][];
+            /** @description True when the group has no time in the Previous Period. */
+            is_new: boolean;
+            /** @description Stable identity within its level; empty for the "(no ...)" group. */
+            key: string;
+            /** @description What to show: the most common spelling of the group. */
+            label: string;
+            /** @description Days, entries, total and the per-Day and per-entry spreads. */
+            stats: components["schemas"]["Stats"];
+        };
+        /**
+         * @description A way to group Time Entries.
+         * @enum {string}
+         */
+        Grouping: "description" | "project" | "tag";
         /** @description Body of `GET /api/health`. */
         Health: {
             /** @description Database status. */
@@ -287,6 +383,84 @@ export interface components {
          * @enum {string}
          */
         Motion: "system" | "reduced" | "full";
+        /** @description The Period's headline numbers. An entry with several tags is counted once here. */
+        Overview: {
+            /**
+             * Format: int64
+             * @description Total divided by the Days tracked, rounded; 0 when none.
+             */
+            avg_per_day_s: number;
+            /** @description Change from the Previous Period. */
+            change: components["schemas"]["OverviewChange"];
+            /**
+             * Format: int64
+             * @description Days with any time.
+             */
+            days_tracked: number;
+            /**
+             * Format: int64
+             * @description Distinct Time Entries.
+             */
+            entries: number;
+            /**
+             * Format: int64
+             * @description Seconds tracked.
+             */
+            total_s: number;
+        };
+        /** @description Change of the overview figures from the Previous Period (current minus previous). */
+        OverviewChange: {
+            /**
+             * Format: int64
+             * @description Seconds.
+             */
+            avg_per_day_s: number;
+            /**
+             * Format: int64
+             * @description Count.
+             */
+            days_tracked: number;
+            /**
+             * Format: int64
+             * @description Count.
+             */
+            entries: number;
+            /**
+             * Format: int64
+             * @description Seconds.
+             */
+            total_s: number;
+        };
+        /** @description The Period the Report covers and the Previous Period it was compared with. */
+        PeriodInfo: {
+            /**
+             * Format: date
+             * @description First Day.
+             */
+            from: string;
+            /** @description How the Period was chosen. */
+            kind: components["schemas"]["PeriodKind"];
+            /**
+             * Format: date
+             * @description First Day of the Previous Period.
+             */
+            previous_from: string;
+            /**
+             * Format: date
+             * @description Last Day of the Previous Period (inclusive).
+             */
+            previous_to: string;
+            /**
+             * Format: date
+             * @description Last Day (inclusive).
+             */
+            to: string;
+        };
+        /**
+         * @description How the Period was chosen; decides what the Previous Period is.
+         * @enum {string}
+         */
+        PeriodKind: "day" | "week" | "month" | "custom";
         /** @description JSON body of every error response (`application/problem+json`). */
         Problem: {
             /**
@@ -329,6 +503,78 @@ export interface components {
             /** @description Always `about:blank`; the status and code say it all. */
             type: string;
         };
+        /** @description A project that has at least one Time Entry. */
+        ProjectFacet: {
+            /** @description False once the project was archived in Toggl. */
+            active: boolean;
+            /**
+             * Format: int64
+             * @description The project's client, when it has one.
+             */
+            client_id?: number | null;
+            /** @description Colour as Toggl stores it (e.g. `#06aaf5`), when set. */
+            color?: string | null;
+            /**
+             * Format: int64
+             * @description Toggl's id.
+             */
+            id: number;
+            /**
+             * Format: date-time
+             * @description Start of the latest entry using it.
+             */
+            last_used: string;
+            /** @description Name. */
+            name: string;
+        };
+        /** @description A summary of the Time Entries in one Period, compared with the Previous Period. */
+        Report: {
+            /** @description One point per Day of the Period. */
+            daily: components["schemas"]["DailyPoint"][];
+            /** @description The first-level grouping used. */
+            group1: components["schemas"]["Grouping"];
+            group2?: components["schemas"]["Grouping"] | null;
+            /** @description First-level groups, largest total first. */
+            groups: components["schemas"]["Group"][];
+            /** @description Headline numbers. */
+            overview: components["schemas"]["Overview"];
+            /** @description The Period covered. */
+            period: components["schemas"]["PeriodInfo"];
+        };
+        /** @description A Time Entry listed under a bottom-level group. */
+        ReportEntry: {
+            /** @description What the person typed; may be empty. */
+            description: string;
+            /**
+             * Format: int64
+             * @description Seconds inside the Period only: an entry crossing the Period's edge is clipped.
+             */
+            duration_s: number;
+            /**
+             * Format: int64
+             * @description The project's id, when it has one.
+             */
+            project_id?: number | null;
+            /** @description The project's name, when known. */
+            project_name?: string | null;
+            /**
+             * Format: date-time
+             * @description When it really started (may be before the Period).
+             */
+            start: string;
+            /**
+             * Format: date-time
+             * @description When it really stopped (may be after the Period).
+             */
+            stop: string;
+            /** @description Tag names. */
+            tags: string[];
+            /**
+             * Format: int64
+             * @description Toggl's id for the entry.
+             */
+            toggl_id: number;
+        };
         /** @description A Sync or Import attempt. */
         RunInfo: {
             /** @description What it did, e.g. `{"inserted": 3}`; empty when it failed. */
@@ -359,6 +605,86 @@ export interface components {
         SourceActivityStatus: components["schemas"]["ActivityStatus"] & {
             /** @description Which Source. */
             source: components["schemas"]["Source"];
+        };
+        /** @description Average, shortest and longest, in seconds. */
+        Spread: {
+            /**
+             * Format: int64
+             * @description Mean, rounded to the nearest second.
+             */
+            avg_s: number;
+            /**
+             * Format: int64
+             * @description Longest.
+             */
+            max_s: number;
+            /**
+             * Format: int64
+             * @description Shortest.
+             */
+            min_s: number;
+        };
+        /** @description Signed difference of a [`Spread`]: current minus previous, in seconds. */
+        SpreadChange: {
+            /**
+             * Format: int64
+             * @description Change in the average.
+             */
+            avg_s: number;
+            /**
+             * Format: int64
+             * @description Change in the longest.
+             */
+            max_s: number;
+            /**
+             * Format: int64
+             * @description Change in the shortest.
+             */
+            min_s: number;
+        };
+        /** @description What a group amounts to over the Period. */
+        Stats: {
+            /**
+             * Format: int64
+             * @description Days with time in this group.
+             */
+            days: number;
+            /**
+             * Format: int64
+             * @description Distinct Time Entries in this group.
+             */
+            entries: number;
+            /** @description Spread of the group's daily totals, over the Days it appears on only. */
+            per_day: components["schemas"]["Spread"];
+            /** @description Spread of each entry's time inside the Period. */
+            per_entry: components["schemas"]["Spread"];
+            /**
+             * Format: int64
+             * @description Seconds in total.
+             */
+            total_s: number;
+        };
+        /** @description Signed difference of [`Stats`]: current minus previous. */
+        StatsChange: {
+            /**
+             * Format: int64
+             * @description Change in the number of Days (a count, not seconds).
+             */
+            days: number;
+            /**
+             * Format: int64
+             * @description Change in the number of entries (a count, not seconds).
+             */
+            entries: number;
+            /** @description Change in the per-Day spread. */
+            per_day: components["schemas"]["SpreadChange"];
+            /** @description Change in the per-entry spread. */
+            per_entry: components["schemas"]["SpreadChange"];
+            /**
+             * Format: int64
+             * @description Change in the total, in seconds.
+             */
+            total_s: number;
         };
         /**
          * @description Overall server health.
@@ -407,6 +733,16 @@ export interface components {
              * @description Time Entries that were already stored and were written again.
              */
             updated: number;
+        };
+        /** @description A tag that has at least one Time Entry. */
+        TagFacet: {
+            /**
+             * Format: date-time
+             * @description Start of the latest entry using it.
+             */
+            last_used: string;
+            /** @description The tag's name (entries carry names, not ids). */
+            name: string;
         };
         /**
          * @description Colour theme: follow the system or force one.
@@ -696,6 +1032,97 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_facets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the filters can offer */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Facets"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_report: {
+        parameters: {
+            query: {
+                /**
+                 * @description How the Period was chosen. `day` needs `from == to`, `week` 7 Days, `month` a whole
+                 *     calendar month.
+                 */
+                kind: components["schemas"]["PeriodKind"];
+                /** @description First Day, `YYYY-MM-DD`, in `tz`. */
+                from: string;
+                /** @description Last Day (inclusive), `YYYY-MM-DD`; at most 366 Days after `from`. */
+                to: string;
+                /** @description IANA time zone of the person, e.g. `Europe/Berlin`. */
+                tz: string;
+                /** @description Only entries on these project ids (repeat the name). OR within, AND with other filters. */
+                project?: number[];
+                /** @description Only entries with one of these tag names (repeat the name). */
+                tag?: string[];
+                /** @description Only entries whose project belongs to one of these client ids (repeat the name). */
+                client?: number[];
+                /** @description Only descriptions containing this text, ignoring case. */
+                q?: string;
+                /** @description First-level grouping; defaults to `description`. */
+                group1?: components["schemas"]["Grouping"];
+                /** @description Optional second-level grouping; must differ from `group1`. */
+                group2?: components["schemas"]["Grouping"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                };
+            };
+            /** @description Invalid Period, time zone, filter or grouping */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
             };
         };
     };

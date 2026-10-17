@@ -128,3 +128,34 @@ async fn an_import_logs_source_counts_and_duration_but_not_titles_apps_or_urls()
     }
     db.drop().await;
 }
+
+#[tokio::test]
+async fn a_report_logs_counts_but_not_descriptions_or_the_search_text() {
+    let db = time_db("logreport").await;
+    sqlx::query(
+        "INSERT INTO time.time_entries
+           (toggl_id, workspace_id, description, start, stop, duration_s, raw)
+         VALUES (1, 7, 'SECRETDESCRIPTION', '2026-10-12T08:00Z', '2026-10-12T09:00Z', 3600, '{}')",
+    )
+    .execute(&db.pool)
+    .await
+    .unwrap();
+    let app = time_app(&db, &FakeToggl::new());
+
+    let (_, logs) = capture_logs(call(
+        &app,
+        "GET",
+        "/api/time/report?kind=week&from=2026-10-12&to=2026-10-18&tz=UTC&q=SECRETSEARCH",
+        None,
+    ))
+    .await;
+
+    let built = lines_with(&logs, "report built");
+    assert_eq!(built.len(), 1, "{logs}");
+    assert_eq!(built[0]["fields"]["entries_read"], 1);
+    assert!(
+        !logs.contains("SECRETDESCRIPTION") && !logs.contains("SECRETSEARCH"),
+        "{logs}"
+    );
+    db.drop().await;
+}

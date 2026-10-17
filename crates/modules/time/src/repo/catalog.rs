@@ -2,8 +2,9 @@
 
 use std::collections::BTreeMap;
 
-use sqlx::PgConnection;
+use sqlx::{PgConnection, PgPool};
 
+use crate::report::facets::{ClientFacet, Facets, ProjectFacet, TagFacet};
 use crate::toggl::types::{Raw, TogglClient, TogglProject, TogglTag};
 
 /// One record per Toggl id, the last listed winning: a list read in pages can repeat
@@ -113,4 +114,40 @@ pub async fn clear(tx: &mut PgConnection) -> Result<(), sqlx::Error> {
         .execute(tx)
         .await?;
     Ok(())
+}
+
+/// Projects, tags and clients that have at least one Time Entry, newest use first.
+/// A project missing from the catalog cannot be named, so it is left out.
+pub async fn used_facets(pool: &PgPool) -> Result<Facets, sqlx::Error> {
+    let projects = sqlx::query_as::<_, ProjectFacet>(
+        "SELECT p.toggl_id AS id, p.name, p.color, p.active, p.client_id, u.last_used
+         FROM (SELECT project_id, max(start) AS last_used FROM time.time_entries
+               WHERE project_id IS NOT NULL GROUP BY project_id) u
+         JOIN time.projects p ON p.toggl_id = u.project_id
+         ORDER BY u.last_used DESC, p.name",
+    )
+    .fetch_all(pool)
+    .await?;
+    let tags = sqlx::query_as::<_, TagFacet>(
+        "SELECT tag AS name, max(start) AS last_used
+         FROM time.time_entries, unnest(tags) AS tag
+         GROUP BY tag ORDER BY last_used DESC, name",
+    )
+    .fetch_all(pool)
+    .await?;
+    let clients = sqlx::query_as::<_, ClientFacet>(
+        "SELECT c.toggl_id AS id, c.name, c.archived, max(e.start) AS last_used
+         FROM time.time_entries e
+         JOIN time.projects p ON p.toggl_id = e.project_id
+         JOIN time.clients c ON c.toggl_id = p.client_id
+         GROUP BY c.toggl_id, c.name, c.archived
+         ORDER BY last_used DESC, c.name",
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(Facets {
+        projects,
+        tags,
+        clients,
+    })
 }

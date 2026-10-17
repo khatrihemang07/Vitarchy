@@ -14,12 +14,14 @@ export * from "./ui/command";
 export * from "./ui/dialog";
 export * from "./ui/input";
 export * from "./ui/label";
+export * from "./ui/popover";
 export * from "./ui/radio-group";
 export * from "./ui/select";
 export * from "./ui/separator";
 export * from "./ui/switch";
 export * from "./ui/tooltip";
 
+export { DailyBars, type DailyBarPoint } from "./charts/DailyBars";
 export { SegmentedControl, type SegmentedOption } from "./controls/SegmentedControl";
 
 export * from "./effects/border-beam";

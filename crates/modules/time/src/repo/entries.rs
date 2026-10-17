@@ -4,6 +4,7 @@ use chrono::{DateTime, Utc};
 use sqlx::{PgConnection, PgPool};
 
 use super::written::Written;
+use crate::report::entry::WindowEntry;
 use crate::sync::plan::{EntryRow, Reconcile};
 
 /// Inserts or updates `rows` (distinct ids) in one statement. Existing rows are
@@ -123,5 +124,26 @@ pub async fn stats(pool: &PgPool) -> Result<Stats, sqlx::Error> {
         "SELECT count(*) AS count, min(start) AS oldest, max(start) AS newest FROM time.time_entries",
     )
     .fetch_one(pool)
+    .await
+}
+
+/// Entries that overlap `[from, to)`, with their project's name and client, oldest first.
+/// Overlap (not "starts inside") so an entry crossing the edge still counts for its part.
+pub async fn in_range(
+    pool: &PgPool,
+    from: DateTime<Utc>,
+    to: DateTime<Utc>,
+) -> Result<Vec<WindowEntry>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT e.toggl_id, e.project_id, p.name AS project_name, p.client_id,
+                e.description, e.tags, e.start, e.stop
+         FROM time.time_entries e
+         LEFT JOIN time.projects p ON p.toggl_id = e.project_id
+         WHERE e.start < $2 AND e.stop > $1
+         ORDER BY e.start, e.toggl_id",
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(pool)
     .await
 }
