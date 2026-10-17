@@ -51,6 +51,8 @@
 @utility motion-reduced {
   animation-duration: var(--duration-reduced) !important;
   animation-iteration-count: 1 !important;
+  /* A stagger delay would otherwise hold a `both`-filled entrance invisible. */
+  animation-delay: 0s !important;
   transition-duration: var(--duration-reduced) !important;
 }
 
@@ -62,7 +64,8 @@
   position: relative;
   &::after {
     content: "";
-    position: fixed;
+    /* Absolute, not fixed: a fixed layer is clipped to the viewport and leaves the grain off a scrolled page. */
+    position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 50;
@@ -101,6 +104,15 @@
   &:focus-visible {
     outline: none;
     box-shadow: 0 0 0 var(--focus-ring-width)
+      color-mix(in srgb, var(--ring) var(--focus-ring-opacity), transparent);
+  }
+}
+
+/* Focus ring drawn inside the box, for clickables packed edge to edge (table rows) where an outer ring would be covered by the next row. */
+@utility focus-ring-inset {
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 var(--focus-ring-width)
       color-mix(in srgb, var(--ring) var(--focus-ring-opacity), transparent);
   }
 }

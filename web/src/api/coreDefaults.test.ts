@@ -31,6 +31,15 @@ describe("coreWithDefaults", () => {
     expect(coreWithDefaults({ week_start: 3, clock: null, theme: "dark" } as never)).toEqual({ ...DEFAULT_CORE, theme: "dark" });
   });
 
+  it("replaces a value outside the field's allowed choices with its default, field by field", () => {
+    const sent = { week_start: "foo", theme: "dark", motion: "off", clock: "h24", date_format: "" };
+    expect(coreWithDefaults(sent as never)).toEqual({ ...DEFAULT_CORE, theme: "dark", clock: "h24" });
+  });
+
+  it("keeps any text as a display name", () => {
+    expect(coreWithDefaults({ display_name: "Ana Maria" }).display_name).toBe("Ana Maria");
+  });
+
   it("survives a body that is not an object", () => {
     expect(coreWithDefaults("oops" as never)).toEqual(DEFAULT_CORE);
     expect(coreWithDefaults(null)).toEqual(DEFAULT_CORE);

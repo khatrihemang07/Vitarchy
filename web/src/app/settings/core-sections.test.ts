@@ -1,4 +1,4 @@
-import { DEFAULT_CORE } from "@/api/settings";
+import { CORE_CHOICES, DEFAULT_CORE } from "@/api/settings";
 import { dateFormatLabel } from "../format/datetime";
 import {
   appearanceSection,
@@ -22,6 +22,13 @@ describe("core sections", () => {
     expect(DISPLAY_NAME_MAX_LENGTH).toBe(50);
     const field = generalSection.fields.find((f) => f.key === "display_name");
     expect(field).toMatchObject({ kind: "text", maxLength: 50 });
+  });
+
+  it("offer exactly the choices coreWithDefaults accepts", () => {
+    const sections = { theme: appearanceSection, motion: appearanceSection, week_start: generalSection, clock: generalSection, date_format: generalSection };
+    for (const [key, section] of Object.entries(sections)) {
+      expect(optionValues(section, key)).toEqual([...CORE_CHOICES[key as keyof typeof CORE_CHOICES]]);
+    }
   });
 
   it("offer the values the server accepts", () => {

@@ -1,48 +1,51 @@
 import type { Report } from "@/api/time";
-import { DailyBars } from "@/design";
+import { Card, DailyBars, NumberTicker, StatCard } from "@/design";
 import { formatCount, formatSpan } from "../format";
-import { periodLabel } from "./period";
 import { ChangeBadge } from "./ChangeBadge";
 import type { ChangeUnit } from "./formatChange";
+import { periodLabel } from "./period";
 
 interface TileProps {
   title: string;
-  value: string;
+  value: number;
+  format: (value: number) => string;
   change: number;
   unit: ChangeUnit;
 }
 
-function Tile({ title, value, change, unit }: TileProps) {
+/** One figure that counts up to its value; screen readers get the final text at once. */
+function Tile({ title, value, format, change, unit }: TileProps) {
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <dt className="text-sm text-muted-foreground">{title}</dt>
-      <dd className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="font-display text-3xl font-bold tracking-tight tabular-nums">{value}</span>
-        <ChangeBadge delta={change} unit={unit} />
-      </dd>
-    </div>
+    <StatCard
+      label={title}
+      value={
+        <>
+          <NumberTicker value={value} format={format} className="text-foreground tracking-tight" aria-hidden="true" />
+          <span className="sr-only">{format(value)}</span>
+        </>
+      }
+      badge={<ChangeBadge delta={change} unit={unit} />}
+    />
   );
 }
 
-interface OverviewStripProps {
-  report: Report;
-}
-
 /** The Period at a glance: total, Days tracked and average, each against the Previous Period, over the daily bars. */
-export function OverviewStrip({ report }: OverviewStripProps) {
+export function OverviewStrip({ report }: { report: Report }) {
   const { overview, period, daily } = report;
+  const previous = periodLabel(period.kind, { from: period.previous_from, to: period.previous_to });
   return (
-    <section aria-label="Overview" className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 md:p-5">
-      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Tile title="Total" value={formatSpan(overview.total_s)} change={overview.change.total_s} unit="seconds" />
-        <Tile title="Days tracked" value={formatCount(overview.days_tracked)} change={overview.change.days_tracked} unit="count" />
-        <Tile title="Average per tracked Day" value={formatSpan(overview.avg_per_day_s)} change={overview.change.avg_per_day_s} unit="seconds" />
-      </dl>
-      <p className="text-xs text-muted-foreground">
-        Changes compare with the Previous Period, {periodLabel(period.kind, { from: period.previous_from, to: period.previous_to })}.
-      </p>
+    <section aria-labelledby="overview-title" className="flex flex-col gap-3">
+      <h2 id="overview-title" className="font-display text-xl font-bold">Overview</h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Tile title="Total" value={overview.total_s} format={formatSpan} change={overview.change.total_s} unit="seconds" />
+        <Tile title="Days tracked" value={overview.days_tracked} format={formatCount} change={overview.change.days_tracked} unit="count" />
+        <Tile title="Average per tracked Day" value={overview.avg_per_day_s} format={formatSpan} change={overview.change.avg_per_day_s} unit="seconds" />
+      </div>
+      <p className="text-xs text-muted-foreground">Changes compare with the Previous Period, {previous}.</p>
       {period.kind === "day" ? null : (
-        <DailyBars label="Time per Day" data={daily.map((d) => ({ date: d.date, seconds: d.seconds }))} formatValue={formatSpan} />
+        <Card className="p-4 md:p-5">
+          <DailyBars label="Time per Day" data={daily.map((d) => ({ date: d.date, seconds: d.seconds }))} formatValue={formatSpan} />
+        </Card>
       )}
     </section>
   );

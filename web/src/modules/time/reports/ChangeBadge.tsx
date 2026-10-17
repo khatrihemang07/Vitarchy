@@ -1,3 +1,4 @@
+import { Badge, Tooltip, TooltipContent, TooltipTrigger } from "@/design";
 import { changeDirection, type ChangeUnit, formatChange } from "./formatChange";
 
 interface ChangeBadgeProps {
@@ -15,13 +16,18 @@ export function ChangeBadge({ delta, unit }: ChangeBadgeProps) {
   const direction = changeDirection(delta);
   const text = formatChange(delta, unit);
   return (
-    <span
-      data-direction={direction}
-      title="Compared with the Previous Period"
-      aria-label={direction === "none" ? "No change from the Previous Period" : `${text.replace("↑", "up").replace("↓", "down")} from the Previous Period`}
-      className="inline-flex w-fit items-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-muted-foreground tabular-nums"
-    >
-      {text}
-    </span>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge
+          variant="secondary"
+          data-direction={direction}
+          aria-label={direction === "none" ? "No change from the Previous Period" : `${text.replace("↑", "up").replace("↓", "down")} from the Previous Period`}
+          className="tabular-nums"
+        >
+          {text}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent>Compared with the Previous Period</TooltipContent>
+    </Tooltip>
   );
 }

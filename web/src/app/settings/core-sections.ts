@@ -1,13 +1,10 @@
 import { Palette, SlidersHorizontal } from "lucide-react";
-import { CORE_SCOPE, type CoreSettings, DEFAULT_CORE } from "@/api/settings";
+import { CORE_CHOICES, CORE_SCOPE, DEFAULT_CORE } from "@/api/settings";
 import { dateFormatLabel } from "../format/datetime";
 import type { SettingsSection } from "./schema";
 
 /** Longest display name, in Unicode code points. Mirrors the server's limit. */
 export const DISPLAY_NAME_MAX_LENGTH = 50;
-
-type DateFormat = CoreSettings["date_format"];
-const DATE_FORMATS: readonly DateFormat[] = ["system", "day_month_year", "month_day_year", "iso"];
 
 /** Keys and option values mirror the backend `CoreSettings` (snake_case enums). */
 export const generalSection: SettingsSection = {
@@ -51,7 +48,7 @@ export const generalSection: SettingsSection = {
       key: "date_format",
       label: "Date format",
       default: DEFAULT_CORE.date_format,
-      options: DATE_FORMATS.map((value) => ({ value, label: dateFormatLabel(value) })),
+      options: CORE_CHOICES.date_format.map((value) => ({ value, label: dateFormatLabel(value) })),
     },
   ],
 };

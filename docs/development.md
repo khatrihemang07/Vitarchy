@@ -190,7 +190,8 @@ cd web && pnpm build
 
 - **Lazy routes:** pages load on first visit (`lazyRouteComponent`), so Recharts only loads with Reports. `vite.config.ts` gives react, tanstack, radix and motion their own vendor chunks.
 - **`sideEffects` in `web/package.json`:** it lets the build drop unused exports of the `@/design` barrel. The barrel and `design/theme/*` hold the CSS and font imports, so they are listed as having side effects. Without that the stylesheet disappears from the build.
-- **Look inside:** `ANALYZE=1 pnpm exec vite build --outDir <somewhere>` writes a treemap to `web/node_modules/.vite/bundle-stats.html`.
+- **Look inside:** `ANALYZE=1 pnpm exec vite build --outDir <somewhere>` adds `rollup-plugin-visualizer` (a dev dependency, only loaded with the flag) and writes a gzip-aware treemap to `web/node_modules/.vite/bundle-stats.html`.
+- **Sizes (minified, 2026-10):** the entry chunk fell from 1,062.92 kB (one file, with Recharts) to about 48 kB. Reports is a lazy chunk of about 382 kB (Recharts and its stack); the vendor chunks are react 207 kB, motion 149 kB, radix 124 kB and tanstack 110 kB. No chunk exceeds the 500 kB warning limit.
 
 Rust tests need the stage Postgres, which `make test` and `make check` start. See Environments.
 

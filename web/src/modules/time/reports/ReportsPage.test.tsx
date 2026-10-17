@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { TooltipProvider } from "@/design";
 import { ReportsPage } from "./ReportsPage";
 import { parseReportSearch, toSearchParams } from "./reportSearch";
 import { disconnected, jsonResponse, stubApi, synced } from "../test-utils";
@@ -24,7 +25,7 @@ function renderPage(path = "/time/reports?project=%5B1%5D") {
   const sources = createRoute({ getParentRoute: () => root, path: "/time", component: () => null });
   const router = createRouter({ routeTree: root.addChildren([route, sources]), history: createMemoryHistory({ initialEntries: [path] }) });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider>);
+  return render(<QueryClientProvider client={client}><TooltipProvider><RouterProvider router={router} /></TooltipProvider></QueryClientProvider>);
 }
 
 const api = (reportHandler: () => Response | Promise<Response>, status = synced) => ({
@@ -60,6 +61,17 @@ describe("ReportsPage", () => {
     expect(await screen.findByRole("alert")).toBeInTheDocument();
   });
 
+  it("retries a failed Report from the notice", async () => {
+    stubApi({
+      ...api(() => jsonResponse(200, {})),
+      "GET /api/time/report": [() => jsonResponse(400, { status: 400, detail: "bad period" }), () => jsonResponse(200, report([group("Standup")]))],
+    });
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("button", { name: /Standup/ })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("offers to clear filters when nothing matches", async () => {
     stubApi(api(() => jsonResponse(200, report([]))));
     renderPage();
@@ -70,7 +82,7 @@ describe("ReportsPage", () => {
   it("sends the person to the Time page when Toggl was never connected", async () => {
     stubApi(api(() => jsonResponse(200, report([])), disconnected));
     renderPage();
-    expect(await screen.findByText("Toggl is not connected yet.")).toBeInTheDocument();
+    expect(await screen.findByText("Toggl is not connected yet")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Connect Toggl/ })).toHaveAttribute("href", "/time");
   });
 

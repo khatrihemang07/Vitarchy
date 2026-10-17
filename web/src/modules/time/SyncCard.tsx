@@ -1,9 +1,10 @@
-import { toTimeFailure, useSyncTime, useTimeStatus, type TimeStatus } from "@/api/time";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
-import { describeRun } from "./describeRun";
-import { FailureNotice } from "./FailureNotice";
-import { formatAge, formatCount, formatDay } from "./format";
-import { LoadingNotice } from "./LoadingNotice";
+import { useSyncTime, useTimeStatus, type TimeStatus } from "@/api/time";
+import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
+import { errorMessage } from "./failureMessage";
+import { formatCount, formatDay } from "./format";
+import { LastRun } from "./LastRun";
+import { StatusNotices } from "./StatusNotices";
+import { TimeNotice } from "./TimeNotice";
 import { useClock } from "./useClock";
 
 function mirroredSpan(status: TimeStatus): string {
@@ -22,6 +23,9 @@ export function SyncCard() {
   const now = useClock();
   const connected = status.data?.connected === true;
   const lastSync = status.data?.last_sync;
+  const startSync = () => {
+    sync.mutate();
+  };
 
   return (
     <Card>
@@ -31,26 +35,18 @@ export function SyncCard() {
           Brings your Time Entries from the last 3 months into Vitarchy and keeps the copy matching Toggl.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {status.isPending ? <LoadingNotice>Loading status…</LoadingNotice> : null}
-        {status.isError ? <FailureNotice failure={toTimeFailure(status.error)} /> : null}
+      <CardContent className="flex flex-1 flex-col gap-4">
+        <StatusNotices inline status={status} loadingTitle="Loading status…" />
         {status.data ? <p className="text-sm text-muted-foreground">{mirroredSpan(status.data)}</p> : null}
-        {lastSync ? (
-          <p className="text-sm" data-outcome={lastSync.outcome}>
-            <span className="text-muted-foreground">Last sync {formatAge(lastSync.finished_at, now)}: </span>
-            {describeRun(lastSync)}
-          </p>
-        ) : null}
+        {lastSync ? <LastRun noun="sync" run={lastSync} now={now} /> : null}
         {status.data && !lastSync ? <p className="text-sm text-muted-foreground">Not synced yet.</p> : null}
-        {sync.isError ? <FailureNotice failure={toTimeFailure(sync.error)} /> : null}
+        {sync.isError ? <TimeNotice inline kind="failure" title={errorMessage(sync.error)} /> : null}
         {status.data && !connected ? (
           <p className="text-sm text-muted-foreground">Connect Toggl to start syncing.</p>
         ) : null}
-        <Button className="self-start" disabled={!connected || sync.isPending} onClick={() => {
-            sync.mutate();
-          }}>
+        <MotionButton className="mt-auto self-start" disabled={!connected || sync.isPending} onClick={startSync}>
           {sync.isPending ? "Syncing…" : "Sync now"}
-        </Button>
+        </MotionButton>
       </CardContent>
     </Card>
   );

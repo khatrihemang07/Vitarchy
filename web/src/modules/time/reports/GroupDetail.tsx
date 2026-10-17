@@ -12,7 +12,7 @@ interface GroupDetailProps {
 /** What opens under a bottom-level row: its time per Day, then its Time Entries. */
 export function GroupDetail({ group, clock }: GroupDetailProps) {
   return (
-    <div className="flex flex-col gap-3 bg-muted/30 py-3">
+    <div className="flex flex-col gap-3 rounded-b-[inherit] bg-muted/30 py-3">
       <DailyBars
         className="px-4"
         label={`Time per Day for ${group.label}`}

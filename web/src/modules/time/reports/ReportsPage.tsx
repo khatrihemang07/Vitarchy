@@ -1,23 +1,26 @@
-import { toTimeFailure, useFacets, useReport, useTimeStatus } from "@/api/time";
-import { FailureNotice } from "../FailureNotice";
-import { LoadingNotice } from "../LoadingNotice";
-import { TimeNav } from "../TimeNav";
+import { useFacets, useReport, useTimeStatus } from "@/api/time";
+import { Link } from "@tanstack/react-router";
+import { Button, FadeUp, stagger } from "@/design";
+import { errorMessage } from "../failureMessage";
+import { TimeNotice } from "../TimeNotice";
 import { useClock } from "../useClock";
 import { FilterBar } from "./FilterBar";
 import { GroupBySelect } from "./GroupBySelect";
-import { NotConnectedNotice } from "./NotConnectedNotice";
 import { PeriodPicker } from "./PeriodPicker";
 import { containsDay, todayOf } from "./period";
 import { ReportBody } from "./ReportBody";
 import { buildReportQuery } from "./reportQuery";
 import { hasAnyFilter } from "./reportActions";
 import { rangeOf } from "./reportSearch";
-import { SettingsFallbackNotice } from "./SettingsFallbackNotice";
 import { StatModeToggle } from "./StatModeToggle";
 import { useDisplaySettings } from "./useDisplaySettings";
 import { useReportHandlers } from "./useReportHandlers";
 import { useReportSearch } from "./useReportSearch";
 import { useStartingFilters } from "./useStartingFilters";
+
+/** Header and tabs are 0 and 1, the filters 2; the report arrives after them. */
+const FILTERS_STAGGER = 2;
+const BODY_STAGGER = FILTERS_STAGGER + 1;
 
 const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -36,15 +39,16 @@ export function ReportsPage() {
   const report = useReport(settings.ready && filtersSettled ? buildReportQuery(search, range, browserTimeZone()) : null);
   const neverSynced = status.data?.connected === false && status.data.time_entry_count === 0;
 
+  const showReport = !neverSynced;
+
   return (
-    <div className="flex flex-col gap-5">
-      <TimeNav />
-      <header>
-        <h1 className="font-display text-4xl font-bold tracking-tight">Reports</h1>
-        <p className="text-muted-foreground">Where your Time Entries went, compared with the Previous Period.</p>
-      </header>
-      {settings.failed ? <SettingsFallbackNotice onRetry={settings.retry} /> : null}
-      <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-6">
+      {settings.failed ? (
+        <TimeNotice kind="settings-fallback" title="Using the default week start" onRetry={settings.retry}>
+          Settings could not load.
+        </TimeNotice>
+      ) : null}
+      <div className="animate-fade-up flex flex-col gap-3" style={stagger(FILTERS_STAGGER)}>
         <PeriodPicker kind={search.kind} range={range} isCurrent={search.kind !== "custom" && containsDay(range, today)} onKind={handlers.onKind} onShift={handlers.onShift} onToday={handlers.onToday} onCustom={handlers.onCustom} />
         <FilterBar facets={facets.data} search={search} active={hasAnyFilter(search)} onFacet={handlers.onFacet} onSearch={handlers.onSearch} onClear={handlers.onClear} />
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -52,12 +56,34 @@ export function ReportsPage() {
           <StatModeToggle mode={search.mode} onChange={handlers.onMode} />
         </div>
       </div>
-      {neverSynced ? <NotConnectedNotice /> : null}
-      {!neverSynced && report.isPending ? <LoadingNotice>Loading report…</LoadingNotice> : null}
-      {!neverSynced && report.isError ? <FailureNotice failure={toTimeFailure(report.error)} /> : null}
-      {!neverSynced && report.data ? (
+      {neverSynced ? (
+        <FadeUp index={BODY_STAGGER}>
+          <TimeNotice
+            kind="not-connected"
+            title="Toggl is not connected yet"
+            action={
+              <Button asChild variant="link">
+                <Link to="/time">Connect Toggl and Sync</Link>
+              </Button>
+            }
+          >
+            Reports are built from your Time Entries. Connect Toggl and Sync to see them here.
+          </TimeNotice>
+        </FadeUp>
+      ) : null}
+      {showReport && report.isPending ? (
+        <FadeUp index={BODY_STAGGER}>
+          <TimeNotice kind="loading" title="Loading report…" />
+        </FadeUp>
+      ) : null}
+      {showReport && report.isError ? (
+        <FadeUp index={BODY_STAGGER}>
+          <TimeNotice kind="failure" title={errorMessage(report.error)} onRetry={() => void report.refetch()} />
+        </FadeUp>
+      ) : null}
+      {showReport && report.data ? (
         <div aria-busy={report.isPlaceholderData} className={report.isPlaceholderData ? "opacity-60 transition-opacity" : "transition-opacity"}>
-          <ReportBody report={report.data} mode={search.mode} clock={settings.clock} today={today} filtered={hasAnyFilter(search)} onClear={handlers.onClear} />
+          <ReportBody report={report.data} mode={search.mode} clock={settings.clock} today={today} filtered={hasAnyFilter(search)} onClear={handlers.onClear} firstStagger={BODY_STAGGER} />
         </div>
       ) : null}
     </div>

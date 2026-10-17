@@ -1,6 +1,7 @@
 import { Check, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import {
+  Badge,
   Button,
   cn,
   Command,
@@ -30,10 +31,10 @@ export function FacetFilter({ facet, onChange }: FacetFilterProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" aria-label={`${facet.label} filter`} className={cn(count > 0 && "border-primary/60")}>
+        <Button variant="outline" size="sm" aria-label={`${facet.label} filter`} className={cn(count > 0 && "border-module/60")}>
           {facet.label}
           {count > 0 ? (
-            <span className="rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground tabular-nums">{count}</span>
+            <Badge className="px-1.5 tabular-nums">{count}</Badge>
           ) : null}
           <ChevronDown className="opacity-50" aria-hidden="true" />
         </Button>

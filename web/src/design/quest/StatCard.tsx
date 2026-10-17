@@ -8,12 +8,14 @@ interface StatCardProps {
   /** Usually a number or a NumberTicker. */
   value: ReactNode;
   hint?: string;
+  /** Sits beside the value (e.g. a change from the last Period). */
+  badge?: ReactNode;
   icon?: ComponentType<{ className?: string }>;
   className?: string;
 }
 
 /** A stat tile tinted by the active module accent. */
-export function StatCard({ label, value, hint, icon: Icon, className }: StatCardProps) {
+export function StatCard({ label, value, hint, badge, icon: Icon, className }: StatCardProps) {
   return (
     <Pressable>
       <Card className={cn("surface-chroma gap-2 p-5", className)}>
@@ -21,7 +23,10 @@ export function StatCard({ label, value, hint, icon: Icon, className }: StatCard
           <span>{label}</span>
           {Icon ? <Icon className="size-4 text-module" /> : null}
         </div>
-        <div className="font-display text-3xl font-bold tracking-tight">{value}</div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-display text-3xl font-bold tracking-tight">{value}</span>
+          {badge}
+        </div>
         {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       </Card>
     </Pressable>

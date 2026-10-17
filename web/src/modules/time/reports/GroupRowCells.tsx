@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
+import { m } from "motion/react";
 import type { ReportGroup } from "@/api/time";
-import { cn } from "@/design";
+import { Badge, cn, nudge } from "@/design";
 import { formatCount } from "../format";
 import { figureLabels } from "./columns";
 import { FigureCell } from "./FigureCell";
@@ -25,7 +26,11 @@ export function GroupRowCells({ group, context, depth, open }: GroupRowCellsProp
   const label = group.label || "(none)";
   return (
     <>
-      <span className="col-span-3 flex min-w-0 items-center gap-2 md:col-span-1" style={{ paddingLeft: `${String(depth * INDENT_REM)}rem` }}>
+      <m.span
+        variants={{ hover: nudge.whileHover }}
+        transition={nudge.transition}
+        className="col-span-3 flex min-w-0 items-center gap-2 md:col-span-1"
+        style={{ paddingLeft: `${String(depth * INDENT_REM)}rem` }}>
         {open === undefined ? (
           <span className="size-4 shrink-0" aria-hidden="true" />
         ) : (
@@ -34,8 +39,8 @@ export function GroupRowCells({ group, context, depth, open }: GroupRowCellsProp
         <span className="min-w-0 truncate font-medium" title={label}>
           {label}
         </span>
-        {figures.isNew ? <span className="rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">new</span> : null}
-      </span>
+        {figures.isNew ? <Badge variant="outline">new</Badge> : null}
+      </m.span>
       <StatCell label="Days">
         {formatCount(figures.days)} of {formatCount(context.periodDays)}
       </StatCell>

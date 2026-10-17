@@ -1,4 +1,4 @@
-import { failureMessage } from "./failureMessage";
+import { errorMessage, failureMessage } from "./failureMessage";
 
 describe("failureMessage", () => {
   it("tells the person what to do about a rejected token", () => {
@@ -30,5 +30,11 @@ describe("failureMessage", () => {
 
   it("passes through any other message", () => {
     expect(failureMessage({ kind: "other", message: "Toggl is not connected." })).toBe("Toggl is not connected.");
+  });
+});
+
+describe("errorMessage", () => {
+  it("words an unexpected thrown value plainly", () => {
+    expect(errorMessage(new TypeError("boom"))).toBe("Something went wrong.");
   });
 });

@@ -1,4 +1,4 @@
-import type { TimeFailure } from "@/api/time";
+import { type TimeFailure, toTimeFailure } from "@/api/time";
 import { formatDuration } from "./format";
 
 /** Words for a failed Time request, fit to show the person. */
@@ -25,4 +25,9 @@ export function failureMessage(failure: TimeFailure): string {
     case "other":
       return failure.message;
   }
+}
+
+/** Words for whatever a failed Time query or mutation threw. */
+export function errorMessage(error: unknown): string {
+  return failureMessage(toTimeFailure(error));
 }

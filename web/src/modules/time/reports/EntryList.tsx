@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReportEntry } from "@/api/time";
-import { cn } from "@/design";
+import { Badge, cn } from "@/design";
 import { formatSpan } from "../format";
 import { type Clock, describeEntry } from "./entryTimes";
 
@@ -20,7 +20,9 @@ function EntryRow({ entry, clock }: { entry: ReportEntry; clock: Clock }) {
       <span className="order-last col-span-2 tabular-nums md:order-none md:col-span-1">
         {times.start} – {times.stop}
         {times.crossesMidnight ? (
-          <span className="ml-1.5 whitespace-nowrap rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">crosses midnight</span>
+          <Badge variant="outline" className="ml-1.5 text-muted-foreground">
+            crosses midnight
+          </Badge>
         ) : null}
       </span>
       <span className="order-last col-span-2 min-w-0 md:order-none md:col-span-1">
@@ -49,7 +51,7 @@ export function EntryList({ entries, clock }: EntryListProps) {
           onClick={() => {
             setShowAll(true);
           }}
-          className="w-full px-4 py-2 text-left text-sm text-primary hover:underline focus-ring"
+          className="w-full rounded-b-xl px-4 py-2 text-left text-sm font-medium text-module hover:underline focus-ring-inset"
         >
           Show all {entries.length} entries
         </button>

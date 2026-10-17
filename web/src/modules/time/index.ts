@@ -1,6 +1,7 @@
 import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import type { ModuleManifest } from "@/app/module-manifest";
+import { TimePageLayout } from "./TimePageLayout";
 import { parseReportSearch, toSearchParams } from "./reports/reportSearch";
 
 // Pages load on first visit; Reports brings the charting library with it.
@@ -13,16 +14,22 @@ export const timeModule: ModuleManifest = {
   label: "Time",
   accent: "var(--module-time)",
   icon: Clock,
-  routes: (root) => [
-    createRoute({ getParentRoute: () => root, path: "/time", component: TimePage }),
-    createRoute({
-      getParentRoute: () => root,
-      path: "/time/reports",
-      // The URL is user-editable: anything unusable falls back to a default. Only
-      // non-default values are kept, so the address stays short and readable.
-      validateSearch: (raw: Record<string, unknown>) => toSearchParams(parseReportSearch(raw)),
-      component: ReportsPage,
-    }),
-  ],
+  routes: (root) => {
+    // One layout route holds the header and tabs, so they persist between the pages.
+    const layout = createRoute({ getParentRoute: () => root, id: "time-layout", component: TimePageLayout });
+    return [
+      layout.addChildren([
+        createRoute({ getParentRoute: () => layout, path: "/time", component: TimePage }),
+        createRoute({
+          getParentRoute: () => layout,
+          path: "/time/reports",
+          // The URL is user-editable: anything unusable falls back to a default. Only
+          // non-default values are kept, so the address stays short and readable.
+          validateSearch: (raw: Record<string, unknown>) => toSearchParams(parseReportSearch(raw)),
+          component: ReportsPage,
+        }),
+      ]),
+    ];
+  },
   navItem: { to: "/time" },
 };

@@ -1,13 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { callApi } from "./callApi";
-import { coreWithDefaults, DEFAULT_CORE } from "./coreDefaults";
+import { CORE_CHOICES, coreWithDefaults, DEFAULT_CORE } from "./coreDefaults";
 import { api } from "./client";
 import { useSaveMutation } from "./saveMutation";
 import type { SaveState } from "./saveStatus";
 import { settingsKey } from "./settingsKeys";
 import { type AllSettings, CORE_SCOPE, storedFor, withScope } from "./settingsScope";
 
-export { coreWithDefaults, CORE_SCOPE, DEFAULT_CORE, settingsKey };
+export { CORE_CHOICES, coreWithDefaults, CORE_SCOPE, DEFAULT_CORE, settingsKey };
 export type { AllSettings, CoreSettings, ModuleSettingsValues } from "./settingsScope";
 
 /** Loads every scope's settings. */

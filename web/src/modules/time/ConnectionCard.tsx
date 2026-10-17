@@ -1,9 +1,8 @@
-import { toTimeFailure, useTimeStatus } from "@/api/time";
+import { useTimeStatus } from "@/api/time";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
 import { ConnectedView } from "./ConnectedView";
 import { ConnectForm } from "./ConnectForm";
-import { FailureNotice } from "./FailureNotice";
-import { LoadingNotice } from "./LoadingNotice";
+import { StatusNotices } from "./StatusNotices";
 
 /** Connect or disconnect Toggl. The token is typed here, sent once and never shown again. */
 export function ConnectionCard() {
@@ -16,11 +15,8 @@ export function ConnectionCard() {
           Vitarchy reads your Time Entries from Toggl Track with your API token.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {status.isPending ? <LoadingNotice>Checking connection…</LoadingNotice> : null}
-        {status.isError ? (
-          <FailureNotice failure={toTimeFailure(status.error)} />
-        ) : null}
+      <CardContent className="flex flex-1 flex-col gap-4">
+        <StatusNotices inline status={status} loadingTitle="Checking connection…" />
         {status.data?.connected ? (
           <ConnectedView workspaceName={status.data.workspace_name ?? "your workspace"} />
         ) : null}

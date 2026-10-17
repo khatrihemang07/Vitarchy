@@ -29,9 +29,13 @@ export * from "./effects/magic-card";
 export * from "./effects/number-ticker";
 
 export { MotionButton } from "./motion/MotionButton";
+export { Expand } from "./motion/Expand";
+export { FadeUp } from "./motion/FadeUp";
 export { MotionProvider } from "./motion/MotionProvider";
 export { Pressable } from "./motion/Pressable";
 export { nudge, pressable, springs } from "./motion/springs";
+export { stagger } from "./motion/stagger";
+export { useMotionReduced } from "./motion/useMotionReduced";
 
 export { AchievementBadge } from "./quest/AchievementBadge";
 export { LevelBadge } from "./quest/LevelBadge";

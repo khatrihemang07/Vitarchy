@@ -1,6 +1,7 @@
 import type { ReportGroup } from "@/api/time";
 import { figureLabels, ROW_GRID } from "./columns";
 import { GroupRow } from "./GroupRow";
+import { ReportCard } from "./ReportCard";
 import type { RowContext } from "./rowContext";
 
 interface SummaryTableProps {
@@ -13,7 +14,7 @@ export function SummaryTable({ groups, context }: SummaryTableProps) {
   const labels = figureLabels(context.mode);
   const headings = ["Days", "Entries", labels.total, labels.avg, labels.min, labels.max];
   return (
-    <section aria-label="Summary" className="overflow-hidden rounded-xl border border-border bg-card">
+    <ReportCard title="Summary">
       <div aria-hidden="true" className={`${ROW_GRID} hidden gap-x-3 border-b border-border bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground`}>
         <span>Group</span>
         {headings.map((heading) => (
@@ -22,11 +23,11 @@ export function SummaryTable({ groups, context }: SummaryTableProps) {
           </span>
         ))}
       </div>
-      <ul>
+      <ul className="rounded-b-xl">
         {groups.map((group, index) => (
           <GroupRow key={group.key || "none"} group={group} context={context} defaultOpen={index === 0} />
         ))}
       </ul>
-    </section>
+    </ReportCard>
   );
 }

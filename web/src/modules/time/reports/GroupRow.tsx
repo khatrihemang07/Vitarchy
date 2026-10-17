@@ -1,6 +1,7 @@
+import { m } from "motion/react";
 import { useId, useState } from "react";
 import type { ReportGroup } from "@/api/time";
-import { cn } from "@/design";
+import { cn, Expand } from "@/design";
 import { ROW_GRID } from "./columns";
 import { GroupDetail } from "./GroupDetail";
 import { GroupRowCells } from "./GroupRowCells";
@@ -24,7 +25,7 @@ export function GroupRow({ group, context, depth = 0, defaultOpen = false }: Gro
 
   if (!hasChildren && context.isDay) {
     return (
-      <li className="border-t border-border first:border-t-0">
+      <li className="border-t border-border first:border-t-0 last:rounded-b-[inherit]">
         <div className={ROW_CLASSES}>
           <GroupRowCells group={group} context={context} depth={depth} open={undefined} />
         </div>
@@ -33,31 +34,30 @@ export function GroupRow({ group, context, depth = 0, defaultOpen = false }: Gro
   }
 
   return (
-    <li className="border-t border-border first:border-t-0">
-      <button
+    <li className="border-t border-border first:border-t-0 last:rounded-b-[inherit]">
+      <m.button
         type="button"
+        whileHover="hover"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => {
           setOpen(!open);
         }}
-        className={cn(ROW_CLASSES, "transition-colors hover:bg-accent/50 focus-ring")}
+        className={cn(ROW_CLASSES, "rounded-[inherit] transition-colors hover:bg-accent/50 focus-ring-inset aria-expanded:rounded-b-none")}
       >
         <GroupRowCells group={group} context={context} depth={depth} open={open} />
-      </button>
-      {open ? (
-        <div id={panelId}>
-          {hasChildren ? (
-            <ul className="border-t border-border bg-muted/20">
-              {group.children.map((child, index) => (
-                <GroupRow key={child.key || "none"} group={child} context={context} depth={depth + 1} defaultOpen={defaultOpen && index === 0} />
-              ))}
-            </ul>
-          ) : (
-            <GroupDetail group={group} clock={context.clock} />
-          )}
-        </div>
-      ) : null}
+      </m.button>
+      <Expand open={open} id={panelId}>
+        {hasChildren ? (
+          <ul className="rounded-b-[inherit] border-t border-border bg-muted/20">
+            {group.children.map((child, index) => (
+              <GroupRow key={child.key || "none"} group={child} context={context} depth={depth + 1} defaultOpen={defaultOpen && index === 0} />
+            ))}
+          </ul>
+        ) : (
+          <GroupDetail group={group} clock={context.clock} />
+        )}
+      </Expand>
     </li>
   );
 }

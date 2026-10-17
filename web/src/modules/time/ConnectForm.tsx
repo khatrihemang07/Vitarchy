@@ -1,7 +1,8 @@
 import { type SyntheticEvent, useId, useState } from "react";
-import { toTimeFailure, useSetConnection } from "@/api/time";
-import { Button, Input, Label } from "@/design";
-import { FailureNotice } from "./FailureNotice";
+import { useSetConnection } from "@/api/time";
+import { Input, Label, MotionButton } from "@/design";
+import { errorMessage } from "./failureMessage";
+import { TimeNotice } from "./TimeNotice";
 
 /** Asks for the Toggl API token and sends it once; it is cleared from the field as soon as it is sent. */
 export function ConnectForm() {
@@ -20,7 +21,7 @@ export function ConnectForm() {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
+    <form onSubmit={submit} className="flex flex-1 flex-col gap-3">
       <div className="flex flex-col gap-2">
         <Label htmlFor={inputId}>Toggl API token</Label>
         <Input
@@ -38,10 +39,12 @@ export function ConnectForm() {
           Find it at the bottom of your Toggl profile page. It stays on this computer.
         </p>
       </div>
-      {connect.isError ? <FailureNotice failure={toTimeFailure(connect.error)} /> : null}
-      <Button type="submit" className="self-start" disabled={connect.isPending || token.trim() === ""}>
+      {connect.isError ? (
+        <TimeNotice inline kind="failure" title={errorMessage(connect.error)} />
+      ) : null}
+      <MotionButton type="submit" className="mt-auto self-start" disabled={connect.isPending || token.trim() === ""}>
         {connect.isPending ? "Connecting…" : "Connect"}
-      </Button>
+      </MotionButton>
     </form>
   );
 }

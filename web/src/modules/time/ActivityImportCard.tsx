@@ -1,10 +1,11 @@
-import { toTimeFailure, useImportActivity, type SourceActivityStatus } from "@/api/time";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
+import { useImportActivity, type SourceActivityStatus } from "@/api/time";
+import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
 
-import { describeRun } from "./describeRun";
-import { FailureNotice } from "./FailureNotice";
+import { errorMessage } from "./failureMessage";
 import { formatAge, formatCount, formatDay } from "./format";
+import { LastRun } from "./LastRun";
 import { sourceCopy } from "./sourceCopy";
+import { TimeNotice } from "./TimeNotice";
 import { useClock } from "./useClock";
 
 function storedSpan(activity: SourceActivityStatus): string {
@@ -28,7 +29,7 @@ export function ActivityImportCard({ activity }: { activity: SourceActivityStatu
         <CardTitle>{copy.title}</CardTitle>
         <CardDescription>{copy.description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-1 flex-col gap-4">
         <p className="text-sm text-muted-foreground">{storedSpan(activity)}</p>
         {activity.snapshot_taken_at ? (
           <p className="text-sm text-muted-foreground">Snapshot taken {formatAge(activity.snapshot_taken_at, now)}.</p>
@@ -38,23 +39,22 @@ export function ActivityImportCard({ activity }: { activity: SourceActivityStatu
           </p>
         )}
         {lastImport ? (
-          <p className="text-sm" data-outcome={lastImport.outcome}>
-            <span className="text-muted-foreground">Last import {formatAge(lastImport.finished_at, now)}: </span>
-            {describeRun(lastImport)}
-          </p>
+          <LastRun noun="import" run={lastImport} now={now} />
         ) : (
           <p className="text-sm text-muted-foreground">Not imported yet.</p>
         )}
-        {importActivity.isError ? <FailureNotice failure={toTimeFailure(importActivity.error)} /> : null}
-        <Button
-          className="self-start"
+        {importActivity.isError ? (
+          <TimeNotice inline kind="failure" title={errorMessage(importActivity.error)} />
+        ) : null}
+        <MotionButton
+          className="mt-auto self-start"
           disabled={!hasSnapshot || importActivity.isPending}
           onClick={() => {
             importActivity.mutate();
           }}
         >
           {importActivity.isPending ? "Importing…" : copy.title}
-        </Button>
+        </MotionButton>
       </CardContent>
     </Card>
   );
