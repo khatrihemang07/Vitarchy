@@ -6,7 +6,7 @@ from .conftest import FILES
 
 
 def run_cli(request: dict | str):
-    text = request if isinstance(request, str) else json.dumps({"version": 1, **request})
+    text = request if isinstance(request, str) else json.dumps({"version": 2, **request})
     done = subprocess.run([sys.executable, "-m", "statement_reader.cli"], input=text,
                           capture_output=True, text=True, check=False)
     return done

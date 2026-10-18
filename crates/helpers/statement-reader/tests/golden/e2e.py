@@ -8,394 +8,30 @@ It creates a fresh `vitarchy_e2e` database on the stage Postgres, starts the bui
 free port with this helper as the reader, drives the whole import flow and stops the server by
 PID. It refuses to run if the stage database is the live one.
 
-Three scenarios, each on a fresh database: the normal import (confirm with "use the match"),
-a page-style import (confirm with the choices the web page builds from the upload-time
-previews, one section at a time), and a repair (duplicate Accounts made by bypassing the
-server's rule, then merged by `vitarchy-server finance-merge-duplicates`). The last two must
-end with the same counts as the first.
+Four scenarios, each on a fresh database: the normal import in two orders (the PhonePe files
+confirmed last, then first; Statements confirm with "use the match", PhonePe sections with their
+proposal or the private expectations' Account for the instrument), a page-style import (confirm
+with the choices the web page builds from the previews, one section at a time), and a repair
+(duplicate Accounts made by bypassing the server's rule, then merged by
+`vitarchy-server finance-merge-duplicates`). Both orders must leave the same Transactions per
+Account, and the last two the same counts as the PhonePe-last import.
 """
 
 from __future__ import annotations
 
-import json
 import os
-import re
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
-import time
-import urllib.error
-import urllib.request
-import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
-HELPER = Path(__file__).resolve().parents[2]
-ROOT = HELPER.parents[2]
-PRIVATE = HELPER / "fixtures" / "private"
-E2E_DB = "vitarchy_e2e"
-FILE_COUNT = 31
-
-EXPECTED_FILE = PRIVATE / "e2e_expected.json"
-
-
-def load_expected() -> dict:
-    """What the private real Statements must produce. It lives beside them, never in git:
-    {"accounts": [[issuer contains, kind, trailing digits shown]...], "sbi_loans": n,
-     "unique_transactions": [[issuer, kind, digits, count]...], "failed_check": {"issuer": ...}}."""
-    if not EXPECTED_FILE.exists():
-        sys.exit(f"missing {EXPECTED_FILE.relative_to(ROOT)}: the real-Statement expectations are private")
-    return json.loads(EXPECTED_FILE.read_text())
-
-
-failures: list[str] = []
-
-
-def check(ok: bool, what: str) -> None:
-    """Records one assertion and prints PASS or FAIL (never any content)."""
-    print(f"  {'PASS' if ok else 'FAIL'}  {what}")
-    if not ok:
-        failures.append(what)
-
-
-def env_url(path: Path) -> str:
-    """DATABASE_URL from a dotenv file, parsed (never sourced)."""
-    for line in reversed(path.read_text().splitlines()):
-        match = re.match(r"\s*DATABASE_URL\s*=\s*(.*?)\s*$", line)
-        if match:
-            return match.group(1).strip("'\"")
-    sys.exit(f"no DATABASE_URL in {path.name}")
-
-
-def refuse_live(stage_url: str) -> None:
-    live = urlparse(env_url(ROOT / ".env" if (ROOT / ".env").exists() else ROOT / ".env.example"))
-    stage = urlparse(stage_url)
-    if stage.port == live.port or stage.path == live.path or live.path.lstrip("/") == E2E_DB:
-        sys.exit("refusing: the stage database looks like the LIVE one")
-
-
-def psql(stage_url: str, database: str, sql: str) -> str:
-    """Runs SQL on the stage Postgres and returns tuples-only output."""
-    url = urlparse(stage_url)
-    env = {**os.environ, "PGPASSWORD": url.password or ""}
-    done = subprocess.run(
-        ["psql", "-h", url.hostname or "127.0.0.1", "-p", str(url.port or 5432), "-U", url.username or "",
-         "-d", database, "-At", "-F", "|", "-v", "ON_ERROR_STOP=1", "-c", sql],
-        env=env, capture_output=True, text=True, check=True)
-    return done.stdout
-
-
-def free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
-
-
-class Api:
-    """Thin JSON client for the Finance API."""
-
-    def __init__(self, port: int) -> None:
-        self.base = f"http://127.0.0.1:{port}"
-
-    def call(self, method: str, path: str, body=None, raw=None, ctype="application/json"):
-        data = raw if raw is not None else (json.dumps(body).encode() if body is not None else None)
-        request = urllib.request.Request(self.base + path, data=data, method=method,
-                                         headers={"content-type": ctype} if data else {})
-        try:
-            with urllib.request.urlopen(request, timeout=900) as response:
-                text = response.read()
-                return response.status, (json.loads(text) if text else None)
-        except urllib.error.HTTPError as error:
-            return error.code, json.loads(error.read() or b"null")
-
-    def upload(self, paths: list[Path]):
-        boundary = uuid.uuid4().hex
-        parts: list[bytes] = []
-        for path in paths:
-            parts += [f'--{boundary}\r\nContent-Disposition: form-data; name="files"; filename="{path.name}"'
-                      "\r\nContent-Type: application/octet-stream\r\n\r\n".encode(), path.read_bytes(), b"\r\n"]
-        parts.append(f"--{boundary}--\r\n".encode())
-        return self.call("POST", "/api/finance/statements", raw=b"".join(parts),
-                         ctype=f"multipart/form-data; boundary={boundary}")
-
-
-def start_server(stage_url: str, port: int, statements_dir: str, log: Path) -> subprocess.Popen:
-    url = urlparse(stage_url)
-    e2e_url = url._replace(path=f"/{E2E_DB}").geturl()
-    env = {**os.environ, "DATABASE_URL": e2e_url, "BIND_ADDR": f"127.0.0.1:{port}", "WEB_DIST": "",
-           "FINANCE_READER": str(HELPER / ".venv" / "bin" / "statement-reader"),
-           "FINANCE_STATEMENTS_DIR": statements_dir, "RUST_LOG": "warn", "VITARCHY_STAGE": "1"}
-    process = subprocess.Popen([str(ROOT / "target" / "debug" / "vitarchy-server")], env=env,
-                               stdout=log.open("w"), stderr=subprocess.STDOUT)
-    for _ in range(120):
-        if process.poll() is not None:
-            sys.exit(f"the server exited early; see {log}")
-        try:
-            urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=2)
-            return process
-        except OSError:
-            time.sleep(0.5)
-    process.kill()
-    sys.exit(f"the server did not become healthy; see {log}")
-
-
-def visible_digits(mask: str | None) -> str:
-    match = re.search(r"\d+$", (mask or "").strip())
-    return match.group(0) if match else ""
-
-
-def same_number(a: str | None, b: str | None) -> bool:
-    da, db = visible_digits(a), visible_digits(b)
-    if len(da) >= 2 and len(db) >= 2:
-        n = min(len(da), len(db))
-        return da[-n:] == db[-n:]
-    return bool(a) and "".join((a or "").upper().split()) == "".join((b or "").upper().split())
-
-
-def confirm_all(api: Api, previews: list[dict]) -> dict[str, int]:
-    """Confirms every file (Statements first); returns what the previews promised and what the
-    confirms did, so the two can be compared."""
-    refused = 0
-    totals = {"previewed_gain": 0, "confirmed_gain": 0}
-    for preview in sorted(previews, key=lambda p: p["kind"] == "payment_history"):
-        sections = []
-        for section in preview.get("sections") or []:
-            proposed = section["proposed"]
-            if proposed.get("issuer") and proposed.get("kind"):
-                sections.append({})
-            else:
-                sections.append({"new_account": {"issuer": proposed.get("issuer") or "Unknown",
-                                                 "kind": proposed.get("kind") or "savings", "name": "Unnamed"}})
-        # The preview as it is just before this confirm, against what earlier confirms stored.
-        _, current = api.call("GET", f"/api/finance/statements/{preview['id']}")
-        totals["previewed_gain"] += sum(s["enriched_count"] for s in (current or {}).get("sections", []))
-        status, reply = api.call("POST", f"/api/finance/statements/{preview['id']}/confirm", {"sections": sections})
-        if status != 200:
-            check(False, f"confirm statement {preview['id']} returned 200 (got {status}, code {(reply or {}).get('code')})")
-            refused += 1
-        else:
-            totals["confirmed_gain"] += reply["enriched"]
-    check(refused == 0, f"every confirm returned 200 ({len(previews) - refused}/{len(previews)})")
-    return totals
-
-
-def assert_accounts(accounts: list[dict], expected: dict) -> None:
-    expected_accounts = [tuple(a) for a in expected["accounts"]]
-    unique = {tuple(u[:3]): u[3] for u in expected["unique_transactions"]}
-    sbi_loans = expected["sbi_loans"]
-    check(len(accounts) == len(expected_accounts) + sbi_loans, f"{len(expected_accounts) + sbi_loans} Accounts (got {len(accounts)})")
-    for issuer, kind, digits in expected_accounts:
-        found = [a for a in accounts if issuer in a["issuer"].lower() and a["kind"] == kind
-                 and same_number(a["mask"], digits)]
-        check(len(found) == 1, f"one {issuer} {kind} Account ending {digits} (got {len(found)})")
-        if (issuer, kind, digits) in unique and found:
-            want = unique[(issuer, kind, digits)]
-            check(found[0]["transaction_count"] == want, f"{issuer} {kind} {digits}: {want} Transactions (got {found[0]['transaction_count']})")
-    loans = [a for a in accounts if "state bank" in a["issuer"].lower() and a["kind"] == "loan"]
-    check(len(loans) == sbi_loans, f"{sbi_loans} SBI loans (got {len(loans)})")
-
-
-def assert_links(stage_url: str) -> None:
-    rows = psql(stage_url, E2E_DB,
-                "SELECT coalesce(p.instrument_issuer,''), coalesce(p.instrument_digits,''), a.issuer, coalesce(a.mask,'') "
-                "FROM finance.payment_records p JOIN finance.transactions t ON t.id = p.transaction_id "
-                "JOIN finance.accounts a ON a.id = t.account_id").splitlines()
-    disagree = 0
-    for row in rows:
-        issuer, digits, account_issuer, mask = row.split("|")
-        issuer_ok = not issuer or " ".join(issuer.lower().split()) == " ".join(account_issuer.lower().split())
-        digits_ok = not digits or same_number(digits, mask)
-        disagree += not (issuer_ok and digits_ok)
-    check(disagree == 0, f"no Payment record links to an Account that disagrees with its instrument ({len(rows)} linked)")
-    print("  linked per instrument (issuer, ...last 2 digits: linked/total):")
-    for line in psql(stage_url, E2E_DB,
-                     "SELECT coalesce(instrument_issuer,'?'), right(coalesce(instrument_digits,'??'), 2), "
-                     "count(transaction_id), count(*) FROM finance.payment_records GROUP BY 1, 2 ORDER BY 1, 2").splitlines():
-        issuer, tail, linked, total = line.split("|")
-        print(f"    {issuer} ...{tail}: {linked}/{total}")
-
-
-def assert_printings(stage_url: str, expected: dict, gains: dict[str, int]) -> None:
-    """Counts only: every Transaction keeps its Printings, overlapping SBI files show the fuller text."""
-    count = lambda sql: int(psql(stage_url, E2E_DB, sql).strip())  # noqa: E731
-    transactions = count("SELECT count(*) FROM finance.transactions")
-    printings = count("SELECT count(*) FROM finance.printings")
-    orphans = count("SELECT count(*) FROM finance.transactions t WHERE NOT EXISTS "
-                    "(SELECT 1 FROM finance.printings p WHERE p.transaction_id = t.id)")
-    print(f"  {transactions} Transactions, {printings} Printings, {gains['confirmed_gain']} enriched by confirms")
-    check(orphans == 0 and printings >= transactions, f"every Transaction has a Printing ({orphans} without)")
-    identical = count("SELECT count(*) FROM (SELECT 1 FROM finance.printings GROUP BY transaction_id, date, "
-                      "description, balance_paise, reference, source_id, foreign_amount, foreign_currency "
-                      "HAVING count(*) > 1) twins")
-    check(identical == 0, f"no two Printings of one Transaction are identical ({identical} such groups)")
-    check(gains["previewed_gain"] > 0, f"previews said some rows would gain detail ({gains['previewed_gain']})")
-    check(gains["previewed_gain"] == gains["confirmed_gain"],
-          f"confirms enriched exactly what the previews promised ({gains['confirmed_gain']} of {gains['previewed_gain']})")
-    both = expected["printed_by_pdf_and_xlsx"]
-    sql = ("SELECT count(*), count(*) FILTER (WHERE t.description = (SELECT p.description FROM finance.printings p "
-           "JOIN finance.statements s ON s.id = p.statement_id WHERE p.transaction_id = t.id AND s.format = 'xlsx' ORDER BY length(p.description) DESC LIMIT 1)) "
-           "FROM finance.transactions t JOIN finance.accounts a ON a.id = t.account_id "
-           f"WHERE a.issuer ILIKE '%{both['issuer']}%' AND a.kind = '{both['kind']}' "
-           "AND (SELECT count(*) FROM finance.printings p WHERE p.transaction_id = t.id) >= 2 "
-           "AND EXISTS (SELECT 1 FROM finance.printings p JOIN finance.statements s ON s.id = p.statement_id "
-           "WHERE p.transaction_id = t.id AND s.format = 'pdf') "
-           "AND EXISTS (SELECT 1 FROM finance.printings p JOIN finance.statements s ON s.id = p.statement_id "
-           "WHERE p.transaction_id = t.id AND s.format = 'xlsx')")
-    printed_both, show_xlsx = (int(n) for n in psql(stage_url, E2E_DB, sql).strip().split("|"))
-    print(f"  {printed_both} printed by a PDF and an XLSX, {show_xlsx} show the XLSX's text")
-    check(printed_both == both["count"], f"{both['count']} {both['issuer']} {both['kind']} Transactions have a PDF Printing and an XLSX Printing (got {printed_both})")
-    # Informational, not asserted: the PDF's narration is often not a strict prefix of the
-    # XLSX's (its last letter differs), so the strict-extension rule keeps the PDF text there.
-    print(f"  INFO  {show_xlsx} of {printed_both} show the XLSX's fuller text")
-
-
-def run(api: Api, stage_url: str, expected: dict) -> dict[str, int]:
-    """The normal scenario; returns its final counts for the others to match."""
-    passwords = json.loads((PRIVATE / "passwords.json").read_text())
-    for label, secrets in passwords.items():
-        for index, secret in enumerate(secrets):
-            status, _ = api.call("POST", "/api/finance/statement-passwords",
-                                 {"label": f"{label.split('_format')[0]}-{index}", "secret": secret})
-            if status not in (200, 201):
-                check(False, f"saved password {label.split('_format')[0]}-{index} (got {status})")
-    files = sorted(p for p in (PRIVATE / "statements").iterdir() if p.is_file())
-    status, previews = api.upload(files)
-    print(f"uploaded {len(files)} files, status {status}")
-    check(len(previews) == FILE_COUNT and all(p["outcome"] == "read" for p in previews),
-          f"all {FILE_COUNT} files read ({sum(p['outcome'] == 'read' for p in previews)}/{len(previews)})")
-    failed = [(s["proposed"].get("issuer") or "") for p in previews for s in p.get("sections") or []
-              for c in s["checks"] if c["outcome"] == "failed"]
-    issuer = expected["failed_check"]["issuer"]
-    check(len(failed) == 1 and issuer in failed[0].lower(), f"exactly 1 failed Check, in the expected file (got {len(failed)})")
-    gains = confirm_all(api, previews)
-    assert_accounts(api.call("GET", "/api/finance/accounts")[1], expected)
-    assert_links(stage_url)
-    assert_printings(stage_url, expected, gains)
-    final = counts(stage_url)
-    print(f"  final counts: {final}")
-    _, again = api.upload(files)
-    dups = sum(1 for p in again if p.get("duplicate_file"))
-    check(dups == FILE_COUNT, f"re-upload: {dups}/{len(again)} duplicate_file")
-    adds = vanished = new_printings = enriched = errors = 0
-    for preview in previews:
-        status, reply = api.call("POST", f"/api/finance/statements/{preview['id']}/read-again")
-        errors += status != 200
-        for section in (reply or {}).get("sections", []):
-            adds += section["add_count"]
-            vanished += section["no_longer_found_count"]
-            new_printings += section["new_printing_count"]
-            enriched += section["enriched_count"]
-    check(errors == 0, f"every Read again returned 200 ({len(previews) - errors}/{len(previews)})")
-    check(adds == 0 and vanished == 0 and new_printings == 0 and enriched == 0,
-          f"Read again: {adds} to add, {new_printings} Printings to add ({enriched} gaining detail), {vanished} no longer found")
-    return final
-
-
-def counts(stage_url: str) -> dict[str, int]:
-    """Row counts of what a finished import leaves: the figures every scenario must agree on."""
-    sql = ("SELECT (SELECT count(*) FROM finance.accounts), (SELECT count(*) FROM finance.transactions), "
-           "(SELECT count(*) FROM finance.printings), "
-           "(SELECT count(*) FROM finance.payment_records WHERE transaction_id IS NOT NULL)")
-    keys = ("accounts", "transactions", "printings", "linked")
-    return dict(zip(keys, (int(n) for n in psql(stage_url, E2E_DB, sql).strip().split("|")), strict=True))
-
-
-def duplicate_account_pairs(stage_url: str) -> int:
-    """How many pairs of Accounts share issuer, kind and visible digits (must be 0)."""
-    rows = [r.split("|") for r in psql(stage_url, E2E_DB,
-            "SELECT issuer, kind, coalesce(mask, '') FROM finance.accounts ORDER BY id").splitlines()]
-    norm = lambda text: " ".join(text.lower().split())  # noqa: E731
-    return sum(1 for i, a in enumerate(rows) for b in rows[i + 1:]
-               if norm(a[0]) == norm(b[0]) and a[1] == b[1] and visible_digits(a[2]) and same_number(a[2], b[2]))
-
-
-def page_choice(section: dict) -> dict:
-    """The choice the web page sends for a section, from `sectionChoice.initialDraft`."""
-    if section.get("matched_account"):
-        return {"account_id": section["matched_account"]["id"]}
-    if section.get("candidate_accounts"):
-        return {"account_id": None}  # the page makes the person choose; sent as "use the match"
-    proposed = section["proposed"]
-    return {"new_account": {"issuer": proposed.get("issuer") or "Unknown",
-                            "kind": proposed.get("kind") or "savings", "name": "Unnamed"}}
-
-
-def confirm_in_order(api: Api, previews: list[dict], choose) -> int:
-    """Confirms Statements then Payment histories in upload order, each section's choice built by
-    `choose(section)` from the preview as it was at upload; returns how many confirms were refused."""
-    refused = 0
-    for preview in sorted(previews, key=lambda p: p["kind"] == "payment_history"):
-        sections = [choose(preview, section) for section in preview.get("sections") or []]
-        status, reply = api.call("POST", f"/api/finance/statements/{preview['id']}/confirm", {"sections": sections})
-        if status != 200:
-            print(f"    confirm statement {preview['id']} returned {status}, code {(reply or {}).get('code')}")
-            refused += 1
-    return refused
-
-
-def upload_all(api: Api) -> list[dict]:
-    """Saves the Statement passwords, uploads every private file and returns the upload-time previews."""
-    passwords = json.loads((PRIVATE / "passwords.json").read_text())
-    for label, secrets in passwords.items():
-        for index, secret in enumerate(secrets):
-            api.call("POST", "/api/finance/statement-passwords", {"label": f"{label.split('_format')[0]}-{index}", "secret": secret})
-    _, previews = api.upload(sorted(p for p in (PRIVATE / "statements").iterdir() if p.is_file()))
-    return previews
-
-
-def run_page_style(api: Api, stage_url: str, normal: dict[str, int]) -> None:
-    """Confirms as the page does: choices from the upload-time previews, in upload order."""
-    print("page-style import:")
-    refused = confirm_in_order(api, upload_all(api), lambda _, section: page_choice(section))
-    check(refused == 0, "every page-style confirm returned 200")
-    check(duplicate_account_pairs(stage_url) == 0, "no two Accounts share issuer, kind and digits")
-    final = counts(stage_url)
-    check(final == normal, f"same counts as the normal import ({final} vs {normal})")
-
-
-def force_account(stage_url: str, proposed: dict) -> int | None:
-    """Creates an Account by direct SQL, bypassing the server's rule, so duplicates can exist."""
-    if not (proposed.get("issuer") and proposed.get("kind")):
-        return None
-    quote = lambda text: "'" + str(text).replace("'", "''") + "'"  # noqa: E731
-    mask = proposed.get("mask") or ""
-    digits = visible_digits(mask)
-    last4 = quote(digits[-4:]) if len(digits) >= 4 else "NULL"
-    sql = ("INSERT INTO finance.accounts (issuer, kind, mask, last4, name) VALUES "
-           f"({quote(proposed['issuer'])}, {quote(proposed['kind'])}, {quote(mask) if mask else 'NULL'}, {last4}, 'Forced') RETURNING id")
-    return int(psql(stage_url, E2E_DB, sql).splitlines()[0])
-
-
-def merge_duplicates(stage_url: str) -> str:
-    """Runs the repair subcommand against the e2e database; returns its counts-only line."""
-    env = {**os.environ, "DATABASE_URL": urlparse(stage_url)._replace(path=f"/{E2E_DB}").geturl(),
-           "VITARCHY_STAGE": "1", "RUST_LOG": "warn"}
-    done = subprocess.run([str(ROOT / "target" / "debug" / "vitarchy-server"), "finance-merge-duplicates"],
-                          env=env, capture_output=True, text=True)
-    check(done.returncode == 0, "finance-merge-duplicates succeeded")
-    return done.stdout.strip()
-
-
-def run_repair(api: Api, stage_url: str, normal: dict[str, int]) -> None:
-    """Makes duplicate Accounts the way the old page did, then repairs them."""
-    print("repair:")
-
-    def choose(_, section: dict) -> dict:
-        made = force_account(stage_url, section["proposed"])
-        return {"account_id": made} if made else page_choice(section)
-
-    refused = confirm_in_order(api, upload_all(api), choose)
-    check(refused == 0, "every confirm onto a forced Account returned 200")
-    check(duplicate_account_pairs(stage_url) > 0, "the duplicates exist before the repair")
-    before = counts(stage_url)
-    print(f"  {merge_duplicates(stage_url)}")
-    check(duplicate_account_pairs(stage_url) == 0, "no two Accounts share issuer, kind and digits after the repair")
-    final = counts(stage_url)
-    check(final == normal, f"same counts as the normal import ({final} vs {normal}; before {before})")
-    merge_duplicates(stage_url)
-    check(counts(stage_url) == final, "a second repair changes nothing")
+from e2e_assertions import compare_orders
+from e2e_env import E2E_DB, PRIVATE, Api, failures, free_port, load_expected, psql, refuse_live, start_server
+from e2e_normal import run
+from e2e_page_style import run_page_style
+from e2e_repair import run_repair
 
 
 def main() -> int:
@@ -409,9 +45,19 @@ def main() -> int:
     admin_db = urlparse(stage_url).path.lstrip("/")
     scratch = tempfile.mkdtemp(prefix="vitarchy-e2e-")
     normal: dict[str, int] = {}
-    scenarios = [("normal", lambda api: run(api, stage_url, expected)),
-                 ("page-style", lambda api: run_page_style(api, stage_url, normal)),
-                 ("repair", lambda api: run_repair(api, stage_url, normal))]
+    orders: dict[str, dict] = {}
+
+    def run_order(phonepe: str):
+        def go(api: Api) -> None:
+            print(f"normal import, PhonePe {phonepe}:")
+            orders[phonepe] = run(api, stage_url, expected, phonepe)
+            if phonepe == "last":
+                normal.update(orders[phonepe]["counts"])
+        return go
+
+    scenarios = [("phonepe-last", run_order("last")), ("phonepe-first", run_order("first")),
+                 ("page-style", lambda api: run_page_style(api, stage_url, normal, expected)),
+                 ("repair", lambda api: run_repair(api, stage_url, normal, expected))]
     for name, scenario in scenarios:
         psql(stage_url, admin_db, f"DROP DATABASE IF EXISTS {E2E_DB} WITH (FORCE)")
         psql(stage_url, admin_db, f"CREATE DATABASE {E2E_DB}")
@@ -419,15 +65,14 @@ def main() -> int:
         port = free_port()
         server = start_server(stage_url, port, str(Path(scratch) / "statements"), log)
         try:
-            result = scenario(Api(port))
-            if name == "normal":
-                normal.update(result)
+            scenario(Api(port))
         finally:
             server.terminate()
             try:
                 server.wait(timeout=15)
             except subprocess.TimeoutExpired:
                 server.kill()
+    compare_orders(orders)
     if not failures:
         shutil.rmtree(scratch, ignore_errors=True)
     print(f"{'FAILED' if failures else 'OK'}: {len(failures)} failed assertion(s)" + (f"; server logs in {scratch}" if failures else ""))

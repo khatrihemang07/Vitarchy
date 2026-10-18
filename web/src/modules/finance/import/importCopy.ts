@@ -16,7 +16,6 @@ export function confirmedLine(counts: ConfirmCounts): string {
     `${formatCount(counts.added)} added`,
     `${formatCount(counts.already_stored)} already stored`,
     whenAny(counts.enriched, "gained detail"),
-    whenAny(counts.linked, "Payment records linked"),
   ];
   return `${list(parts)}.`;
 }

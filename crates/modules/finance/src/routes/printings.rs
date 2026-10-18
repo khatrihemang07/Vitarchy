@@ -4,7 +4,7 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveTime};
 use serde::Serialize;
 use utoipa::ToSchema;
 use vitarchy_core::AppState;
@@ -26,6 +26,8 @@ pub struct PrintingItem {
     pub file_name: String,
     /// The date as that Statement printed it.
     pub date: NaiveDate,
+    /// The local time as that Statement printed it, when it prints one.
+    pub time: Option<NaiveTime>,
     /// The description as that Statement printed it.
     pub description: String,
     /// Balance after, when that Statement printed it.
@@ -43,6 +45,7 @@ impl From<PrintingRow> for PrintingItem {
             statement_id: r.statement_id,
             file_name: r.file_name,
             date: r.date,
+            time: r.time,
             description: r.description,
             balance_paise: r.balance_paise,
             reference: r.reference,

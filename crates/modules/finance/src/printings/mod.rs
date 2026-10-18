@@ -9,16 +9,18 @@ pub use gain::{Plan, plan_for};
 pub use resolve::{Resolved, resolve};
 pub use same::identical_to_live;
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveTime};
 
 use crate::reader::contract::Transaction;
 
-/// The seven fields a Statement prints for a Transaction. Two Printings are the same
+/// The eight fields a Statement prints for a Transaction. Two Printings are the same
 /// when these are equal (ADR 0015), so they travel as one value.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrintedFields {
     /// The date as printed.
     pub date: NaiveDate,
+    /// The local time, when the source prints one.
+    pub time: Option<NaiveTime>,
     /// The description as printed.
     pub description: String,
     /// Balance after, when printed.
@@ -55,6 +57,7 @@ impl Printing {
             statement_id,
             printed: PrintedFields {
                 date: tx.date,
+                time: tx.time,
                 description: tx.description.clone(),
                 balance_paise: tx.balance_paise,
                 reference: tx.reference.clone(),

@@ -16,12 +16,9 @@ def summarise(result: dict) -> dict:
         "mask": (s.get("account") or {}).get("mask"),
         "has_period": all((s.get("period") or {}).get(end) for end in ("start", "end")),
     } for s in result.get("statements", [])]
-    records = result.get("payment_records", [])
     return {
         "outcome": result.get("outcome"), "kind": result.get("kind"),
-        "statement_count": len(statements), "statements": statements,
-        "payment_records": {"count": len(records), "debit_paise": _sum(records, "debit"),
-                            "credit_paise": _sum(records, "credit")},
+        "statement_count": len(statements), "statements": statements
     }
 
 
@@ -36,7 +33,6 @@ BARE_AMOUNT = re.compile(rf"^{AMOUNT}(?:\s|$)|(?:^|\s){AMOUNT}$")
 def description_failures(expected: dict, result: dict) -> list[str]:
     """Codes only (an index, never the text): invariants on every row plus the verified samples."""
     groups = [(f"s{i}", s["transactions"]) for i, s in enumerate(result.get("statements", []))]
-    groups.append(("p", result.get("payment_records", [])))
     failures = []
     for label, rows in groups:
         empty = [i for i, r in enumerate(rows) if not r["description"].strip()]
@@ -60,10 +56,6 @@ def compare(expected: dict, result: dict) -> list[str]:
         if i >= len(actual["statements"]):
             break
         failures += _statement_failures(i, want, actual["statements"][i])
-    if "payment_records" in expected:
-        for key, value in expected["payment_records"].items():
-            if actual["payment_records"][key] != value:
-                failures.append(f"payment_records.{key}: {actual['payment_records'][key]} != {value}")
     return failures + description_failures(expected, result)
 
 

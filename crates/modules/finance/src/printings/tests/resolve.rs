@@ -98,3 +98,33 @@ fn a_transaction_is_no_longer_found_only_when_every_printing_is_gone() {
         "all gone: all still count"
     );
 }
+
+fn at(printing: crate::printings::Printing, hour: u32) -> crate::printings::Printing {
+    let mut p = printing;
+    p.printed.time = chrono::NaiveTime::from_hms_opt(hour, 20, 0);
+    p
+}
+
+#[test]
+fn the_time_is_the_first_one_any_printing_prints() {
+    let shown = resolve(&[
+        printing("bank row"),
+        at(printing("app row"), 11),
+        at(printing("x"), 14),
+    ]);
+    assert_eq!(
+        shown.detail.time,
+        chrono::NaiveTime::from_hms_opt(11, 20, 0)
+    );
+}
+
+#[test]
+fn a_transaction_no_printing_gives_a_time_shows_none() {
+    assert_eq!(resolve(&[printing("bank row")]).detail.time, None);
+}
+
+#[test]
+fn a_gone_printings_time_is_ignored_while_a_live_one_exists() {
+    let shown = resolve(&[gone(at(printing("app row"), 9)), printing("bank row")]);
+    assert_eq!(shown.detail.time, None);
+}

@@ -38,10 +38,6 @@ function changesOf(item: ReadAgainItem): ItemChanges {
     totals.unchanged += section.unchanged_count;
     totals.noLongerFound += section.no_longer_found_count;
   }
-  if (preview?.payment_records) {
-    totals.add += preview.payment_records.add_count;
-    totals.unchanged += preview.payment_records.unchanged_count;
-  }
   return { statementId: item.statement_id, fileName: item.file_name, ...totals };
 }
 

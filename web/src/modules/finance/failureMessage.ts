@@ -15,10 +15,14 @@ export function failureMessage(failure: FinanceFailure): string {
       return "Several Accounts fit. Choose which one this belongs to.";
     case "statement_sections_changed":
       return "The file now lists different Accounts than when it was confirmed, so nothing was changed.";
+    case "statement_sections_unplaced":
+      return "This file lists an Account that cannot be matched to your Transactions, so nothing was changed.";
     case "confirm_in_progress":
       return "Another confirm is running. Wait a moment and try again.";
     case "statement_confirmed":
       return "This Statement is already confirmed.";
+    case "statement_has_rows":
+      return "This file's rows are already part of your Transactions as Printings, so it cannot be discarded. Confirm it instead.";
     case "statement_not_found":
       return "This Statement no longer exists. It may have been discarded.";
     case "upload_too_large":

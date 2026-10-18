@@ -37,7 +37,11 @@ impl Env {
     }
 
     pub async fn with_reader(label: &str, reader: FakeReader) -> Self {
-        let db = finance_db(label).await;
+        Self::on_database(finance_db(label).await, reader)
+    }
+
+    /// The routes over an existing, already migrated database.
+    pub fn on_database(db: TestDb, reader: FakeReader) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let reader = Arc::new(reader);
         let (router, _) = utoipa_axum::router::OpenApiRouter::new()

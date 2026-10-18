@@ -71,7 +71,7 @@ async fn retry_inner(
     .await?;
     statement_accounts::clear(&mut *tx, row.id).await?;
     if let Ok(read) = &result {
-        propose(&mut tx, row.id, &read.statements).await?;
+        propose(&mut tx, row.id, read.kind, &read.statements).await?;
     }
     if let (Some(sha), Some((password_id, label))) = (&kept_sha, &unlocked_with) {
         statement_files::record_unlock(&mut *tx, row.id, sha, &row.file_sha256, Some(label))

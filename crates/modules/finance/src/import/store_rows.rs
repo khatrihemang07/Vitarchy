@@ -4,7 +4,11 @@
 use sqlx::PgConnection;
 
 use super::printing_writes::{Target, add_printings, add_transactions};
-use crate::{dedupe::pair, reader::contract::Transaction, repo::transactions};
+use crate::{
+    dedupe::{Origin, pair},
+    reader::contract::Transaction,
+    repo::transactions,
+};
 
 /// What storing a section's rows did.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -17,7 +21,7 @@ pub struct RowCounts {
     pub enriched: usize,
 }
 
-/// Stores `rows` of Statement `statement_id` under the Account.
+/// Stores `rows` of Statement `statement_id` (a file of `origin`) under the Account.
 ///
 /// # Errors
 /// The database failed.
@@ -25,12 +29,13 @@ pub async fn store_rows(
     db: &mut PgConnection,
     account_id: i64,
     statement_id: i64,
+    origin: Origin,
     rows: &[Transaction],
 ) -> Result<RowCounts, sqlx::Error> {
     let stored = transactions::stored_keys(&mut *db, account_id).await?;
     let mut new_rows = Vec::new();
     let mut targets = Vec::new();
-    for (row, found) in rows.iter().zip(pair(rows, &stored)) {
+    for (row, found) in rows.iter().zip(pair(rows, origin, &stored)) {
         match found {
             Some(transaction_id) => targets.push(Target {
                 transaction_id,

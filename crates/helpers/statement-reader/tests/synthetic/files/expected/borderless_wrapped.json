@@ -30,7 +30,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007000"
+          "source_id": "13680007000",
+          "time": null
         },
         {
           "date": "2026-04-04",
@@ -41,7 +42,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007007"
+          "source_id": "13680007007",
+          "time": null
         },
         {
           "date": "2026-04-05",
@@ -52,7 +54,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007014"
+          "source_id": "13680007014",
+          "time": null
         },
         {
           "date": "2026-04-07",
@@ -63,7 +66,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007021"
+          "source_id": "13680007021",
+          "time": null
         },
         {
           "date": "2026-04-09",
@@ -74,7 +78,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007028"
+          "source_id": "13680007028",
+          "time": null
         },
         {
           "date": "2026-04-10",
@@ -85,7 +90,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007035"
+          "source_id": "13680007035",
+          "time": null
         },
         {
           "date": "2026-04-10",
@@ -96,7 +102,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007042"
+          "source_id": "13680007042",
+          "time": null
         },
         {
           "date": "2026-04-10",
@@ -107,7 +114,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007049"
+          "source_id": "13680007049",
+          "time": null
         },
         {
           "date": "2026-04-10",
@@ -118,7 +126,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007056"
+          "source_id": "13680007056",
+          "time": null
         },
         {
           "date": "2026-04-11",
@@ -129,7 +138,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007063"
+          "source_id": "13680007063",
+          "time": null
         },
         {
           "date": "2026-04-12",
@@ -140,7 +150,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007070"
+          "source_id": "13680007070",
+          "time": null
         },
         {
           "date": "2026-04-12",
@@ -151,7 +162,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007077"
+          "source_id": "13680007077",
+          "time": null
         },
         {
           "date": "2026-04-12",
@@ -162,7 +174,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007084"
+          "source_id": "13680007084",
+          "time": null
         },
         {
           "date": "2026-04-14",
@@ -173,7 +186,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "13680007091"
+          "source_id": "13680007091",
+          "time": null
         }
       ]
     }

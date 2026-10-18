@@ -20,7 +20,7 @@ pub struct Request<'a> {
 }
 
 impl<'a> Request<'a> {
-    /// A version 1 request.
+    /// A version-2 request.
     #[must_use]
     pub const fn new(
         file_path: &'a Path,
@@ -75,7 +75,7 @@ mod tests {
         let json = serde_json::to_value(&request).unwrap();
         assert_eq!(
             json,
-            serde_json::json!({"version":1,"file_path":"/a","passwords":["p"],"decrypted_out":"/b"})
+            serde_json::json!({"version":2,"file_path":"/a","passwords":["p"],"decrypted_out":"/b"})
         );
     }
 }

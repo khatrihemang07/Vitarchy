@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use super::transaction::TransactionView;
 use crate::{
-    dedupe::{StoredEvidence, pair},
+    dedupe::{Origin, StoredEvidence, pair},
     printings::{Plan, Printing, plan_for},
     reader::contract::Transaction,
 };
@@ -20,10 +20,11 @@ pub struct Rows {
     pub enriched_count: usize,
 }
 
-/// Compares `incoming` (printed by Statement `statement_id`) with the Account's `stored`
+/// Compares `incoming` (printed by Statement `statement_id`, a file of `origin`) with the Account's `stored`
 /// Transactions and their `printings`. A row whose Statement already printed it gains nothing.
 pub fn build(
     statement_id: i64,
+    origin: Origin,
     incoming: &[Transaction],
     stored: &[StoredEvidence],
     printings: &HashMap<i64, Vec<Printing>>,
@@ -33,7 +34,7 @@ pub fn build(
         new_count: 0,
         enriched_count: 0,
     };
-    for (tx, found) in incoming.iter().zip(pair(incoming, stored)) {
+    for (tx, found) in incoming.iter().zip(pair(incoming, origin, stored)) {
         let gains = found.is_some_and(|id| {
             plan_for(statement_id, tx, printings.get(&id).map(Vec::as_slice))
                 == Plan::Add { gains: true }

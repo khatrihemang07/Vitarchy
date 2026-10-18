@@ -1,6 +1,7 @@
 //! Whether two rows of one Account are the same Transaction, and by which evidence. The
 //! rungs run strongest first; a rung present on both rows decides, so a disagreement means
-//! "not the same" and never falls through to a weaker rung.
+//! "not the same" and never falls through to a weaker rung. A final rung, a unique
+//! partner between a payment app and an issuer, is decided over whole sets in `pairing`.
 
 use super::evidence::Evidence;
 
@@ -36,16 +37,38 @@ pub struct Verdict {
     pub closeness: u32,
 }
 
-/// `Some` when the rows are the same Transaction.
-#[must_use]
-pub fn verdict(a: &Evidence, b: &Evidence) -> Option<Verdict> {
+/// Days apart when the rows have an equal amount and direction and dates within the window:
+/// the ground every rung stands on.
+fn days_apart_if_close(a: &Evidence, b: &Evidence) -> Option<i64> {
     if a.amount_paise != b.amount_paise || a.direction != b.direction {
         return None;
     }
     let days_apart = (a.date - b.date).num_days().abs();
-    if days_apart > DATE_WINDOW_DAYS {
-        return None;
-    }
+    (days_apart <= DATE_WINDOW_DAYS).then_some(days_apart)
+}
+
+/// Whether both rows carry a value and the values differ: a rung present on both sides that
+/// disagrees means "not the same".
+fn disagree<T: PartialEq>(a: Option<&T>, b: Option<&T>) -> bool {
+    matches!((a, b), (Some(x), Some(y)) if x != y)
+}
+
+/// Whether the rows could be the same payment by amount, direction, date and origin alone:
+/// one is only a payment app's and the other only an issuer's, an equal amount and
+/// direction, within the date window, and no reference or shared-namespace id that
+/// disagrees. The unique-partner rung decides when this holds for exactly one pair.
+#[must_use]
+pub fn unique_partner_possible(a: &Evidence, b: &Evidence) -> bool {
+    days_apart_if_close(a, b).is_some()
+        && a.origins.complement(b.origins)
+        && !disagree(a.reference.as_ref(), b.reference.as_ref())
+        && !(a.origins.share_ids(b.origins) && disagree(a.source_id.as_ref(), b.source_id.as_ref()))
+}
+
+/// `Some` when the rows are the same Transaction.
+#[must_use]
+pub fn verdict(a: &Evidence, b: &Evidence) -> Option<Verdict> {
+    let days_apart = days_apart_if_close(a, b)?;
     let decided = |rung, closeness| {
         Some(Verdict {
             rung,
@@ -53,7 +76,9 @@ pub fn verdict(a: &Evidence, b: &Evidence) -> Option<Verdict> {
             closeness,
         })
     };
-    if let (Some(x), Some(y)) = (&a.source_id, &b.source_id) {
+    if let (Some(x), Some(y)) = (&a.source_id, &b.source_id)
+        && a.origins.share_ids(b.origins)
+    {
         return if x == y {
             decided(Rung::SourceId, 0)
         } else {
@@ -67,16 +92,16 @@ pub fn verdict(a: &Evidence, b: &Evidence) -> Option<Verdict> {
             None
         };
     }
-    // Only an id or a balance may bridge a day; weaker evidence needs the same date.
-    if days_apart != 0 {
-        return None;
-    }
+    // A reference bridges a day as an id and a balance do; descriptions need the same date.
     if let (Some(x), Some(y)) = (&a.reference, &b.reference) {
         return if x == y {
             decided(Rung::Reference, 0)
         } else {
             None
         };
+    }
+    if days_apart != 0 {
+        return None;
     }
     let closeness = description_closeness(&a.description, &b.description)?;
     decided(Rung::Description, closeness)

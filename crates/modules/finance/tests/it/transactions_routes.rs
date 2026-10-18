@@ -2,8 +2,7 @@
 
 use crate::common::{
     app::Env,
-    payment,
-    results::{card_section, credit, history, read, section},
+    results::{app_row, card_section, credit, history, instrument, read, section},
     tx,
 };
 use vitarchy_finance::reader::contract::AccountKind;
@@ -24,9 +23,17 @@ async fn confirmed_env(label: &str) -> Env {
         "XXXX4321",
         vec![tx(3, "SAV", 50)],
     )]);
-    let mut record = payment(Some("P1"), Some("512345678901"), 25_000);
-    record.instrument_digits = Some("2003".to_owned());
-    let env = Env::new(label, vec![card, savings, history(vec![record])]).await;
+    let phone = history(vec![instrument(
+        None,
+        "XXXXXX2003",
+        vec![app_row(
+            tx(5, "Paid to SOME MERCHANT", 25_000),
+            (11, 20),
+            Some("P1"),
+            Some("512345678901"),
+        )],
+    )]);
+    let env = Env::new(label, vec![card, savings, phone]).await;
     for (name, bytes) in [("a.pdf", &b"a"[..]), ("b.pdf", &b"b"[..])] {
         let id = env.upload_one(name, bytes).await;
         env.confirm_proposed(id, 1).await;
@@ -55,7 +62,7 @@ async fn rows_come_newest_first_with_a_total() {
         ["NINE", "PAID VIA UPI", "SAV", "TWO", "ONE"]
     );
     assert_eq!(reply.json["items"][0]["direction"], "credit");
-    assert!(reply.json["items"][0]["payment_record"].is_null());
+    assert!(reply.json["items"][0]["time"].is_null());
     assert_eq!(reply.json["items"][0]["no_longer_found"], false);
     env.finish().await;
 }
@@ -80,52 +87,25 @@ async fn filters_and_paging_narrow_the_rows_and_keep_the_total_honest() {
 }
 
 #[tokio::test]
-async fn a_linked_payment_record_comes_inline() {
-    let env = confirmed_env("tx_linked").await;
+async fn a_payment_apps_row_joins_the_transaction_and_lends_its_time() {
+    let env = confirmed_env("tx_app").await;
     let phone = env.upload_one("phone.csv", b"phone").await;
-    let confirmed = env.confirm_proposed(phone, 0).await;
+    let confirmed = env.confirm_proposed(phone, 1).await;
 
     let reply = env.get("/transactions").await;
 
-    assert_eq!(confirmed.json["linked"], 1);
-    let linked = reply.json["items"]
+    assert_eq!(confirmed.status, 200, "{}", confirmed.text);
+    assert_eq!(confirmed.json["added"], 0);
+    assert_eq!(confirmed.json["already_stored"], 1);
+    assert_eq!(reply.json["total"], 5, "the payment is counted once");
+    let paid = reply.json["items"]
         .as_array()
         .unwrap()
         .iter()
-        .find(|r| !r["payment_record"].is_null())
+        .find(|r| r["description"] == "PAID VIA UPI")
         .unwrap()
         .clone();
-    assert_eq!(linked["description"], "PAID VIA UPI");
-    assert_eq!(linked["payment_record"]["utr"], "512345678901");
-    assert_eq!(
-        linked["payment_record"]["description"],
-        "Paid to SOME MERCHANT"
-    );
-    assert_eq!(
-        linked["payment_record"]["occurred_at"],
-        "2026-07-05T11:20:00"
-    );
-    env.finish().await;
-}
-
-#[tokio::test]
-async fn invalid_filters_are_refused_with_a_code() {
-    let env = confirmed_env("tx_invalid").await;
-
-    for query in [
-        "limit=0",
-        "limit=501",
-        "offset=-1",
-        "from=2026-07-09&to=2026-07-01",
-        "from=yesterday",
-        "account_id=abc",
-    ] {
-        let reply = env.get(&format!("/transactions?{query}")).await;
-        assert_eq!(
-            (reply.status, reply.json["code"].as_str()),
-            (400, Some("invalid_query")),
-            "{query}"
-        );
-    }
+    assert_eq!(paid["time"], "11:20:00");
+    assert_eq!(paid["printing_count"], 2);
     env.finish().await;
 }

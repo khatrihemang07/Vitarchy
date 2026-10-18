@@ -15,12 +15,13 @@ async fn stored_rows_come_back_as_evidence_that_drives_dedupe() {
             .await
             .unwrap();
     }
-    let stored: Vec<_> = transactions::stored_keys(&db.pool, account.id)
-        .await
-        .unwrap()
-        .into_iter()
-        .map(|key| key.evidence)
-        .collect();
+    let stored: Vec<_> =
+        transactions::stored_keys(&mut db.pool.acquire().await.unwrap(), account.id)
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|key| key.evidence)
+            .collect();
     let second = [
         tx(1, "coffee", 100),
         tx(2, "Tea", 200),
@@ -50,11 +51,13 @@ async fn read_again_marks_gone_printings_and_clearing_restores_them_without_dele
     let diff_of = |rows: Vec<_>| {
         let pool = db.pool.clone();
         async move {
-            let keys = transactions::stored_keys(&pool, account.id).await.unwrap();
+            let keys = transactions::stored_keys(&mut pool.acquire().await.unwrap(), account.id)
+                .await
+                .unwrap();
             let here = printings::marks_of_statement(&pool, account.id, statement)
                 .await
                 .unwrap();
-            read_again_diff(&rows, &keys, &here)
+            read_again_diff(&rows, vitarchy_finance::Origin::Statement, &keys, &here)
         }
     };
 

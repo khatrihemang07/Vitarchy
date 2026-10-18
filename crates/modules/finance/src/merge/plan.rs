@@ -1,19 +1,10 @@
 //! What merging one Account into another does to each of its Transactions. Pure: the one
-//! matcher (`dedupe::pair`) decides which rows are the same, as it does for a Statement.
+//! matcher (`dedupe::pair_with`) decides which rows are the same, as it does for a Statement.
 
-use crate::{
-    dedupe::{Evidence, StoredEvidence, pair},
-    reader::contract::Transaction,
-};
+use crate::dedupe::{Evidence, StoredEvidence, pair_with};
 
-/// A stored Transaction as its resolved view reads.
-#[derive(Debug, Clone)]
-pub struct Row {
-    /// Its row id.
-    pub id: i64,
-    /// What it shows.
-    pub tx: Transaction,
-}
+/// A stored Transaction as matching sees it.
+pub type Row = StoredEvidence;
 
 /// What happens to one Transaction of the Account being merged away.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,16 +26,9 @@ pub enum Move {
 /// A move for every row of `from`, in order, given the rows of the Account that stays.
 #[must_use]
 pub fn plan(keep: &[Row], from: &[Row]) -> Vec<Move> {
-    let stored: Vec<StoredEvidence> = keep
-        .iter()
-        .map(|row| StoredEvidence {
-            id: row.id,
-            evidence: Evidence::from(&row.tx),
-        })
-        .collect();
-    let incoming: Vec<Transaction> = from.iter().map(|row| row.tx.clone()).collect();
+    let incoming: Vec<Evidence> = from.iter().map(|row| row.evidence.clone()).collect();
     from.iter()
-        .zip(pair(&incoming, &stored))
+        .zip(pair_with(&incoming, keep))
         .map(|(row, found)| match found {
             Some(into_id) => Move::Fold {
                 from_id: row.id,

@@ -1,6 +1,6 @@
-//! A page of Transactions with their linked Payment record, for the Transactions table.
+//! A page of Transactions, for the Transactions table.
 
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{NaiveDate, NaiveTime};
 use sqlx::PgExecutor;
 
 use crate::reader::contract::Direction;
@@ -16,7 +16,7 @@ pub struct Filter {
     pub to: Option<NaiveDate>,
 }
 
-/// A Transaction and, when linked, its Payment record.
+/// A Transaction as the table shows it.
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct PageRow {
     /// Row id.
@@ -25,6 +25,8 @@ pub struct PageRow {
     pub account_id: i64,
     /// The printed date.
     pub date: NaiveDate,
+    /// The local time, when any Statement printed one.
+    pub time: Option<NaiveTime>,
     /// The printed description.
     pub description: String,
     /// Amount, always above 0.
@@ -44,16 +46,6 @@ pub struct PageRow {
     pub no_longer_found: bool,
     /// How many Statements printed it (Printings, gone ones included).
     pub printing_count: i64,
-    /// The linked Payment record's id.
-    pub record_id: Option<i64>,
-    /// When the linked payment happened.
-    pub record_occurred_at: Option<NaiveDateTime>,
-    /// The linked Payment record's description.
-    pub record_description: Option<String>,
-    /// The linked Payment record's bank reference.
-    pub record_utr: Option<String>,
-    /// The linked Payment record's funding account.
-    pub record_instrument: Option<String>,
 }
 
 const WHERE: &str = "WHERE ($1::bigint IS NULL OR t.account_id = $1)
@@ -70,15 +62,11 @@ pub async fn page(
     offset: i64,
 ) -> Result<Vec<PageRow>, sqlx::Error> {
     sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT t.id, t.account_id, t.date, t.description, t.amount_paise, t.direction,
+        "SELECT t.id, t.account_id, t.date, t.time, t.description, t.amount_paise, t.direction,
                 t.balance_paise, t.foreign_amount, t.foreign_currency, t.reference,
                 t.no_longer_found_at IS NOT NULL AS no_longer_found,
-                (SELECT count(*) FROM finance.printings g WHERE g.transaction_id = t.id) AS printing_count,
-                p.id AS record_id, p.occurred_at AS record_occurred_at,
-                p.description AS record_description, p.utr AS record_utr,
-                p.instrument AS record_instrument
+                (SELECT count(*) FROM finance.printings g WHERE g.transaction_id = t.id) AS printing_count
          FROM finance.transactions t
-         LEFT JOIN finance.payment_records p ON p.transaction_id = t.id
          {WHERE} ORDER BY t.date DESC, t.id DESC LIMIT $4 OFFSET $5"
     )))
     .bind(filter.account_id)

@@ -1,7 +1,7 @@
 use chrono::Days;
 
 use super::{
-    Evidence,
+    Evidence, Origin, Origins,
     verdict::{Rung, verdict},
 };
 use crate::{reader::contract::Direction, test_support::tx};
@@ -66,7 +66,7 @@ fn one_missing_balance_falls_through_to_the_description() {
 }
 
 #[test]
-fn a_day_apart_matches_only_with_a_balance_or_an_id() {
+fn a_day_apart_matches_only_with_a_balance_an_id_or_a_reference() {
     let later = |e: &mut Evidence| e.date = e.date.checked_add_days(Days::new(1)).unwrap();
     assert_eq!(
         rung(
@@ -86,6 +86,19 @@ fn a_day_apart_matches_only_with_a_balance_or_an_id() {
         Some(Rung::SourceId)
     );
     let referenced = with(ev("x"), |e| e.reference = Some("R1".to_owned()));
+    assert_eq!(
+        rung(&referenced, &with(referenced.clone(), later)),
+        Some(Rung::Reference)
+    );
+}
+
+#[test]
+fn a_different_reference_a_day_apart_still_blocks() {
+    let later = |e: &mut Evidence| {
+        e.date = e.date.checked_add_days(Days::new(1)).unwrap();
+        e.reference = Some("R2".to_owned());
+    };
+    let referenced = with(ev("x"), |e| e.reference = Some("R1".to_owned()));
     assert_eq!(rung(&referenced, &with(referenced.clone(), later)), None);
 }
 
@@ -104,6 +117,52 @@ fn a_source_id_decides_even_when_everything_else_differs() {
         e.balance_paise = Some(1);
     });
     assert_eq!(rung(&a, &b), Some(Rung::SourceId));
+}
+
+#[test]
+fn ids_from_a_bank_and_a_payment_app_neither_agree_nor_disagree() {
+    let bank = with(ev("coffee shop"), |e| {
+        e.source_id = Some("ROW-1".to_owned());
+        e.origins = Origins::of(Origin::Statement);
+        e.reference = Some("R1".to_owned());
+    });
+    let app = with(ev("paid to coffee shop"), |e| {
+        e.source_id = Some("T-99".to_owned());
+        e.origins = Origins::of(Origin::PaymentHistory);
+        e.reference = Some("R1".to_owned());
+    });
+    assert_eq!(rung(&bank, &app), Some(Rung::Reference));
+    let same_id = with(app.clone(), |e| e.source_id = Some("ROW-1".to_owned()));
+    assert_eq!(
+        rung(&bank, &same_id),
+        Some(Rung::Reference),
+        "equal text across namespaces is no evidence"
+    );
+}
+
+#[test]
+fn ids_from_the_same_kind_of_file_still_decide() {
+    let app = |id: &str| {
+        with(ev("paid to coffee shop"), |e| {
+            e.source_id = Some(id.to_owned());
+            e.origins = Origins::of(Origin::PaymentHistory);
+        })
+    };
+    assert_eq!(rung(&app("T1"), &app("T1")), Some(Rung::SourceId));
+    assert_eq!(rung(&app("T1"), &app("T2")), None);
+}
+
+#[test]
+fn a_transaction_both_kinds_printed_shows_ids_no_single_namespace_owns() {
+    let mixed = with(ev("coffee shop"), |e| {
+        e.source_id = Some("ROW-1".to_owned());
+        e.origins = Origins::Both;
+    });
+    let bank = with(ev("coffee shop"), |e| {
+        e.source_id = Some("ROW-2".to_owned());
+        e.origins = Origins::of(Origin::Statement);
+    });
+    assert_eq!(rung(&mixed, &bank), Some(Rung::Description));
 }
 
 #[test]
@@ -153,4 +212,26 @@ fn similar_descriptions_match_at_the_threshold_and_dissimilar_ones_do_not() {
         rung(&ev("swiggy order 123"), &ev("demoeats order 456")),
         None
     );
+}
+
+#[test]
+fn the_unique_partner_rung_refuses_a_disagreeing_reference_or_same_namespace_id() {
+    use super::verdict::unique_partner_possible;
+    let app = with(ev("paid to coffee shop"), |e| {
+        e.origins = Origins::of(Origin::PaymentHistory);
+        e.reference = Some("R1".to_owned());
+    });
+    let bank = with(ev("coffee shop"), |e| {
+        e.origins = Origins::of(Origin::Statement);
+    });
+    assert!(unique_partner_possible(&app, &bank));
+    let other_ref = with(bank.clone(), |e| e.reference = Some("R2".to_owned()));
+    assert!(!unique_partner_possible(&app, &other_ref));
+    let same_ref = with(bank, |e| e.reference = Some("R1".to_owned()));
+    assert!(unique_partner_possible(&app, &same_ref));
+    let (x, y) = (
+        with(app.clone(), |e| e.source_id = Some("A".to_owned())),
+        with(app, |e| e.source_id = Some("B".to_owned())),
+    );
+    assert!(!unique_partner_possible(&x, &y), "same kind never joins");
 }

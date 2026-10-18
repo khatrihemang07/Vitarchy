@@ -1,6 +1,6 @@
 //! The Printings of one Transaction with their Statements' file names, for the API.
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveTime};
 use sqlx::PgExecutor;
 
 /// One Printing and the Statement that printed it.
@@ -14,6 +14,8 @@ pub struct PrintingRow {
     pub file_name: String,
     /// The date as that Statement printed it.
     pub date: NaiveDate,
+    /// The local time as that Statement printed it, if it prints one.
+    pub time: Option<NaiveTime>,
     /// The description as printed.
     pub description: String,
     /// Balance after, when printed.
@@ -44,7 +46,7 @@ pub async fn of_transaction(
     transaction_id: i64,
 ) -> Result<Vec<PrintingRow>, sqlx::Error> {
     sqlx::query_as(
-        "SELECT p.id, p.statement_id, s.file_name, p.date, p.description, p.balance_paise,
+        "SELECT p.id, p.statement_id, s.file_name, p.date, p.time, p.description, p.balance_paise,
                 p.reference, p.gone_at IS NOT NULL AS gone
          FROM finance.printings p JOIN finance.statements s ON s.id = p.statement_id
          WHERE p.transaction_id = $1 ORDER BY p.id",

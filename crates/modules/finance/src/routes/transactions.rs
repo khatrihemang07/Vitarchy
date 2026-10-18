@@ -37,8 +37,7 @@ pub struct TransactionParams {
     offset: Option<i64>,
 }
 
-/// Transactions, newest first, with their linked Payment record. Rows a Read again no longer
-/// finds are included and flagged.
+/// Transactions, newest first. Rows a Read again no longer finds are included and flagged.
 #[utoipa::path(
     get,
     path = "/transactions",

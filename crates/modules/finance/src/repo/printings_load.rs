@@ -12,6 +12,7 @@ struct Row {
     transaction_id: i64,
     statement_id: i64,
     date: chrono::NaiveDate,
+    time: Option<chrono::NaiveTime>,
     description: String,
     balance_paise: Option<i64>,
     reference: Option<String>,
@@ -30,6 +31,7 @@ impl From<Row> for (i64, Printing) {
                 statement_id: r.statement_id,
                 printed: PrintedFields {
                     date: r.date,
+                    time: r.time,
                     description: r.description,
                     balance_paise: r.balance_paise,
                     reference: r.reference,
@@ -43,7 +45,7 @@ impl From<Row> for (i64, Printing) {
     }
 }
 
-const COLUMNS: &str = "id, transaction_id, statement_id, date, description, balance_paise, reference, source_id, foreign_amount, foreign_currency, gone_at IS NOT NULL AS gone";
+const COLUMNS: &str = "id, transaction_id, statement_id, date, time, description, balance_paise, reference, source_id, foreign_amount, foreign_currency, gone_at IS NOT NULL AS gone";
 
 /// The Printings of these Transactions, each list in creation order.
 ///

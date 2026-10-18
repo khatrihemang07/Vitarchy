@@ -1,11 +1,16 @@
 //! Matching a Statement's proposed Account to the Accounts Vitarchy already knows, on
 //! issuer + kind + the trailing digits both masks show.
 
+mod instrument;
 mod mask;
+
+pub use instrument::{find_instrument, instrument_key};
 
 pub use mask::{last4, remembered_digits, same_number};
 
-use crate::reader::contract::AccountKind;
+use std::{collections::HashMap, hash::BuildHasher};
+
+use crate::reader::contract::{AccountKind, Kind, ProposedAccount};
 
 /// How an existing Account can be recognised: its own details or a remembered identifier.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,6 +64,43 @@ fn normalised(issuer: &str) -> String {
         .to_lowercase()
 }
 
+/// The Accounts that fit, each once, in first-seen order: the issuer and kind when given,
+/// and the printed number when there is one (an Account without a number then never fits).
+fn candidates(
+    issuer: Option<&str>,
+    kind: Option<AccountKind>,
+    printed: Option<&str>,
+    identities: &[AccountIdentity],
+) -> Vec<i64> {
+    let mut ids: Vec<i64> = Vec::new();
+    for entry in identities {
+        let number_fits = printed.is_none_or(|mask| {
+            entry
+                .mask
+                .as_deref()
+                .is_some_and(|other| same_number(mask, other))
+        });
+        if number_fits
+            && kind.is_none_or(|kind| entry.kind == kind)
+            && issuer.is_none_or(|issuer| same_issuer(&entry.issuer, issuer))
+            && !ids.contains(&entry.account_id)
+        {
+            ids.push(entry.account_id);
+        }
+    }
+    ids
+}
+
+/// What `ids` amount to: nothing, one Account (by number, or by issuer alone), or several.
+fn matched(ids: Vec<i64>, numbered: bool) -> Match {
+    match (ids.as_slice(), numbered) {
+        ([], _) => Match::None,
+        ([one], true) => Match::One(*one),
+        ([one], false) => Match::OneWithoutNumber(*one),
+        _ => Match::Several(ids),
+    }
+}
+
 /// Finds the Accounts a proposal belongs to, each Account once, in first-seen order. A
 /// proposal with no printed number matches by issuer and kind alone.
 #[must_use]
@@ -72,28 +114,33 @@ pub fn find(
         return Match::None;
     };
     let printed = mask.map(str::trim).filter(|mask| !mask.is_empty());
-    let mut ids: Vec<i64> = Vec::new();
-    for entry in identities {
-        let fits = match (printed, entry.mask.as_deref()) {
-            (None, _) => true,
-            (Some(mask), Some(other)) => same_number(mask, other),
-            (Some(_), None) => false,
-        };
-        if fits
-            && entry.kind == kind
-            && same_issuer(&entry.issuer, issuer)
-            && !ids.contains(&entry.account_id)
-        {
-            ids.push(entry.account_id);
-        }
-    }
-    match (ids.as_slice(), printed) {
-        ([], _) => Match::None,
-        ([one], Some(_)) => Match::One(*one),
-        ([one], None) => Match::OneWithoutNumber(*one),
-        _ => Match::Several(ids),
-    }
+    matched(
+        candidates(Some(issuer), Some(kind), printed, identities),
+        printed.is_some(),
+    )
 }
 
+/// The Account a section of a file of `kind` proposes: an instrument for a payment history,
+/// an issuer, kind and number for a Statement.
+#[must_use]
+pub fn find_for<S: BuildHasher>(
+    kind: Option<Kind>,
+    proposal: &ProposedAccount,
+    remembered: &HashMap<String, i64, S>,
+    identities: &[AccountIdentity],
+) -> Match {
+    if kind == Some(Kind::PaymentHistory) {
+        return find_instrument(proposal, remembered, identities);
+    }
+    find(
+        proposal.issuer.as_deref(),
+        proposal.kind,
+        proposal.mask.as_deref(),
+        identities,
+    )
+}
+
+#[cfg(test)]
+mod instrument_tests;
 #[cfg(test)]
 mod tests;

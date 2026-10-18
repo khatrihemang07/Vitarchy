@@ -5,15 +5,14 @@ use crate::common::{
     account,
     app::Env,
     cards::{MASK, card},
-    payment,
-    results::{history, read, section},
+    results::{read, section},
     tx,
 };
 use serde_json::json;
 use vitarchy_finance::{
     merge_duplicate_accounts,
     reader::contract::{AccountKind, Transaction},
-    repo::accounts,
+    repo::{accounts, instrument_accounts},
 };
 
 async fn count(env: &Env, table: &str) -> i64 {
@@ -185,18 +184,8 @@ fn savings(rows: Vec<Transaction>) -> vitarchy_finance::reader::ReaderResult {
 }
 
 #[tokio::test]
-async fn payment_record_links_survive_a_merge() {
-    let mut paid = tx(5, "UPI/DR/512345678901/SOME MERCHANT", 25_000);
-    paid.reference = Some("512345678901".to_owned());
-    let env = Env::new(
-        "mg_links",
-        vec![
-            savings(vec![tx(2, "other", 100)]),
-            savings(vec![paid.clone()]),
-            history(vec![payment(Some("R1"), Some("512345678901"), 25_000)]),
-        ],
-    )
-    .await;
+async fn a_remembered_instrument_follows_its_account_through_a_merge() {
+    let env = Env::new("mg_instrument", vec![savings(vec![tx(2, "other", 100)])]).await;
     let mut ids = Vec::new();
     for name in ["a", "b"] {
         let made = accounts::insert(
@@ -209,89 +198,14 @@ async fn payment_record_links_survive_a_merge() {
         .await
         .unwrap();
         ids.push(made.id);
-        let statement = env
-            .upload_one(&format!("{name}.pdf"), name.as_bytes())
-            .await;
-        let body = json!({"sections": [{"account_id": made.id}]});
-        env.post(
-            &format!("/statements/{statement}/confirm"),
-            &body.to_string(),
-        )
-        .await;
     }
-    let phone = env.upload_one("phone.csv", b"history").await;
-    env.confirm_proposed(phone, 0).await;
-    let linked_before = count_linked(&env).await;
-
-    merge_duplicate_accounts(&env.db.pool).await.unwrap();
-
-    assert_eq!((linked_before, count_linked(&env).await), (1, 1));
-    let account_of_linked: i64 = sqlx::query_scalar(
-        "SELECT t.account_id FROM finance.payment_records p
-         JOIN finance.transactions t ON t.id = p.transaction_id",
-    )
-    .fetch_one(&env.db.pool)
-    .await
-    .unwrap();
-    assert_eq!(account_of_linked, ids[0]);
-    env.finish().await;
-}
-
-async fn count_linked(env: &Env) -> i64 {
-    sqlx::query_scalar(
-        "SELECT count(*) FROM finance.payment_records WHERE transaction_id IS NOT NULL",
-    )
-    .fetch_one(&env.db.pool)
-    .await
-    .unwrap()
-}
-
-#[tokio::test]
-async fn a_record_linked_to_a_folded_transaction_moves_to_the_kept_one() {
-    let mut paid = tx(5, "UPI/DR/512345678901/SOME MERCHANT", 25_000);
-    paid.reference = Some("512345678901".to_owned());
-    let env = Env::new(
-        "mg_fold_link",
-        vec![
-            savings(vec![paid.clone()]),
-            savings(vec![paid]),
-            history(vec![payment(Some("R1"), Some("512345678901"), 25_000)]),
-        ],
-    )
-    .await;
-    for name in ["a", "b"] {
-        let made = accounts::insert(
-            &env.db.pool,
-            "SBI",
-            AccountKind::Savings,
-            Some("XXXXXX4321"),
-            name,
-        )
-        .await
-        .unwrap();
-        let statement = env
-            .upload_one(&format!("{name}.pdf"), name.as_bytes())
-            .await;
-        let body = json!({"sections": [{"account_id": made.id}]});
-        env.post(
-            &format!("/statements/{statement}/confirm"),
-            &body.to_string(),
-        )
-        .await;
-    }
-    let phone = env.upload_one("phone.csv", b"history").await;
-    env.confirm_proposed(phone, 0).await;
-    // The record links to the first free Transaction; make it the later one to force a move.
-    sqlx::query("UPDATE finance.payment_records SET transaction_id = (SELECT max(id) FROM finance.transactions)")
-        .execute(&env.db.pool)
+    instrument_accounts::remember(&env.db.pool, "XXXXXX4321", ids[1])
         .await
         .unwrap();
 
     merge_duplicate_accounts(&env.db.pool).await.unwrap();
 
-    assert_eq!(
-        (count(&env, "transactions").await, count_linked(&env).await),
-        (1, 1)
-    );
+    let kept = instrument_accounts::all(&env.db.pool).await.unwrap();
+    assert_eq!(kept.get("XXXXXX4321"), Some(&ids[0]));
     env.finish().await;
 }

@@ -113,7 +113,7 @@ _Avoid_: Baseline, norm, typical
 ## Finance
 
 **Statement**:
-A file from a bank or card issuer (PDF, CSV, XLS or XLSX) that lists the Transactions of one or more Accounts over a period. It is unconfirmed until the person checks its preview and confirms it; only then do its Transactions count. Vitarchy keeps the original file so it can be Read again.
+A file from a bank, card issuer or payment app (PDF, CSV, XLS or XLSX) that lists the Transactions of one or more Accounts over a period. It is unconfirmed until the person checks its preview and confirms it; only then do its Transactions count. Vitarchy keeps the original file so it can be Read again.
 _Avoid_: Source, feed, export, report
 
 **Account**:
@@ -128,13 +128,13 @@ _Avoid_: Entry, record, txn
 What one Statement printed for a Transaction, exactly as it printed it. A Transaction has one or more Printings; Vitarchy keeps them all and shows the fullest. A Statement that prints a Transaction exactly as a kept Printing adds no new one.
 _Avoid_: Copy, version, duplicate
 
-**Payment record**:
-What a payment app such as PhonePe noted about one payment: when, with whom, its ids, and the Account it used. It is never money on its own; it links to at most one Transaction, and it waits unlinked until that Account's Statement arrives.
-_Avoid_: UPI record, payment detail
-
 **Payment history**:
-A payment app's export of Payment records. It is not a Statement and creates no Transactions.
-_Avoid_: Statement (for app exports)
+A payment app's Statement: its rows are Printings on the Accounts that paid. The file has one section per Instrument, each confirmed to an Account, and a payment is counted once even when the person's bank Statement lists it too.
+_Avoid_: Payment record, UPI record
+
+**Instrument**:
+How a payment app names the Account it paid from, such as `XXXXXX4321` or `ICICI R`; Vitarchy remembers which Account each one is. An Instrument does not say what kind of Account it is, so it is matched on its issuer and visible digits across kinds, and the person decides when that is not enough.
+_Avoid_: Funding source, payment method
 
 **Statement password**:
 A password the person saved for opening locked Statements. Each one is tried on every locked file and never shown again.

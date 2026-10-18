@@ -92,7 +92,7 @@ describe("AccountsPage", () => {
             { date: "2026-03-05", description: "Newly found row", amount_paise: 1000, direction: "debit", is_already_stored: false },
           ], new_printings: [] }],
         }),
-      "POST /api/finance/statements/3/read-again/confirm": () => jsonResponse(200, { added: 1, linked: 0, no_longer_found: 1, unchanged: 28 }),
+      "POST /api/finance/statements/3/read-again/confirm": () => jsonResponse(200, { added: 1, no_longer_found: 1, unchanged: 28 }),
     });
     renderWithClient(<AccountsPage />);
 

@@ -1,5 +1,10 @@
+from statement_reader.contract import Summary
 from statement_reader.locate.grid_header import find_grid_header
-from statement_reader.normalize.payments import build_payment_records, instrument_details, instrument_label
+from statement_reader.normalize.payments import (
+    instrument_issuer,
+    instrument_label,
+    payment_history_statements,
+)
 from statement_reader.segment.grid_rows import grid_rows
 from statement_reader.segment.rows import RawRow
 from statement_reader.vocabulary import load_vocabulary
@@ -40,19 +45,38 @@ def test_instrument_prefixes_come_from_the_vocabulary():
     assert instrument_label("", V) is None
 
 
-def test_payment_records_combine_date_and_time_and_take_direction_from_the_type_column():
-    row = RawRow({"date": "Sept 19, 2026", "time": "11:20 am", "amount": "650", "type": "CREDIT",
-                  "source_id": "T1", "utr": "512345678952", "instrument": "Paid by CARD R"},
-                 "Paid to X", 0)
-    (record,) = build_payment_records([row], V)
-    assert (record.occurred_at, record.amount_paise, record.direction) == ("2026-09-19T11:20:00", 65000, "credit")
-    assert (record.utr, record.instrument, record.source_id) == ("512345678952", "CARD R", "T1")
+def _row(instrument, when="Sept 19, 2026", clock="11:20 am", **cells):
+    return RawRow({"date": when, "time": clock, "amount": "650", "type": "CREDIT", "source_id": "T1",
+                   "utr": "512345678952", "instrument": instrument, **cells}, "Paid to X", 0)
 
 
-def test_the_instrument_issuer_and_trailing_digits_come_from_the_vocabulary():
-    assert instrument_details("ICICI R", V) == ("ICICI Bank", None)
-    assert instrument_details("BOB R", V) == ("Bank of Baroda", None)
-    assert instrument_details("XXXXXX4321", V) == (None, "4321")
-    assert instrument_details("XXXXXXXXXX56", V) == (None, "56")
-    assert instrument_details("Wallet", V) == (None, None)
-    assert instrument_details(None, V) == (None, None)
+def test_a_row_becomes_a_transaction_with_date_time_utr_and_app_id():
+    (section,) = payment_history_statements([_row("Paid by CARD R")], V)
+    (txn,) = section.transactions
+    assert (txn.date, txn.time, txn.amount_paise, txn.direction) == ("2026-09-19", "11:20:00", 65000, "credit")
+    assert (txn.reference, txn.source_id, txn.balance_paise, txn.description) == ("512345678952", "T1", None, "Paid to X")
+
+
+def test_a_row_without_a_time_column_has_no_time():
+    (section,) = payment_history_statements([_row("Paid by CARD R", clock="")], V)
+    assert section.transactions[0].time is None
+
+
+def test_one_section_per_instrument_in_first_seen_order_with_period_and_no_checks():
+    rows = [_row("Paid by ICICI R", "Oct 02, 2026"), _row("Paid by XXXXXX4321", "Oct 01, 2026"),
+            _row("Credited to ICICI R", "Sept 20, 2026"), _row("", "Sept 21, 2026")]
+    sections = payment_history_statements(rows, V)
+    assert [s.account.mask for s in sections] == ["ICICI R", "XXXXXX4321", None]
+    assert [s.account.issuer for s in sections] == ["ICICI Bank", None, None]
+    assert all(s.account.kind is None and s.checks == [] for s in sections)
+    assert [len(s.transactions) for s in sections] == [2, 1, 1]
+    assert (sections[0].period.start, sections[0].period.end) == ("2026-09-20", "2026-10-02")
+    assert sections[0].summary == Summary()
+
+
+def test_the_instrument_issuer_comes_from_the_vocabulary():
+    assert instrument_issuer("ICICI R", V) == "ICICI Bank"
+    assert instrument_issuer("BOB R", V) == "Bank of Baroda"
+    assert instrument_issuer("XXXXXX4321", V) is None
+    assert instrument_issuer("Wallet", V) is None
+    assert instrument_issuer(None, V) is None

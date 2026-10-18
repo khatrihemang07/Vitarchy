@@ -163,8 +163,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Writes the Statement's new rows to the chosen Accounts and links Payment records. Rows
-         *     already stored are skipped; a failed Check does not stop a confirm.
+         * Writes the Statement's new rows to the chosen Accounts. Rows already stored gain a
+         *     Printing instead; a failed Check does not stop a confirm.
          */
         post: operations["post_confirm"];
         delete?: never;
@@ -238,10 +238,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Transactions, newest first, with their linked Payment record. Rows a Read again no longer
-         *     finds are included and flagged.
-         */
+        /** Transactions, newest first. Rows a Read again no longer finds are included and flagged. */
         get: operations["list_transactions"];
         put?: never;
         post?: never;
@@ -638,18 +635,16 @@ export interface components {
         };
         /** @description What a confirm did. */
         ConfirmCounts: {
-            /** @description Transactions (or Payment records) stored. */
+            /** @description Transactions stored. */
             added: number;
             /** @description Rows that were already stored: each gained a Printing, not a Transaction. */
             already_stored: number;
             /** @description Of those, rows whose Printing made the Transaction show more detail. */
             enriched: number;
-            /** @description Payment records linked to a Transaction by this confirm. */
-            linked: number;
         };
         /**
          * @description Body of the confirm: one choice per Account listed in the Statement, in printed order.
-         *     A Payment history takes none.
+         *     A payment app's history has one per instrument.
          */
         ConfirmRequest: {
             /** @description The choices. */
@@ -820,11 +815,6 @@ export interface components {
              * @description Statements waiting to be confirmed.
              */
             unconfirmed_statement_count: number;
-            /**
-             * Format: int64
-             * @description Payment records not linked to a Transaction yet.
-             */
-            unlinked_payment_record_count: number;
         };
         /** @description One row of the summary: a description, project or tag, with its numbers. */
         Group: {
@@ -885,6 +875,11 @@ export interface components {
              */
             updated: number;
         };
+        /**
+         * @description What a read file holds.
+         * @enum {string}
+         */
+        Kind: "statement" | "payment_history";
         /** @description A Time Entry on the Day lane, clipped to the Day. */
         LaneEntry: {
             /** @description What the person typed; may be empty. */
@@ -901,25 +896,6 @@ export interface components {
              * @description When it stopped.
              */
             stop_at: string;
-        };
-        /** @description The Payment record linked to a Transaction. */
-        LinkedPaymentRecord: {
-            /** @description With whom. */
-            description: string;
-            /**
-             * Format: int64
-             * @description Payment record id.
-             */
-            id: number;
-            /** @description The funding account as printed. */
-            instrument?: string | null;
-            /**
-             * Format: date-time
-             * @description Local time of the payment.
-             */
-            occurred_at: string;
-            /** @description The bank reference. */
-            utr?: string | null;
         };
         /**
          * @description Motion setting: follow the system or force reduced or full.
@@ -1019,13 +995,6 @@ export interface components {
              * @description When it last opened a file.
              */
             last_used_at?: string | null;
-        };
-        /** @description What a Payment history holds. */
-        PaymentHistoryPreview: {
-            /** @description Payment records in the file. */
-            record_count: number;
-            /** @description How many would link to a stored Transaction right now. */
-            would_link_now: number;
         };
         /** @description The Period the Report covers, the Previous Period and the Usual's range it is compared with. */
         PeriodInfo: {
@@ -1127,6 +1096,8 @@ export interface components {
              * @description The Statement that printed it.
              */
             statement_id: number;
+            /** @description The local time as that Statement printed it, when it prints one. */
+            time?: string | null;
         };
         /** @description JSON body of every error response (`application/problem+json`). */
         Problem: {
@@ -1209,8 +1180,6 @@ export interface components {
             added: number;
             /** @description Of those, Printings that made the Transaction show more detail. */
             enriched: number;
-            /** @description Payment records linked as a result. */
-            linked: number;
             /** @description Printings marked no longer found. */
             no_longer_found: number;
             /** @description Printings added to Transactions other Statements stored. */
@@ -1233,8 +1202,10 @@ export interface components {
         };
         /** @description A Read again: the Statement as it is now, and what reading it again would change. */
         ReadAgainPreview: {
-            payment_records?: components["schemas"]["RecordChanges"] | null;
-            /** @description Per Account section; empty for an unconfirmed Statement or a Payment history. */
+            /**
+             * @description Per Account section (a payment app's instrument is a section too); empty for an
+             *     unconfirmed Statement.
+             */
             sections: components["schemas"]["SectionChanges"][];
             /** @description The Statement as stored (an unconfirmed one is already re-read). */
             statement: components["schemas"]["StatementPreview"];
@@ -1247,8 +1218,6 @@ export interface components {
             enriched: number;
             /** @description Statements that could not be read again and were left as they were. */
             failed: number;
-            /** @description Payment records linked as a result. */
-            linked: number;
             /** @description Printings marked no longer found. */
             no_longer_found: number;
             /** @description Printings added to Transactions other Statements stored. */
@@ -1268,13 +1237,6 @@ export interface components {
              * @description Segments now stored.
              */
             segment_count: number;
-        };
-        /** @description The changes to a Payment history. */
-        RecordChanges: {
-            /** @description Records that would be added. */
-            add_count: number;
-            /** @description Records already stored. */
-            unchanged_count: number;
         };
         /** @description Body of `PATCH /api/finance/accounts/{id}`. */
         RenameAccount: {
@@ -1528,14 +1490,12 @@ export interface components {
              * @description Statement id.
              */
             id: number;
-            /** @description `statement` or `payment_history`; absent until read. */
-            kind?: string | null;
+            kind?: components["schemas"]["Kind"] | null;
             /** @description `read`, `locked`, `unsupported`, `no_table` or `crashed`. */
             outcome: string;
-            payment_history?: components["schemas"]["PaymentHistoryPreview"] | null;
             /** @description The printed period across all Accounts in the file. */
             period: components["schemas"]["PeriodView"];
-            /** @description One section per Account listed (Statements only). */
+            /** @description One section per Account listed, or per instrument for a payment app's history. */
             sections: components["schemas"]["SectionPreview"][];
             /** @description `unconfirmed` or `confirmed`. */
             status: string;
@@ -1565,11 +1525,10 @@ export interface components {
              * @description Statement id.
              */
             id: number;
-            /** @description `statement` or `payment_history`. */
-            kind?: string | null;
+            kind?: components["schemas"]["Kind"] | null;
             /** @description `read`, `locked`, `unsupported`, `no_table` or `crashed`. */
             outcome: string;
-            /** @description Transactions (or Payment records) in the file. */
+            /** @description Transactions in the file. */
             row_count: number;
             /** @description `unconfirmed` or `confirmed`. */
             status: string;
@@ -1894,7 +1853,6 @@ export interface components {
             id: number;
             /** @description True when a Read again no longer finds this row in any Statement that printed it. */
             no_longer_found: boolean;
-            payment_record?: components["schemas"]["LinkedPaymentRecord"] | null;
             /**
              * Format: int64
              * @description How many Statements printed it; above 1, `GET /transactions/{id}/printings` lists them.
@@ -1902,6 +1860,8 @@ export interface components {
             printing_count: number;
             /** @description A UPI or NEFT reference. */
             reference?: string | null;
+            /** @description The local time, when any Statement printed one (payment apps do). */
+            time?: string | null;
         };
         /** @description A page of Transactions. */
         TransactionPage: {
@@ -1944,6 +1904,8 @@ export interface components {
             is_already_stored: boolean;
             /** @description A UPI or NEFT reference. */
             reference?: string | null;
+            /** @description The printed local time, when the source prints one. */
+            time?: string | null;
         };
         /**
          * @description The multipart body: one or more `file` parts. Documentation only; the handler reads the
@@ -2342,7 +2304,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemBody"];
                 };
             };
-            /** @description Already confirmed (`statement_confirmed`) */
+            /** @description Already confirmed, or its rows are already Transactions' Printings (`statement_confirmed`, `statement_has_rows`) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2437,7 +2399,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemBody"];
                 };
             };
-            /** @description The engine no longer reads the file as before (`statement_not_readable`, `statement_sections_changed`) */
+            /** @description The engine no longer reads the file as before (`statement_not_readable`, `statement_sections_changed`, `statement_sections_unplaced`) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2487,7 +2449,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemBody"];
                 };
             };
-            /** @description Unconfirmed, unreadable or a confirm is running (`statement_unconfirmed`, `statement_not_readable`, `statement_sections_changed`, `confirm_in_progress`) */
+            /** @description Unconfirmed, unreadable or a confirm is running (`statement_unconfirmed`, `statement_not_readable`, `statement_sections_changed`, `statement_sections_unplaced`, `confirm_in_progress`) */
             409: {
                 headers: {
                     [name: string]: unknown;

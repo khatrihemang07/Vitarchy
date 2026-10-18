@@ -19,10 +19,10 @@ export function formatPeriod(period: { start?: string | null | undefined; end?: 
   return "Period not printed";
 }
 
-/** "1 Apr 2026, 10:15" from a timestamp without a time zone, as a Payment record carries it. */
-export function formatDateTime(stamp: string): string {
-  const time = /T(\d{2}:\d{2})/.exec(stamp)?.[1];
-  return time ? `${formatDate(stamp)}, ${time}` : formatDate(stamp);
+/** "18 Aug 2026 · 11:20" from a date and an `HH:MM:SS` time; just the date when no time was printed. */
+export function formatDateAndTime(day: string, time: string | null | undefined): string {
+  const hoursMinutes = time ? /^(\d{2}:\d{2})/.exec(time)?.[1] : undefined;
+  return hoursMinutes ? `${formatDate(day)} · ${hoursMinutes}` : formatDate(day);
 }
 
 /** "Last used 3 May 2026" or "Never used". */

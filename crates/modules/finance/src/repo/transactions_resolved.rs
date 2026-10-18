@@ -19,8 +19,8 @@ pub async fn apply(
     sqlx::query(
         "UPDATE finance.transactions
          SET description = $2, balance_paise = $3, reference = $4, source_id = $5,
-             foreign_amount = $6, foreign_currency = $7,
-             no_longer_found_at = CASE WHEN $8 THEN COALESCE(no_longer_found_at, now()) END
+             foreign_amount = $6, foreign_currency = $7, time = $8,
+             no_longer_found_at = CASE WHEN $9 THEN COALESCE(no_longer_found_at, now()) END
          WHERE id = $1",
     )
     .bind(id)
@@ -30,6 +30,7 @@ pub async fn apply(
     .bind(&d.source_id)
     .bind(&d.foreign_amount)
     .bind(&d.foreign_currency)
+    .bind(d.time)
     .bind(resolved.no_longer_found)
     .execute(db)
     .await?;

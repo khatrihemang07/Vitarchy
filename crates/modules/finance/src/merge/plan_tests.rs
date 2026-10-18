@@ -1,11 +1,8 @@
 use super::plan::{Move, Row, plan};
-use crate::test_support::tx;
+use crate::{dedupe::Evidence, test_support::tx};
 
 fn row(id: i64, description: &str, amount: i64) -> Row {
-    Row {
-        id,
-        tx: tx(description, amount),
-    }
+    Row::new(id, Evidence::from(&tx(description, amount)))
 }
 
 #[test]

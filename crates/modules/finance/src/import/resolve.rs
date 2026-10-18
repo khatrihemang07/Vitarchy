@@ -1,109 +1,82 @@
 //! Deciding which Account a section is written to when the person confirms.
 
+use std::collections::HashMap;
+
 use sqlx::PgConnection;
 
-use super::choice::{Choice, NewAccount};
+use super::{
+    choice::Choice,
+    new_account::{create_from_proposal, create_unless_known},
+};
 use crate::{
-    accounts::{AccountIdentity, Match, last4, remembered_digits},
+    accounts::{AccountIdentity, Match, find_for, instrument_key, remembered_digits},
     error::FinanceError,
-    match_account,
     problem::Refusal,
-    reader::contract::{AccountKind, ProposedAccount},
-    repo::{account_identifiers, accounts},
+    reader::contract::{Kind, ProposedAccount},
+    repo::{account_identifiers, accounts, instrument_accounts},
 };
 
-/// The Account id for a section, creating the Account or remembering an identifier as needed.
+/// Everything that tells one Account from another, as the database holds it now.
+pub struct Known {
+    /// Every way an Account is known.
+    pub accounts: Vec<AccountIdentity>,
+    /// The Account each remembered instrument is, by [`instrument_key`].
+    pub instruments: HashMap<String, i64>,
+}
+
+impl Known {
+    /// Loads what is known now.
+    ///
+    /// # Errors
+    /// The database failed.
+    pub async fn load(db: &mut PgConnection) -> Result<Self, sqlx::Error> {
+        Ok(Self {
+            accounts: accounts::identities(&mut *db).await?,
+            instruments: instrument_accounts::all(&mut *db).await?,
+        })
+    }
+}
+
+/// The Account id for a section of a file of `kind`, creating the Account or remembering an
+/// identifier or instrument as needed.
 ///
 /// # Errors
 /// The choice does not fit the proposal, names a missing Account, or the database failed.
 pub async fn account_for(
     db: &mut PgConnection,
+    kind: Option<Kind>,
     proposal: &ProposedAccount,
     choice: &Choice,
-    known: &[AccountIdentity],
+    known: &Known,
 ) -> Result<i64, FinanceError> {
-    let found = match_account(
-        proposal.issuer.as_deref(),
-        proposal.kind,
-        proposal.mask.as_deref(),
-        known,
-    );
-    match choice {
+    let found = find_for(kind, proposal, &known.instruments, &known.accounts);
+    let id = match choice {
         Choice::Existing(id) => {
             accounts::get(&mut *db, *id)
                 .await?
                 .ok_or(Refusal::ACCOUNT_NOT_FOUND)?;
             remember_if_new(db, proposal, &found, *id).await?;
-            Ok(*id)
+            *id
         }
-        Choice::New(new) => create_unless_known(db, proposal, new, known).await,
+        Choice::New(new) => create_unless_known(db, kind, proposal, new, &known.accounts).await?,
         Choice::Proposal => match found {
-            Match::One(id) | Match::OneWithoutNumber(id) => Ok(id),
-            Match::Several(_) => Err(Refusal::AMBIGUOUS_ACCOUNT.into()),
-            Match::None => create_from_proposal(db, proposal).await,
+            Match::One(id) | Match::OneWithoutNumber(id) => id,
+            Match::Several(_) => return Err(Refusal::AMBIGUOUS_ACCOUNT.into()),
+            Match::None => create_from_proposal(db, kind, proposal).await?,
         },
-    }
-}
-
-/// An Account is known by issuer, kind and number, so a new one whose three match exactly
-/// one Account is that Account, whatever the page sent.
-async fn create_unless_known(
-    db: &mut PgConnection,
-    proposal: &ProposedAccount,
-    new: &NewAccount,
-    known: &[AccountIdentity],
-) -> Result<i64, FinanceError> {
-    let same = match_account(
-        Some(&new.issuer),
-        Some(new.kind),
-        proposal.mask.as_deref(),
-        known,
-    );
-    match same {
-        Match::One(id) => Ok(id),
-        _ => create(db, proposal, new).await,
-    }
-}
-
-async fn create(
-    db: &mut PgConnection,
-    proposal: &ProposedAccount,
-    new: &NewAccount,
-) -> Result<i64, FinanceError> {
-    let row = accounts::insert(
-        &mut *db,
-        &new.issuer,
-        new.kind,
-        proposal.mask.as_deref(),
-        &new.name,
-    )
-    .await?;
-    Ok(row.id)
-}
-
-async fn create_from_proposal(
-    db: &mut PgConnection,
-    proposal: &ProposedAccount,
-) -> Result<i64, FinanceError> {
-    let (Some(issuer), Some(kind)) = (proposal.issuer.as_deref(), proposal.kind) else {
-        return Err(Refusal::NEW_ACCOUNT_REQUIRED.into());
     };
-    let name = default_name(issuer, kind, proposal.mask.as_deref());
-    let row = accounts::insert(&mut *db, issuer, kind, proposal.mask.as_deref(), &name).await?;
-    Ok(row.id)
-}
-
-/// `ICICI Bank credit card 2003`: the issuer, the kind in words and the last 4 when known.
-fn default_name(issuer: &str, kind: AccountKind, mask: Option<&str>) -> String {
-    let kind = kind.id().replace('_', " ");
-    match last4(mask) {
-        Some(digits) => format!("{issuer} {kind} {digits}"),
-        None => format!("{issuer} {kind}"),
+    if kind == Some(Kind::PaymentHistory)
+        && let Some(instrument) = instrument_key(proposal.mask.as_deref())
+    {
+        instrument_accounts::remember(&mut *db, &instrument, id).await?;
+        tracing::debug!(account_id = id, "instrument remembered");
     }
+    Ok(id)
 }
 
 /// Reassigning a section to an Account the proposal did not match teaches Vitarchy that this
-/// issuer, kind and trailing digits mean that Account.
+/// issuer, kind and trailing digits mean that Account. An instrument has no kind, so only
+/// the instrument itself is remembered (by the caller).
 async fn remember_if_new(
     db: &mut PgConnection,
     proposal: &ProposedAccount,

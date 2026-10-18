@@ -25,7 +25,6 @@ export function appliedLine(counts: ReadAgainCounts | ReadAllAgainCounts): strin
     whenAny(counts.enriched, "gained detail"),
     unchanged,
     `${formatCount(counts.no_longer_found)} no longer found`,
-    whenAny(counts.linked, "Payment records linked"),
   ];
   return list(parts);
 }

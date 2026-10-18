@@ -23,8 +23,6 @@ pub struct ReadAllAgainCounts {
     pub enriched: usize,
     /// Printings marked no longer found.
     pub no_longer_found: usize,
-    /// Payment records linked as a result.
-    pub linked: usize,
     /// Statements that could not be read again and were left as they were.
     pub failed: usize,
 }
@@ -97,5 +95,4 @@ fn add(total: &mut ReadAllAgainCounts, counts: &ReadAgainCounts) {
     total.printings_added += counts.printings_added;
     total.enriched += counts.enriched;
     total.no_longer_found += counts.no_longer_found;
-    total.linked += counts.linked;
 }

@@ -116,7 +116,7 @@ async fn read_and_save(
         passwords::touch(&mut *tx, *password_id).await?;
     }
     if let Ok(read) = &result {
-        propose(&mut tx, id, &read.statements).await?;
+        propose(&mut tx, id, read.kind, &read.statements).await?;
     }
     tx.commit().await?;
     if decrypted.is_some() {

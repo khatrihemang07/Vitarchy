@@ -19,6 +19,8 @@ import tempfile
 import tomllib
 from pathlib import Path
 
+from statement_reader.contract import CONTRACT_VERSION
+
 HELPER = Path(__file__).resolve().parents[2]
 PRIVATE = HELPER / "fixtures" / "private"
 OUT = PRIVATE / "denylist.txt"
@@ -85,7 +87,7 @@ def flatten_passwords() -> list[str]:
 
 
 def run_helper(path: Path, passwords: list[str], scratch: Path) -> tuple[dict, Path]:
-    request = {"version": 1, "file_path": str(path), "passwords": passwords,
+    request = {"version": CONTRACT_VERSION, "file_path": str(path), "passwords": passwords,
                "decrypted_out": str(scratch / "decrypted")}
     done = subprocess.run([sys.executable, "-m", "statement_reader.cli"], input=json.dumps(request),
                           capture_output=True, text=True, cwd=HELPER, check=True, timeout=300)
@@ -194,11 +196,6 @@ class Collector:
                 for key in ("description", "reference", "utr", "source_id"):
                     if row.get(key):
                         self.free_text(str(row[key]))
-        for record in result.get("payment_records", []):
-            for value in record.values():
-                if isinstance(value, str):
-                    self.free_text(value)
-            self.mask(record.get("instrument_digits"))
 
     def lines(self) -> list[str]:
         baseline = baseline_tokens()

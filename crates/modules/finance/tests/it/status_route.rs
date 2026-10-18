@@ -15,7 +15,6 @@ async fn an_empty_module_reports_zeroes_and_an_available_reader() {
     assert_eq!(reply.status, 200);
     assert_eq!(reply.json["account_count"], 0);
     assert_eq!(reply.json["unconfirmed_statement_count"], 0);
-    assert_eq!(reply.json["unlinked_payment_record_count"], 0);
     assert_eq!(reply.json["reader_available"], true);
     assert!(reply.json["latest_runs"].as_array().unwrap().is_empty());
     env.finish().await;

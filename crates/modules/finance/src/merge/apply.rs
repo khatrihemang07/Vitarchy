@@ -63,9 +63,5 @@ pub async fn merge_into(
 }
 
 async fn rows(db: &mut PgConnection, account_id: i64) -> Result<Vec<Row>, sqlx::Error> {
-    Ok(transactions::rows_of_account(&mut *db, account_id)
-        .await?
-        .into_iter()
-        .map(|(id, tx)| Row { id, tx })
-        .collect())
+    transactions::stored_keys(&mut *db, account_id).await
 }

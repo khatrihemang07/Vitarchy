@@ -1,4 +1,4 @@
-"""Dataclasses mirroring CONTRACT.md v1: the single source of the schema on the Python side."""
+"""Dataclasses mirroring CONTRACT.md v2: the single source of the schema on the Python side."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any
 
-CONTRACT_VERSION = 1
+CONTRACT_VERSION = 2
 
 
 @dataclass
@@ -65,6 +65,7 @@ class Transaction:
     foreign_currency: str | None = None
     reference: str | None = None
     source_id: str | None = None
+    time: str | None = None  # HH:MM:SS local time, only when the source prints one
 
 
 class Scope(Enum):
@@ -90,19 +91,6 @@ class Statement:
 
 
 @dataclass
-class PaymentRecord:
-    occurred_at: str
-    description: str
-    amount_paise: int
-    direction: str
-    source_id: str | None = None
-    utr: str | None = None
-    instrument: str | None = None
-    instrument_issuer: str | None = None  # the issuer the vocabulary recognises in `instrument`
-    instrument_digits: str | None = None  # the trailing visible digits of `instrument`
-
-
-@dataclass
 class Diagnostics:
     stage: str | None = None  # open | read | locate | segment | normalize
     code: str | None = None
@@ -120,7 +108,6 @@ class Result:
     unlocked_with: int | None = None
     kind: str | None = None  # statement | payment_history
     statements: list[Statement] = field(default_factory=list)
-    payment_records: list[PaymentRecord] = field(default_factory=list)
     diagnostics: Diagnostics = field(default_factory=Diagnostics)
     version: int = CONTRACT_VERSION
 

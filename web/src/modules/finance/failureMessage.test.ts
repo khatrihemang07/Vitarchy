@@ -12,6 +12,16 @@ describe("errorMessage", () => {
     expect(errorMessage(error)).toMatch(/different Accounts/);
   });
 
+  it("explains a Read again that cannot place a section", () => {
+    const error = new RequestError("x", "rejected", 409, { code: "statement_sections_unplaced" });
+    expect(errorMessage(error)).toMatch(/cannot be matched/);
+  });
+
+  it("explains in plain words why a Statement with Printings cannot be discarded", () => {
+    const error = new RequestError("x", "rejected", 409, { code: "statement_has_rows" });
+    expect(errorMessage(error)).toMatch(/already part of your Transactions as Printings/);
+  });
+
   it("falls back to the server's message", () => {
     expect(errorMessage(new RequestError("The name cannot be empty.", "rejected", 400))).toBe("The name cannot be empty.");
   });

@@ -15,7 +15,7 @@ A Statement that prints a Transaction **exactly** as an already-kept, live Print
 ## Consequences
 
 - The merged view is recomputed from the Printings whenever one is stored or marked, so a better rule can be applied to existing data without a re-import.
-- Matching a new row to a stored Transaction compares it with the resolved view, through the one matcher for confirm, preview and Read again.
+- Matching a new row to a stored Transaction uses every Printing of the Transaction (see ADR 0016), through the one matcher for confirm, preview and Read again.
 - A Read again marks only its own Statement's Printings, and a row it finds in a Transaction another Statement stored gains a Printing instead of a second Transaction.
 - A strict-extension rule is cautious: when a Statement's text differs from the fuller one in its last characters, the first text stays. Every Printing is still shown, so nothing is hidden.
 - A Transaction only knows its first identical Statement; the person accepted this, including the lost gone record above. A Read again that loses the row from that Statement can flag it "no longer found" even though a later Statement prints it identically. Reading that later Statement again, once no identical live Printing remains, adds its Printing and revives the Transaction. This was accepted to keep one Printing per distinct text instead of one per overlapping file.

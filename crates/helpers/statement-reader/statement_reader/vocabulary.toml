@@ -99,7 +99,7 @@ loan = ["loan / od accounts", "dl/tl account", "loan account"]
 savings = ["savings account", "saving account", "statement of account", "account statement"]
 
 [payment_history]
-# A file whose header or preamble matches is a payment-app export (Payment records, no balances).
+# A file whose header or preamble matches is a payment-app export (one section per Instrument, no balances).
 preamble_markers = ["transaction statement for"]
 header_fields = ["instrument", "utr", "time", "type"]
 # Words before the funding account in an instrument cell ("Paid by XXXX4321").

@@ -52,8 +52,7 @@ def process(request: Request) -> Result:
         return stopped("no_table", "read", error.code, format=sniffed.format)
     with stage("engine") as counts:
         result = engine.read_document(document)
-        counts.update(outcome=result.outcome, statements=len(result.statements),
-                      payment_records=len(result.payment_records))
+        counts.update(outcome=result.outcome, statements=len(result.statements))
     if document.pages:
         document.pages.close()
     return dataclasses.replace(result, format=document.format, encrypted=unlocked.encrypted,

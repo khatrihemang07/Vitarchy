@@ -104,7 +104,6 @@ export function preview(over: Partial<StatementPreview> = {}): StatementPreview 
     unlocked_with_label: null,
     uploaded_at: "2026-05-01T10:00:00Z",
     sections: [section()],
-    payment_history: null,
     ...over,
   };
 }

@@ -1,5 +1,4 @@
 import type { ReadAgainPreview } from "@/api/finance";
-import { formatCount } from "../money";
 import { formatMask } from "../mask";
 import { sectionChangesLine } from "./readAgainCopy";
 import { accountKindLabel } from "../statementCopy";
@@ -7,14 +6,6 @@ import { StatementRowsTable } from "../StatementRowsTable";
 
 /** What a Read again would change: per Account section, rows to add, rows unchanged and rows no longer found. */
 export function ReadAgainChanges({ preview }: { preview: ReadAgainPreview }) {
-  const records = preview.payment_records;
-  if (records) {
-    return (
-      <p className="text-sm">
-        {formatCount(records.add_count)} new Payment records, {formatCount(records.unchanged_count)} unchanged.
-      </p>
-    );
-  }
   return (
     <div className="flex flex-col gap-4">
       {preview.sections.map((changes) => {

@@ -46,18 +46,16 @@ describe("TransactionsPage", () => {
     expect(await screen.findByText("HDFC Savings", { selector: "td" })).toBeInTheDocument();
   });
 
-  it("shows the linked Payment record inline and flags rows no longer found", async () => {
+  it("flags rows no longer found", async () => {
     stubApi({
       "GET /api/finance/accounts": () => jsonResponse(200, [account()]),
       "GET /api/finance/transactions": page([
-        item({ payment_record: { id: 5, occurred_at: "2026-04-02T18:30:00", description: "Paid to Fresh Mart", utr: "412345678901" } }),
+        item(),
         item({ id: 2, description: "Old row", no_longer_found: true }),
       ]),
     });
     renderAt("/finance/transactions");
-    expect(await screen.findByText("Paid to Fresh Mart")).toBeInTheDocument();
-    expect(screen.getByText("UTR 412345678901")).toBeInTheDocument();
-    expect(screen.getByText("2 Apr 2026, 18:30")).toBeInTheDocument();
+    expect(await screen.findByText("Old row")).toBeInTheDocument();
     expect(screen.getByText("No longer found")).toBeInTheDocument();
   });
 

@@ -22,7 +22,7 @@ async fn confirming_creates_the_account_and_stores_every_row() {
     assert_eq!(reply.status, 200, "{}", reply.text);
     assert_eq!(
         reply.json,
-        json!({"added": 2, "already_stored": 0, "enriched": 0, "linked": 0})
+        json!({"added": 2, "already_stored": 0, "enriched": 0})
     );
     let accounts = env.get("/accounts").await;
     assert_eq!(accounts.json[0]["issuer"], "ICICI Bank");
@@ -65,7 +65,7 @@ async fn an_overlapping_second_statement_adds_only_its_new_rows() {
     );
     assert_eq!(
         reply.json,
-        json!({"added": 1, "already_stored": 2, "enriched": 0, "linked": 0})
+        json!({"added": 1, "already_stored": 2, "enriched": 0})
     );
     assert_eq!(transaction_total(&env).await, 4);
     assert_eq!(env.get("/accounts").await.json.as_array().unwrap().len(), 1);

@@ -5,7 +5,7 @@ import { ReaderStatus } from "./ReaderStatus";
 afterEach(() => vi.unstubAllGlobals());
 
 const status = (reader_available: boolean) => () =>
-  jsonResponse(200, { account_count: 0, unconfirmed_statement_count: 0, unlinked_payment_record_count: 0, reader_available, latest_runs: [] });
+  jsonResponse(200, { account_count: 0, unconfirmed_statement_count: 0, reader_available, latest_runs: [] });
 
 describe("ReaderStatus", () => {
   it("says the reader is ready", async () => {

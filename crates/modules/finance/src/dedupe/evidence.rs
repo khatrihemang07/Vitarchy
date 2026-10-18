@@ -3,6 +3,7 @@
 
 use chrono::NaiveDate;
 
+use super::origin::Origins;
 use crate::reader::contract::{Direction, Transaction};
 
 /// The facts of a row that can show it is (or is not) another row, already normalised.
@@ -22,6 +23,8 @@ pub struct Evidence {
     pub reference: Option<String>,
     /// The description with only alphanumerics kept, case folded.
     pub description: String,
+    /// The kinds of file that printed it; [`Origins::Unknown`] when not known.
+    pub origins: Origins,
 }
 
 impl Evidence {
@@ -44,7 +47,15 @@ impl Evidence {
             balance_paise,
             reference: present(reference),
             description: normalise(description),
+            origins: Origins::Unknown,
         }
+    }
+
+    /// The same facts, printed by files of these `origins`.
+    #[must_use]
+    pub fn with_origins(mut self, origins: Origins) -> Self {
+        self.origins = origins;
+        self
     }
 }
 

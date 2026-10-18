@@ -6,7 +6,6 @@ import { ReadAgainChanges } from "./ReadAgainChanges";
 function readAgain(): ReadAgainPreview {
   return {
     statement: preview(),
-    payment_records: null,
     sections: [
       {
         position: 0,

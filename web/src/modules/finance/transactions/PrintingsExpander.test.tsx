@@ -42,6 +42,15 @@ describe("Printings expander", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("shows the time next to the date, for a Printing from a payment app too", async () => {
+    stubApi({ [PATH]: () => jsonResponse(200, [printing({ file_name: "phonepe.csv", time: "11:20:05", date: "2026-08-18" })]) });
+    renderRow(item({ date: "2026-08-18", time: "11:20:05" }));
+    expect(screen.getByText("18 Aug 2026 · 11:20")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Printed in 2/ }));
+    expect(await screen.findByText("phonepe.csv")).toBeInTheDocument();
+    expect(screen.getAllByText("18 Aug 2026 · 11:20")).toHaveLength(2);
+  });
+
   it("opens from the keyboard", async () => {
     stubApi({ [PATH]: () => jsonResponse(200, [printing()]) });
     renderRow(item());

@@ -1,7 +1,7 @@
 import type { TransactionView } from "@/api/finance";
 import { Badge, cn } from "@/design";
 import { AmountCell } from "./AmountCell";
-import { formatDate } from "./dates";
+import { formatDateAndTime } from "./dates";
 import { formatBalance } from "./money";
 
 /** The rows of a Statement section: date, description, amount and balance. Rows already stored are dimmed. */
@@ -23,9 +23,9 @@ export function StatementRowsTable({ rows, caption }: { rows: readonly Transacti
             const balance = formatBalance(row.balance_paise);
             return (
             <tr key={index} data-already-stored={row.is_already_stored} className={cn("border-t", row.is_already_stored && "opacity-50")}>
-              <td className="hidden px-3 py-2 whitespace-nowrap sm:table-cell">{formatDate(row.date)}</td>
+              <td className="hidden px-3 py-2 whitespace-nowrap sm:table-cell">{formatDateAndTime(row.date, row.time)}</td>
               <td className="min-w-0 px-3 py-2 [overflow-wrap:anywhere]">
-                <span className="block text-xs text-muted-foreground sm:hidden">{formatDate(row.date)}</span>
+                <span className="block text-xs text-muted-foreground sm:hidden">{formatDateAndTime(row.date, row.time)}</span>
                 {row.description}
                 {row.is_already_stored ? <span className="ml-2 text-xs text-muted-foreground">Already stored</span> : null}
                 {row.gains_detail ? <Badge variant="outline" className="ml-2 border-primary/40 text-primary">Gains detail</Badge> : null}

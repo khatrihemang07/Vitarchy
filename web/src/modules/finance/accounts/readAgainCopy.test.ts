@@ -12,9 +12,9 @@ describe("readAgainCopy", () => {
   });
 
   it("describes an applied Read again and Read all again", () => {
-    const one = { added: 1, enriched: 1, linked: 0, no_longer_found: 2, printings_added: 4, unchanged: 7 };
+    const one = { added: 1, enriched: 1, no_longer_found: 2, printings_added: 4, unchanged: 7 };
     expect(appliedLine(one)).toBe("1 added, 4 Printings added to stored Transactions, 1 gained detail, 7 unchanged, 2 no longer found");
-    const all = { added: 0, enriched: 0, failed: 0, linked: 0, no_longer_found: 0, printings_added: 0, statements: 1 };
+    const all = { added: 0, enriched: 0, failed: 0, no_longer_found: 0, printings_added: 0, statements: 1 };
     expect(appliedLine(all)).toBe("0 added, 0 no longer found");
   });
 });

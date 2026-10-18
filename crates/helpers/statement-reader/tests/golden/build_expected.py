@@ -11,6 +11,7 @@ those listed are asserted). Nothing here is committed from private/: this script
 from __future__ import annotations
 
 import json
+import re
 from decimal import Decimal
 from pathlib import Path
 
@@ -98,6 +99,16 @@ def sheet_files() -> dict[str, dict]:
             FIRST_SBI_SHEET[0]: statement_file([statement(rows[:FIRST_SBI_SHEET[1]], checks)])}
 
 
+def instrument_sections(picked: list[dict]) -> list[dict]:
+    """One Statement per instrument in first-seen order, from the research rows (printed order)."""
+    sections: dict[str, list[tuple[int, int]]] = {}
+    for r in picked:
+        mask = re.sub(r"^(?:Paid by|Credited to)\s+", "", r["instrument"])
+        amount = paise(r["amount"])
+        sections.setdefault(mask, []).append((amount, 0) if r["direction"] == "out" else (0, amount))
+    return [statement(rows, {}) | {"mask": mask} for mask, rows in sections.items()]
+
+
 def payment_history_files() -> dict[str, dict]:
     records = load("csv_xlsx")["phonepe_transactions"]
     expected = {}
@@ -108,9 +119,9 @@ def payment_history_files() -> dict[str, dict]:
         count, want_debit, want_credit = PHONEPE_REPORTED[name]
         # The research counts and totals are the source of truth; refuse to write a mismatch.
         assert (len(picked), debit, credit) == (count, paise(want_debit), paise(want_credit)), name
-        expected[name] = {"outcome": "read", "kind": "payment_history", "statement_count": 0,
-                          "statements": [], "payment_records": {
-                              "count": count, "debit_paise": debit, "credit_paise": credit}}
+        sections = instrument_sections(picked)
+        expected[name] = {"outcome": "read", "kind": "payment_history",
+                          "statement_count": len(sections), "statements": sections}
     return expected
 
 

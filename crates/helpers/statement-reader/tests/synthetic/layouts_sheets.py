@@ -11,7 +11,7 @@ import msoffcrypto
 import openpyxl
 import xlwt
 
-from .built import Built, expected_statements, statement
+from .built import SUMMARY_KEYS, Built, expected_statements, statement
 from .data import ledger, plain, totals
 
 ISSUER = "Example Bank"
@@ -121,11 +121,12 @@ def xls_with_ghost_row(out: Path) -> Built:
 
 
 def payment_history_csv(out: Path) -> Built:
-    """(l) A Payment history file: preamble, quoted fields, 'Sept' dates, separate date and time."""
+    """(l) A Payment history file: preamble, quoted fields, 'Sept' dates, separate date and time,
+    two instruments interleaved (one Statement each, in first-seen order)."""
     records = [
         ("2026-10-18T11:20:00", "Paid to FAKE SHOP", 65000, "debit", "Paid by XXXXXX0123"),
-        ("2026-09-30T09:05:00", "Received from FAKE PERSON", 120050, "credit", "Credited to XXXXXX0123"),
         ("2026-09-19T23:59:00", "Payment to FAKE STREAMING", 19900, "debit", "Paid by EXAMPLE R"),
+        ("2026-09-30T09:05:00", "Received from FAKE PERSON", 120050, "credit", "Credited to XXXXXX0123"),
         ("2026-09-19T00:05:00", "Refund from FAKE TRAVEL", 643980, "credit", "Credited to EXAMPLE R"),
     ]
     months = {9: "Sept", 10: "Oct"}
@@ -133,7 +134,7 @@ def payment_history_csv(out: Path) -> Built:
              ["Duration", "18 Sept, 2026 - 18 Oct, 2026"], [],
              ["Date", "Time", "Transaction Details", "Transaction ID", "UTR", "Transaction Type",
               "Credit/debit instrument", "Amount"]]
-    expected = []
+    sections: dict[str, list[dict]] = {}
     for i, (stamp, details, paise, direction, instrument) in enumerate(records):
         moment = datetime.fromisoformat(stamp)
         txn_id = f"T{moment:%y%m%d%H%M}{i:013d}"
@@ -142,13 +143,18 @@ def payment_history_csv(out: Path) -> Built:
                       moment.strftime("%I:%M %p").lower(), details, txn_id, utr, direction.upper(),
                       instrument, plain(paise).removesuffix(".00")])
         shown = instrument.split(" ", 2)[-1]
-        expected.append({
-            "occurred_at": stamp, "description": details, "amount_paise": paise,
-            "direction": direction, "source_id": txn_id, "utr": utr,
-            "instrument": shown,
-            "instrument_issuer": "Example Bank" if shown == "EXAMPLE R" else None,
-            "instrument_digits": shown[-4:] if shown[-1].isdigit() else None,
-        })
+        sections.setdefault(shown, []).append({
+            "date": moment.date().isoformat(), "time": moment.strftime("%H:%M:%S"),
+            "description": details, "amount_paise": paise, "direction": direction,
+            "balance_paise": None, "foreign_amount": None, "foreign_currency": None,
+            "reference": utr, "source_id": txn_id})
+    statements = []
+    for shown, found in sections.items():
+        days = [t["date"] for t in found]
+        statements.append({
+            "account": {"issuer": ISSUER if shown == "EXAMPLE R" else None, "kind": None, "mask": shown},
+            "period": {"start": min(days), "end": max(days)},
+            "summary": dict.fromkeys(SUMMARY_KEYS), "transactions": found})
     lines += [[], ["This is an automatically generated statement."], ["Disclaimer : fake text", "x"]]
     path = out / "payment_history.csv"
     with open(path, "w", newline="", encoding="utf-8-sig") as handle:
@@ -159,5 +165,5 @@ def payment_history_csv(out: Path) -> Built:
             else:
                 writer.writerow(line)
     return Built(path.name, {"outcome": "read", "kind": "payment_history",
-                             "payment_records": expected},
+                             "statements": statements},
                  {"format": "csv", "rows": len(lines), "cols": 8, "bom": True})

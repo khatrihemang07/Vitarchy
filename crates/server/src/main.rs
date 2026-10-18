@@ -64,13 +64,8 @@ async fn merge_duplicates() -> Result<(), Box<dyn std::error::Error>> {
     init_environment();
     let report = repair::finance_merge_duplicates(&Config::from_env()?).await?;
     println!(
-        "merged {} Accounts in {} groups: {} Transactions moved, {} folded into others ({} Printings moved), {} Payment records linked again",
-        report.accounts_merged,
-        report.groups,
-        report.moved,
-        report.folded,
-        report.printings,
-        report.relinked
+        "merged {} Accounts in {} groups: {} Transactions moved, {} folded into others ({} Printings moved)",
+        report.accounts_merged, report.groups, report.moved, report.folded, report.printings
     );
     Ok(())
 }

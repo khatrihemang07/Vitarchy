@@ -4,7 +4,7 @@ use vitarchy_finance::reader::{ReaderError, ReaderResult, StatementReader, testi
 
 fn result(outcome: &str) -> ReaderResult {
     serde_json::from_str(&format!(
-        r#"{{"version":1,"outcome":"{outcome}","format":null,"diagnostics":{{}}}}"#
+        r#"{{"version":2,"outcome":"{outcome}","format":null,"diagnostics":{{}}}}"#
     ))
     .unwrap()
 }

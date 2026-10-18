@@ -11,8 +11,9 @@ fn printings_are_the_same_only_when_every_printed_field_is_equal() {
         same_as(&base, &other_statement),
         "statement and gone ignored"
     );
-    let changes: [fn(&mut Printing); 7] = [
+    let changes: [fn(&mut Printing); 8] = [
         |p| p.printed.date = chrono::NaiveDate::from_ymd_opt(2026, 3, 2).unwrap(),
+        |p| p.printed.time = chrono::NaiveTime::from_hms_opt(9, 30, 0),
         |p| p.printed.description.push('!'),
         |p| p.printed.balance_paise = Some(1),
         |p| p.printed.reference = Some("R".into()),

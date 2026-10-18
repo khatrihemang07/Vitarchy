@@ -18,7 +18,7 @@ use crate::{
 };
 
 /// Body of the confirm: one choice per Account listed in the Statement, in printed order.
-/// A Payment history takes none.
+/// A payment app's history has one per instrument.
 #[derive(Deserialize, ToSchema)]
 pub struct ConfirmRequest {
     /// The choices.
@@ -26,8 +26,8 @@ pub struct ConfirmRequest {
     pub sections: Vec<SectionChoice>,
 }
 
-/// Writes the Statement's new rows to the chosen Accounts and links Payment records. Rows
-/// already stored are skipped; a failed Check does not stop a confirm.
+/// Writes the Statement's new rows to the chosen Accounts. Rows already stored gain a
+/// Printing instead; a failed Check does not stop a confirm.
 #[utoipa::path(
     post,
     path = "/statements/{id}/confirm",

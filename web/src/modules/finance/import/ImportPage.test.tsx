@@ -6,7 +6,7 @@ import { ImportPage } from "./ImportPage";
 afterEach(() => vi.unstubAllGlobals());
 
 const statusOk = () =>
-  jsonResponse(200, { account_count: 0, unconfirmed_statement_count: 0, unlinked_payment_record_count: 0, reader_available: true, latest_runs: [] });
+  jsonResponse(200, { account_count: 0, unconfirmed_statement_count: 0, reader_available: true, latest_runs: [] });
 const base = {
   "GET /api/finance/status": statusOk,
   "GET /api/finance/statement-passwords": () => jsonResponse(200, []),
@@ -34,7 +34,7 @@ describe("ImportPage", () => {
     stubApi({
       ...base,
       "GET /api/finance/status": () =>
-        jsonResponse(200, { account_count: 0, unconfirmed_statement_count: 0, unlinked_payment_record_count: 0, reader_available: false, latest_runs: [] }),
+        jsonResponse(200, { account_count: 0, unconfirmed_statement_count: 0, reader_available: false, latest_runs: [] }),
       "GET /api/finance/statements": () => jsonResponse(200, []),
     });
     renderWithClient(<ImportPage />);
@@ -90,8 +90,8 @@ describe("ImportPage reviewing a waiting Statement", () => {
     stubApi({
       ...base,
       "GET /api/finance/statements": [() => jsonResponse(200, [summary]), () => jsonResponse(200, [])],
-      "GET /api/finance/statements/9": () => jsonResponse(200, preview({ id: 9, file_name: "earlier.csv", sections: [] , payment_history: { record_count: 2, would_link_now: 0 }, kind: "payment_history" })),
-      "POST /api/finance/statements/9/confirm": () => jsonResponse(200, { added: 2, already_stored: 0, linked: 0 }),
+      "GET /api/finance/statements/9": () => jsonResponse(200, preview({ id: 9, file_name: "earlier.csv", sections: [], kind: "payment_history" })),
+      "POST /api/finance/statements/9/confirm": () => jsonResponse(200, { added: 2, already_stored: 0, enriched: 0 }),
     });
     renderWithClient(<ImportPage />);
 

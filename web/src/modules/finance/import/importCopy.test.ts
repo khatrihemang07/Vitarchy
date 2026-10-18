@@ -9,9 +9,9 @@ describe("importCopy", () => {
 
 
   it("says what a confirm did, leaving out zero extras", () => {
-    expect(confirmedLine({ added: 2, already_stored: 1, enriched: 0, linked: 0 })).toBe("2 added, 1 already stored.");
-    expect(confirmedLine({ added: 2, already_stored: 4, enriched: 3, linked: 1 })).toBe(
-      "2 added, 4 already stored, 3 gained detail, 1 Payment records linked.",
+    expect(confirmedLine({ added: 2, already_stored: 1, enriched: 0 })).toBe("2 added, 1 already stored.");
+    expect(confirmedLine({ added: 2, already_stored: 4, enriched: 3 })).toBe(
+      "2 added, 4 already stored, 3 gained detail.",
     );
   });
 });

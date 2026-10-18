@@ -1,4 +1,4 @@
-import { accountKindLabel, checkCopy, hasFailedCheck, statementKindLabel, unreadCopy } from "./statementCopy";
+import { sectionHeading, accountKindLabel, checkCopy, hasFailedCheck, statementKindLabel, unreadCopy } from "./statementCopy";
 
 const diagnostics = (stage: string | null = null) => ({ stage, code: null, pages: null, rows: null });
 
@@ -43,5 +43,15 @@ describe("labels", () => {
   it("flags a failed Check", () => {
     expect(hasFailedCheck([{ outcome: "passed" }, { outcome: "failed" }])).toBe(true);
     expect(hasFailedCheck([{ outcome: "skipped" }])).toBe(false);
+  });
+});
+
+describe("sectionHeading", () => {
+  it("names a Payment history section by its Instrument, with the issuer when known", () => {
+    expect(sectionHeading("payment_history", { issuer: null, kind: null, mask: "icici r" })).toBe("Instrument: ICICI R");
+    expect(sectionHeading("payment_history", { issuer: "HDFC", kind: null, mask: "xx1234" })).toBe("Instrument: XX1234 · HDFC");
+  });
+  it("names a bank Statement section by issuer, kind and number", () => {
+    expect(sectionHeading("statement", { issuer: "SBI", kind: "loan", mask: "xx98" })).toBe("SBI · Loan · XX98");
   });
 });

@@ -1,29 +1,9 @@
 //! The coded problem responses of Finance: core's problem fields plus a machine `code` the
 //! web app acts on, and the table of refusals the handlers can answer with.
 
-use axum::{
-    Json,
-    http::{HeaderValue, StatusCode, header::CONTENT_TYPE},
-    response::{IntoResponse, Response},
-};
-use serde::Serialize;
-use utoipa::ToSchema;
+mod body;
 
-/// Problem body for a coded failure.
-#[derive(Serialize, ToSchema)]
-pub struct ProblemBody {
-    /// Always `about:blank`; the status and code say it all.
-    #[serde(rename = "type")]
-    pub kind: String,
-    /// The status's reason phrase.
-    pub title: String,
-    /// The HTTP status.
-    pub status: u16,
-    /// Explanation fit to show the person; never holds a password or file content.
-    pub detail: String,
-    /// A stable `snake_case` reason, e.g. `statement_not_readable` or `confirm_in_progress`.
-    pub code: String,
-}
+pub use body::{ProblemBody, problem_response};
 
 /// A request Finance refuses, as data: the status, the code and what to tell the person.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,6 +46,12 @@ impl Refusal {
         "statement_confirmed",
         "This Statement is already confirmed.",
     );
+    /// An unconfirmed Statement already has Printings on Transactions.
+    pub const HAS_ROWS: Self = refusal(
+        409,
+        "statement_has_rows",
+        "Transactions already hold rows from this Statement, so it cannot be discarded.",
+    );
     /// The Statement is not confirmed yet.
     pub const UNCONFIRMED: Self = refusal(
         409,
@@ -77,6 +63,12 @@ impl Refusal {
         409,
         "statement_sections_changed",
         "The file now lists different Accounts than when it was confirmed.",
+    );
+    /// A confirmed Statement lost its sections and one cannot be placed on a single Account.
+    pub const SECTIONS_UNPLACED: Self = refusal(
+        409,
+        "statement_sections_unplaced",
+        "This file lists an Account that cannot be matched to your Transactions, so nothing was changed.",
     );
     /// A chosen Account does not exist.
     pub const ACCOUNT_NOT_FOUND: Self =
@@ -127,23 +119,4 @@ impl Refusal {
         "invalid_query",
         "The query is invalid: check the status, dates, limit and offset.",
     );
-}
-
-/// Renders a coded problem, logging it once where it is rendered.
-pub fn problem_response(status: u16, code: &str, detail: &str) -> Response {
-    tracing::warn!(status, code, "finance request failed");
-    let status = StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-    let body = ProblemBody {
-        kind: "about:blank".to_owned(),
-        title: status.canonical_reason().unwrap_or("Error").to_owned(),
-        status: status.as_u16(),
-        detail: detail.to_owned(),
-        code: code.to_owned(),
-    };
-    let mut response = (status, Json(body)).into_response();
-    response.headers_mut().insert(
-        CONTENT_TYPE,
-        HeaderValue::from_static("application/problem+json"),
-    );
-    response
 }

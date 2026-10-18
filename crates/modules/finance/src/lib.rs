@@ -1,18 +1,16 @@
 //! Finance: the Module that turns the person's Statements into exact Transactions
-//! (ADR 0012-0014). Owns the `finance` Postgres schema. Files are read by the
-//! statement-reader helper; this crate stores, dedupes and links what it returns.
+//! (ADR 0012-0016). Owns the `finance` Postgres schema. Files are read by the
+//! statement-reader helper; this crate stores and dedupes what it returns.
 
 mod accounts;
 mod dedupe;
 mod error;
 pub mod files;
 mod import;
-mod linking;
 mod merge;
 mod printings;
 mod problem;
 pub mod reader;
-mod record_key;
 pub mod repo;
 mod routes;
 #[cfg(test)]
@@ -21,12 +19,15 @@ mod view;
 
 use vitarchy_core::Module;
 
-pub use accounts::{AccountIdentity, Match, find as match_account, last4, same_number};
+pub use accounts::{
+    AccountIdentity, Match, find as match_account, find_instrument, instrument_key, last4,
+    same_number,
+};
 pub use dedupe::{
-    Evidence, PrintingToAdd, ReadAgainDiff, StoredEvidence, new_rows, pair, read_again_diff,
+    Evidence, Origin, Origins, PrintingToAdd, ReadAgainDiff, StoredEvidence, new_rows, pair,
+    read_again_diff,
 };
 pub use error::FinanceError;
-pub use linking::{RecordFacts, TransactionFacts, link};
 pub use merge::{MergeReport, merge_duplicate_accounts};
 pub use routes::router_with;
 

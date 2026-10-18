@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "outcome": "read",
   "format": "pdf",
   "encrypted": true,
@@ -27,7 +27,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "512345678901",
-          "source_id": null
+          "source_id": null,
+          "time": null
         },
         {
           "date": "2026-07-03",
@@ -38,7 +39,8 @@
           "foreign_amount": "25.00",
           "foreign_currency": "USD",
           "reference": null,
-          "source_id": "51234567907"
+          "source_id": "51234567907",
+          "time": null
         },
         {
           "date": "2026-07-04",
@@ -49,7 +51,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": null
+          "source_id": null,
+          "time": null
         }
       ],
       "checks": [
@@ -59,6 +62,5 @@
       ]
     }
   ],
-  "payment_records": [],
   "diagnostics": {"stage": null, "code": null, "pages": 4, "rows": 3}
 }

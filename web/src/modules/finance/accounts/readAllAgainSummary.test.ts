@@ -20,7 +20,6 @@ function item(id: number, add: number, unchanged: number, lost: number): ReadAga
           added: [], new_printings: [],
         },
       ],
-      payment_records: null,
     },
   };
 }
@@ -40,14 +39,6 @@ describe("summariseReadAllAgain", () => {
     expect(summary).toMatchObject({ newPrintings: 5, enriched: 2 });
     expect(summary.changed.map((c) => c.statementId)).toEqual([4]);
     expect(itemChangesLine(summary.changed[0] as ItemChanges)).toBe("0 to add, 5 Printings to add, 2 would gain detail, 0 no longer found");
-  });
-
-  it("counts a Payment history's new records as additions", () => {
-    const history: ReadAgainItem = {
-      ...item(3, 0, 0, 0),
-      preview: { statement: preview({ id: 3 }), sections: [], payment_records: { add_count: 4, unchanged_count: 6 } },
-    };
-    expect(summariseReadAllAgain([history])).toMatchObject({ add: 4, unchanged: 6, noLongerFound: 0 });
   });
 
   it("lists a failed Statement with words and keeps it out of the totals", () => {

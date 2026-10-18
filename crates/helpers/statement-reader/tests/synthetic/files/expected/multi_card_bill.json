@@ -30,7 +30,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "542205879158",
-          "source_id": "14000000000"
+          "source_id": "14000000000",
+          "time": null
         },
         {
           "date": "2026-07-06",
@@ -41,7 +42,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "762230128916",
-          "source_id": "14000000001"
+          "source_id": "14000000001",
+          "time": null
         },
         {
           "date": "2026-07-07",
@@ -52,7 +54,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "14000000002"
+          "source_id": "14000000002",
+          "time": null
         },
         {
           "date": "2026-07-08",
@@ -63,7 +66,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "361901933501",
-          "source_id": "14000000003"
+          "source_id": "14000000003",
+          "time": null
         },
         {
           "date": "2026-07-08",
@@ -74,7 +78,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "783616319229",
-          "source_id": "14000000004"
+          "source_id": "14000000004",
+          "time": null
         }
       ]
     },
@@ -106,7 +111,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "901632980589",
-          "source_id": "14000000005"
+          "source_id": "14000000005",
+          "time": null
         },
         {
           "date": "2026-07-10",
@@ -117,7 +123,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "957363906950",
-          "source_id": "14000000006"
+          "source_id": "14000000006",
+          "time": null
         },
         {
           "date": "2026-07-11",
@@ -128,7 +135,8 @@
           "foreign_amount": "25.00",
           "foreign_currency": "USD",
           "reference": null,
-          "source_id": "14000000007"
+          "source_id": "14000000007",
+          "time": null
         },
         {
           "date": "2026-07-11",
@@ -139,7 +147,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "source_id": "14000000008"
+          "source_id": "14000000008",
+          "time": null
         }
       ]
     }

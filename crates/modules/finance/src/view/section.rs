@@ -7,21 +7,31 @@ use super::{
     rows,
 };
 use crate::{
-    accounts::{AccountIdentity, Match},
-    dedupe::StoredEvidence,
-    match_account,
+    accounts::{AccountIdentity, Match, find_for},
+    dedupe::{Origin, StoredEvidence},
     printings::Printing,
-    reader::contract::{Direction, Statement},
+    reader::contract::{Direction, Kind, Statement},
     repo::statement_accounts::StatementAccountRow,
 };
 
-/// What the database knows that a section needs: Account names, the ways Accounts are known
+/// How a section finds its Account: by the kind of file it is in, the ways Accounts are known
+/// and the instruments the person has confirmed.
+pub struct Matcher<'a> {
+    /// What the file is.
+    pub kind: Option<Kind>,
+    /// Every way an Account is known.
+    pub known: &'a [AccountIdentity],
+    /// The Account each remembered instrument is.
+    pub instruments: &'a HashMap<String, i64>,
+}
+
+/// What the database knows that a section needs: Account names, how Accounts are matched,
 /// the rows stored per Account and their Printings.
 pub struct Lookup<'a> {
     /// Account names by id.
     pub names: &'a HashMap<i64, String>,
-    /// Every way an Account is known.
-    pub known: &'a [AccountIdentity],
+    /// How a section finds its Account.
+    pub matcher: Matcher<'a>,
     /// Each Account's stored rows as matching sees them, by Account id.
     pub stored: &'a HashMap<i64, Vec<StoredEvidence>>,
     /// The Printings of every stored row, by Transaction id.
@@ -30,22 +40,14 @@ pub struct Lookup<'a> {
     pub statement_id: i64,
 }
 
-/// The Account a section resolves to: the one stored on its slot, else a live match.
-pub fn resolve(
-    slot: &StatementAccountRow,
-    statement: &Statement,
-    known: &[AccountIdentity],
-) -> Match {
-    if let Some(id) = slot.account_id {
-        return Match::One(id);
+impl Matcher<'_> {
+    /// The Account a section resolves to: the one stored on its slot, else a live match.
+    pub fn resolve(&self, slot: &StatementAccountRow, statement: &Statement) -> Match {
+        if let Some(id) = slot.account_id {
+            return Match::One(id);
+        }
+        find_for(self.kind, &statement.account, self.instruments, self.known)
     }
-    let proposal = &statement.account;
-    match_account(
-        proposal.issuer.as_deref(),
-        proposal.kind,
-        proposal.mask.as_deref(),
-        known,
-    )
 }
 
 fn account_ref(lookup: &Lookup<'_>, id: i64) -> Option<AccountRef> {
@@ -70,7 +72,7 @@ pub fn build(
     statement: &Statement,
     lookup: &Lookup<'_>,
 ) -> SectionPreview {
-    let found = resolve(slot, statement, lookup.known);
+    let found = lookup.matcher.resolve(slot, statement);
     let matched_without_number = matches!(found, Match::OneWithoutNumber(_));
     let matched = found.single();
     let candidates = match found {
@@ -82,6 +84,7 @@ pub fn build(
         .map_or(&[][..], Vec::as_slice);
     let rows = rows::build(
         lookup.statement_id,
+        lookup.matcher.kind.map_or(Origin::Statement, Origin::from),
         &statement.transactions,
         stored,
         lookup.printings,

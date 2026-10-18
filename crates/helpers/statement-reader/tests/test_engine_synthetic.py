@@ -23,7 +23,6 @@ def test_the_fixture_reads_to_the_planted_transactions(name):
     expected = json.loads((FILES / "expected" / f"{name.rsplit('.', 1)[0]}.json").read_text())
     got = read(name)
     assert got["outcome"] == expected["outcome"] and got["kind"] == expected["kind"], got["diagnostics"]
-    assert got["payment_records"] == expected.get("payment_records", [])
     assert len(got["statements"]) == len(expected.get("statements", []))
     for want, have in zip(expected.get("statements", []), got["statements"], strict=True):
         assert have["account"] == want["account"]

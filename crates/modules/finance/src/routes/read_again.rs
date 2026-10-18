@@ -36,7 +36,7 @@ use crate::{
     responses(
         (status = 200, description = "The Statement and what would change", body = ReadAgainPreview),
         (status = 404, description = "No such Statement (`statement_not_found`)", body = ProblemBody),
-        (status = 409, description = "The engine no longer reads the file as before (`statement_not_readable`, `statement_sections_changed`)", body = ProblemBody),
+        (status = 409, description = "The engine no longer reads the file as before (`statement_not_readable`, `statement_sections_changed`, `statement_sections_unplaced`)", body = ProblemBody),
         (status = 502, description = "The statement reader failed", body = ProblemBody),
     )
 )]
@@ -62,20 +62,19 @@ pub(super) async fn read_one(
     row: &StatementRow,
     request_id: Option<&str>,
 ) -> Result<ReadAgainPreview, FinanceError> {
-    let (sections, payment_records) = if row.status == "confirmed" {
+    let sections = if row.status == "confirmed" {
         let (result, diff) =
             read_again::preview(&state.pool, reader, files, row, request_id).await?;
         of_diff(&diff, &result)
     } else {
         retry::retry(&state.pool, reader, files, row, request_id).await?;
-        (vec![], None)
+        vec![]
     };
     let row = load(state, row.id).await?;
     let mut db = state.pool.acquire().await?;
     Ok(ReadAgainPreview {
         statement: preview::build(&mut db, &row, false).await?,
         sections,
-        payment_records,
     })
 }
 
@@ -89,7 +88,7 @@ pub(super) async fn read_one(
     responses(
         (status = 200, description = "Applied", body = ReadAgainCounts),
         (status = 404, description = "No such Statement (`statement_not_found`)", body = ProblemBody),
-        (status = 409, description = "Unconfirmed, unreadable or a confirm is running (`statement_unconfirmed`, `statement_not_readable`, `statement_sections_changed`, `confirm_in_progress`)", body = ProblemBody),
+        (status = 409, description = "Unconfirmed, unreadable or a confirm is running (`statement_unconfirmed`, `statement_not_readable`, `statement_sections_changed`, `statement_sections_unplaced`, `confirm_in_progress`)", body = ProblemBody),
         (status = 502, description = "The statement reader failed", body = ProblemBody),
     )
 )]

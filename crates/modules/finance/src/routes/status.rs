@@ -62,8 +62,6 @@ pub struct FinanceStatus {
     pub account_count: i64,
     /// Statements waiting to be confirmed.
     pub unconfirmed_statement_count: i64,
-    /// Payment records not linked to a Transaction yet.
-    pub unlinked_payment_record_count: i64,
     /// Whether the statement-reader helper can be found.
     pub reader_available: bool,
     /// The latest run of each kind that has run, in read, confirm, read again order.
@@ -90,7 +88,6 @@ pub async fn get_finance_status(
     Ok(Json(FinanceStatus {
         account_count: counts::accounts(pool).await?,
         unconfirmed_statement_count: counts::unconfirmed_statements(pool).await?,
-        unlinked_payment_record_count: counts::unlinked_payment_records(pool).await?,
         reader_available: reader.available().await,
         latest_runs,
     }))

@@ -37,7 +37,7 @@ wire_enum! {
     Kind {
         /// A bank or card Statement.
         Statement = "statement",
-        /// A payment app's history of Payments, as Payment records.
+        /// A payment app's history: one section per instrument.
         PaymentHistory = "payment_history",
     }
 }

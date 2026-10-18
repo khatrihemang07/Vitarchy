@@ -8,6 +8,8 @@ export type StatementPreview = Schemas["StatementPreview"];
 export type SectionPreview = Schemas["SectionPreview"];
 /** A Transaction as a Statement printed it. */
 export type TransactionView = Schemas["TransactionView"];
+/** What a read file holds: a bank `statement` or a `payment_history`. */
+export type StatementKind = Schemas["Kind"];
 /** Which way money moved: `debit` or `credit`. */
 export type Direction = Schemas["Direction"];
 /** A test of a section against itself. */
@@ -40,11 +42,9 @@ export type FinanceRun = Schemas["FinanceRunInfo"];
 export type PasswordItem = Schemas["PasswordItem"];
 /** A page of Transactions. */
 export type TransactionPage = Schemas["TransactionPage"];
-/** A Transaction row with its linked Payment record. */
+/** A Transaction row. */
 export type TransactionItem = Schemas["TransactionItem"];
 /** One Statement's Printing of a Transaction, as that Statement printed it. */
 export type PrintingItem = Schemas["PrintingItem"];
-/** The Payment record linked to a Transaction. */
-export type LinkedPaymentRecord = Schemas["LinkedPaymentRecord"];
 /** Query of `GET /api/finance/transactions`. */
 export type TransactionQuery = NonNullable<paths["/api/finance/transactions"]["get"]["parameters"]["query"]>;

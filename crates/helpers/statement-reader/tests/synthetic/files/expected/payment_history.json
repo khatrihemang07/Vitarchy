@@ -1,50 +1,96 @@
 {
   "outcome": "read",
   "kind": "payment_history",
-  "payment_records": [
+  "statements": [
     {
-      "occurred_at": "2026-10-18T11:20:00",
-      "description": "Paid to FAKE SHOP",
-      "amount_paise": 65000,
-      "direction": "debit",
-      "source_id": "T26101811200000000000000",
-      "utr": "512345678952",
-      "instrument": "XXXXXX0123",
-      "instrument_issuer": null,
-      "instrument_digits": "0123"
+      "account": {
+        "issuer": null,
+        "kind": null,
+        "mask": "XXXXXX0123"
+      },
+      "period": {
+        "start": "2026-09-30",
+        "end": "2026-10-18"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-10-18",
+          "time": "11:20:00",
+          "description": "Paid to FAKE SHOP",
+          "amount_paise": 65000,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "512345678952",
+          "source_id": "T26101811200000000000000"
+        },
+        {
+          "date": "2026-09-30",
+          "time": "09:05:00",
+          "description": "Received from FAKE PERSON",
+          "amount_paise": 120050,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "512345678954",
+          "source_id": "T26093009050000000000002"
+        }
+      ]
     },
     {
-      "occurred_at": "2026-09-30T09:05:00",
-      "description": "Received from FAKE PERSON",
-      "amount_paise": 120050,
-      "direction": "credit",
-      "source_id": "T26093009050000000000001",
-      "utr": "512345678953",
-      "instrument": "XXXXXX0123",
-      "instrument_issuer": null,
-      "instrument_digits": "0123"
-    },
-    {
-      "occurred_at": "2026-09-19T23:59:00",
-      "description": "Payment to FAKE STREAMING",
-      "amount_paise": 19900,
-      "direction": "debit",
-      "source_id": "T26091923590000000000002",
-      "utr": "512345678954",
-      "instrument": "EXAMPLE R",
-      "instrument_issuer": "Example Bank",
-      "instrument_digits": null
-    },
-    {
-      "occurred_at": "2026-09-19T00:05:00",
-      "description": "Refund from FAKE TRAVEL",
-      "amount_paise": 643980,
-      "direction": "credit",
-      "source_id": "T26091900050000000000003",
-      "utr": "512345678955",
-      "instrument": "EXAMPLE R",
-      "instrument_issuer": "Example Bank",
-      "instrument_digits": null
+      "account": {
+        "issuer": "Example Bank",
+        "kind": null,
+        "mask": "EXAMPLE R"
+      },
+      "period": {
+        "start": "2026-09-19",
+        "end": "2026-09-19"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-09-19",
+          "time": "23:59:00",
+          "description": "Payment to FAKE STREAMING",
+          "amount_paise": 19900,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "512345678953",
+          "source_id": "T26091923590000000000001"
+        },
+        {
+          "date": "2026-09-19",
+          "time": "00:05:00",
+          "description": "Refund from FAKE TRAVEL",
+          "amount_paise": 643980,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "512345678955",
+          "source_id": "T26091900050000000000003"
+        }
+      ]
     }
   ]
 }

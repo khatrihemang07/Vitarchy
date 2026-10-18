@@ -1,6 +1,6 @@
 //! One row of a Statement as the preview and the change list show it.
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveTime};
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -11,6 +11,8 @@ use crate::reader::contract::{Direction, Transaction};
 pub struct TransactionView {
     /// The printed date.
     pub date: NaiveDate,
+    /// The printed local time, when the source prints one.
+    pub time: Option<NaiveTime>,
     /// The printed description.
     pub description: String,
     /// Amount in paise, above 0.
@@ -37,6 +39,7 @@ impl TransactionView {
     pub fn of(tx: &Transaction, is_already_stored: bool, gains_detail: bool) -> Self {
         Self {
             date: tx.date,
+            time: tx.time,
             description: tx.description.clone(),
             amount_paise: tx.amount_paise,
             direction: tx.direction,

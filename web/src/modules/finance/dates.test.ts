@@ -1,4 +1,4 @@
-import { formatDate, formatDateTime, formatLastUsed, formatPeriod } from "./dates";
+import { formatDate, formatDateAndTime, formatLastUsed, formatPeriod } from "./dates";
 
 describe("formatDate", () => {
   it("writes a printed date without shifting it across time zones", () => {
@@ -20,9 +20,13 @@ describe("formatPeriod", () => {
   });
 });
 
-describe("formatDateTime", () => {
-  it("adds the time to the date", () => {
-    expect(formatDateTime("2026-04-01T10:15:30")).toBe("1 Apr 2026, 10:15");
+describe("formatDateAndTime", () => {
+  it("puts the time next to the date, to the minute", () => {
+    expect(formatDateAndTime("2026-08-18", "11:20:45")).toBe("18 Aug 2026 · 11:20");
+  });
+  it("shows only the date when no time was printed", () => {
+    expect(formatDateAndTime("2026-08-18", null)).toBe("18 Aug 2026");
+    expect(formatDateAndTime("2026-08-18", undefined)).toBe("18 Aug 2026");
   });
 });
 

@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     enums::{Format, Kind, Outcome},
-    payment::PaymentRecord,
     statement::Statement,
 };
 
@@ -26,12 +25,10 @@ pub struct ReaderResult {
     /// Set only when `outcome` is `read`.
     #[serde(default)]
     pub kind: Option<Kind>,
-    /// Filled when `kind` is `statement`.
+    /// Filled when `outcome` is `read`: a Statement's Accounts, or a Payment history's
+    /// instruments, one section each.
     #[serde(default)]
     pub statements: Vec<Statement>,
-    /// Filled when `kind` is `payment_history`.
-    #[serde(default)]
-    pub payment_records: Vec<PaymentRecord>,
     /// Where it stopped and counts; holds no content.
     pub diagnostics: Diagnostics,
 }

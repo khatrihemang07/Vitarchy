@@ -1,6 +1,6 @@
 //! One Account's Statement within a file, row by row.
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveTime};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -75,6 +75,9 @@ pub struct Summary {
 pub struct Transaction {
     /// The printed date.
     pub date: NaiveDate,
+    /// The printed local time, when the source prints one.
+    #[serde(default)]
+    pub time: Option<NaiveTime>,
     /// The printed text, wrapped lines joined.
     pub description: String,
     /// Always greater than 0.

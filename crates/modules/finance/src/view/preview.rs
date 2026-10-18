@@ -5,17 +5,15 @@ use std::collections::HashMap;
 use sqlx::PgConnection;
 
 use super::{
-    model::{DiagnosticsView, PaymentHistoryPreview, PeriodView, SectionPreview, StatementPreview},
-    section::{self, Lookup},
+    model::{DiagnosticsView, PeriodView, SectionPreview, StatementPreview},
+    section::{self, Lookup, Matcher},
     summary::parse_result,
 };
 use crate::{
-    link,
-    linking::from_rows,
-    reader::{ReaderResult, contract::Kind},
+    reader::ReaderResult,
     repo::{
-        accounts, printings, statement_accounts, statement_files, statements::StatementRow,
-        transactions,
+        accounts, instrument_accounts, printings, statement_accounts, statement_files,
+        statements::StatementRow, transactions,
     },
 };
 
@@ -33,18 +31,12 @@ pub async fn build(
         Some(result) => sections(db, row.id, result).await?,
         None => vec![],
     };
-    let payment_history = match &result {
-        Some(result) if result.kind == Some(Kind::PaymentHistory) => {
-            Some(payment_history(db, result).await?)
-        }
-        _ => None,
-    };
     let diagnostics = result.as_ref().map(|r| &r.diagnostics);
     Ok(StatementPreview {
         id: row.id,
         file_name: row.file_name.clone(),
         format: row.format.clone(),
-        kind: row.kind.clone(),
+        kind: row.file_kind(),
         outcome: row.outcome.clone(),
         status: row.status.clone(),
         duplicate_file,
@@ -59,7 +51,6 @@ pub async fn build(
         unlocked_with_label: statement_files::unlocked_with_label(&mut *db, row.id).await?,
         uploaded_at: row.uploaded_at,
         sections,
-        payment_history,
     })
 }
 
@@ -70,6 +61,12 @@ async fn sections(
 ) -> Result<Vec<SectionPreview>, sqlx::Error> {
     let slots = statement_accounts::list(&mut *db, statement_id).await?;
     let known = accounts::identities(&mut *db).await?;
+    let instruments = instrument_accounts::all(&mut *db).await?;
+    let matcher = Matcher {
+        kind: result.kind,
+        known: &known,
+        instruments: &instruments,
+    };
     let names: HashMap<i64, String> = accounts::list(&mut *db)
         .await?
         .into_iter()
@@ -78,7 +75,7 @@ async fn sections(
     let mut stored = HashMap::new();
     let mut printed = HashMap::new();
     for (slot, statement) in slots.iter().zip(&result.statements) {
-        if let Some(id) = section::resolve(slot, statement, &known).single()
+        if let Some(id) = matcher.resolve(slot, statement).single()
             && let std::collections::hash_map::Entry::Vacant(entry) = stored.entry(id)
         {
             entry.insert(transactions::stored_keys(&mut *db, id).await?);
@@ -87,7 +84,7 @@ async fn sections(
     }
     let lookup = Lookup {
         names: &names,
-        known: &known,
+        matcher,
         stored: &stored,
         printings: &printed,
         statement_id,
@@ -97,21 +94,6 @@ async fn sections(
         .zip(&result.statements)
         .map(|(slot, statement)| section::build(slot, statement, &lookup))
         .collect())
-}
-
-async fn payment_history(
-    db: &mut PgConnection,
-    result: &ReaderResult,
-) -> Result<PaymentHistoryPreview, sqlx::Error> {
-    let waiting = transactions::without_payment_record(&mut *db).await?;
-    let pairs = link(
-        &from_rows::incoming_records(&result.payment_records),
-        &from_rows::transactions(&waiting),
-    );
-    Ok(PaymentHistoryPreview {
-        record_count: result.payment_records.len(),
-        would_link_now: pairs.len(),
-    })
 }
 
 fn overall_period(sections: &[SectionPreview]) -> PeriodView {

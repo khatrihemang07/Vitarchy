@@ -21,14 +21,15 @@ pub async fn insert(
 ) -> Result<bool, sqlx::Error> {
     let done = sqlx::query(
         "INSERT INTO finance.printings
-           (transaction_id, statement_id, date, description, balance_paise, reference, source_id,
-            foreign_amount, foreign_currency)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           (transaction_id, statement_id, date, time, description, balance_paise, reference,
+            source_id, foreign_amount, foreign_currency)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          ON CONFLICT (statement_id, transaction_id) DO NOTHING",
     )
     .bind(transaction_id)
     .bind(statement_id)
     .bind(tx.date)
+    .bind(tx.time)
     .bind(&tx.description)
     .bind(tx.balance_paise)
     .bind(&tx.reference)
@@ -84,4 +85,38 @@ pub async fn marks_of_statement(
     .fetch_all(db)
     .await?;
     Ok(rows.into_iter().collect())
+}
+
+/// Whether the Statement has any Printing.
+///
+/// # Errors
+/// The database failed.
+pub async fn statement_has_any(
+    db: impl PgExecutor<'_>,
+    statement_id: i64,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM finance.printings WHERE statement_id = $1)")
+        .bind(statement_id)
+        .fetch_one(db)
+        .await
+}
+
+/// The Accounts that hold the Statement's Printings with these source ids.
+///
+/// # Errors
+/// The database failed.
+pub async fn accounts_by_source_ids(
+    db: impl PgExecutor<'_>,
+    statement_id: i64,
+    source_ids: &[String],
+) -> Result<Vec<i64>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT DISTINCT t.account_id
+         FROM finance.printings p JOIN finance.transactions t ON t.id = p.transaction_id
+         WHERE p.statement_id = $1 AND p.source_id = ANY($2) ORDER BY 1",
+    )
+    .bind(statement_id)
+    .bind(source_ids)
+    .fetch_all(db)
+    .await
 }

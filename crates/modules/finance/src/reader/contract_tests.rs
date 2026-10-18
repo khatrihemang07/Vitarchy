@@ -47,7 +47,7 @@ fn a_result_survives_a_round_trip_through_json() {
 
 #[test]
 fn unknown_fields_are_ignored() {
-    let json = r#"{"version":1,"outcome":"locked","format":"pdf","future":1,
+    let json = r#"{"version":2,"outcome":"locked","format":"pdf","future":1,
         "diagnostics":{"stage":"open","code":"x","extra":true}}"#;
     let result: ReaderResult = serde_json::from_str(json).expect("parse");
     assert_eq!(result.outcome, Outcome::Locked);
@@ -68,24 +68,25 @@ fn enums_use_the_wire_spelling() {
 }
 
 #[test]
-fn a_payment_record_carries_its_instrument_issuer_and_digits_when_given() {
-    let json = r#"{"occurred_at":"2026-10-18T11:20:00","description":"d","amount_paise":5,
-        "direction":"debit","instrument":"ICICI R","instrument_issuer":"ICICI Bank",
-        "instrument_digits":"8765"}"#;
-    let record: super::contract::PaymentRecord = serde_json::from_str(json).expect("parse");
-    assert_eq!(record.instrument_issuer.as_deref(), Some("ICICI Bank"));
-    assert_eq!(record.instrument_digits.as_deref(), Some("8765"));
+fn a_payment_history_reads_as_one_section_per_instrument_with_times() {
+    let text = std::fs::read_to_string(fixture_dir().join("payment_history.json")).expect("read");
+    let result: ReaderResult = serde_json::from_str(&text).expect("parse");
+    assert_eq!(result.version, super::contract::VERSION);
+    assert_eq!(result.kind, Some(super::contract::Kind::PaymentHistory));
+    assert!(result.statements.len() >= 2, "one section per instrument");
+    let first = &result.statements[0].transactions[0];
+    assert_eq!(
+        first.time.map(|t| t.to_string()).as_deref(),
+        Some("11:20:00")
+    );
+    assert!(result.statements.iter().all(|s| s.account.kind.is_none()));
 }
 
 #[test]
-fn a_payment_record_from_an_older_helper_has_no_instrument_details() {
-    let json = r#"{"occurred_at":"2026-10-18T11:20:00","description":"d","amount_paise":5,
-        "direction":"debit","instrument":"XXXXXX4321"}"#;
-    let record: super::contract::PaymentRecord = serde_json::from_str(json).expect("parse");
-    assert_eq!(
-        (record.instrument_issuer, record.instrument_digits),
-        (None, None)
-    );
+fn a_row_without_a_time_reads_as_none() {
+    let json = r#"{"date":"2026-07-02","description":"d","amount_paise":5,"direction":"debit"}"#;
+    let row: super::contract::Transaction = serde_json::from_str(json).expect("parse");
+    assert_eq!(row.time, None);
 }
 
 #[test]

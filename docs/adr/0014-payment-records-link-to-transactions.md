@@ -1,3 +1,5 @@
+> **Superseded by [ADR 0016](0016-payment-apps-print-transactions-too.md).** Payment records are retired: a payment app's rows are now Printings on the Account that paid. This note records the earlier decision.
+
 # Payment records link to Transactions
 
 A payment app's Payment history (PhonePe now) describes the same money that the person's bank and card Statements already list. Treating it as an Account would count every UPI payment twice. Instead, each Payment record is extra detail (the exact time, the other party, the app's ids) attached to at most one Transaction. The link is made first by UTR, which banks print inside UPI narrations (39 of 39 matched in the sample), and then by amount, direction and date. A Payment record whose Account has not been imported yet waits, and links when that Statement is confirmed.

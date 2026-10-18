@@ -6,6 +6,7 @@ use serde_json::Value;
 use utoipa::ToSchema;
 
 use super::transaction::TransactionView;
+use crate::reader::contract::Kind;
 
 /// A Statement as the person reviews it before (or after) confirming.
 #[derive(Serialize, ToSchema)]
@@ -16,8 +17,8 @@ pub struct StatementPreview {
     pub file_name: String,
     /// `pdf`, `csv`, `xls` or `xlsx`; absent when unsupported.
     pub format: Option<String>,
-    /// `statement` or `payment_history`; absent until read.
-    pub kind: Option<String>,
+    /// What the file holds; absent until read.
+    pub kind: Option<Kind>,
     /// `read`, `locked`, `unsupported`, `no_table` or `crashed`.
     pub outcome: String,
     /// `unconfirmed` or `confirmed`.
@@ -34,10 +35,8 @@ pub struct StatementPreview {
     pub unlocked_with_label: Option<String>,
     /// When it was uploaded.
     pub uploaded_at: DateTime<Utc>,
-    /// One section per Account listed (Statements only).
+    /// One section per Account listed, or per instrument for a payment app's history.
     pub sections: Vec<SectionPreview>,
-    /// For a Payment history: its records and what would link.
-    pub payment_history: Option<PaymentHistoryPreview>,
 }
 
 /// Why a file was not read, without content.
@@ -126,13 +125,4 @@ pub struct SectionPreview {
     pub enriched_count: usize,
     /// The rows, in printed order.
     pub transactions: Vec<TransactionView>,
-}
-
-/// What a Payment history holds.
-#[derive(Serialize, ToSchema)]
-pub struct PaymentHistoryPreview {
-    /// Payment records in the file.
-    pub record_count: usize,
-    /// How many would link to a stored Transaction right now.
-    pub would_link_now: usize,
 }

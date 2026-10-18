@@ -9,7 +9,7 @@ use std::{
 
 use vitarchy_finance::reader::{ProcessReader, ReaderError, StatementReader};
 
-const LOCKED: &str = r#"{"version":1,"outcome":"locked","format":"pdf","encrypted":true,"diagnostics":{"stage":"open","code":"no_password_worked"}}"#;
+const LOCKED: &str = r#"{"version":2,"outcome":"locked","format":"pdf","encrypted":true,"diagnostics":{"stage":"open","code":"no_password_worked"}}"#;
 
 fn script(dir: &Path, body: &str) -> PathBuf {
     let path = dir.join("fake-reader");
@@ -47,7 +47,7 @@ async fn sends_the_request_on_stdin_and_parses_stdout() {
     let request: serde_json::Value = serde_json::from_slice(&std::fs::read(seen).unwrap()).unwrap();
     assert_eq!(
         request,
-        serde_json::json!({"version":1,"file_path":"/in/file.pdf","passwords":["pw1","pw2"],"decrypted_out":"/out/copy"})
+        serde_json::json!({"version":2,"file_path":"/in/file.pdf","passwords":["pw1","pw2"],"decrypted_out":"/out/copy"})
     );
 }
 

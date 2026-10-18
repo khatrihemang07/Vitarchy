@@ -4,6 +4,8 @@ use chrono::{DateTime, Utc};
 use serde_json::Value;
 use sqlx::PgExecutor;
 
+use crate::reader::contract::Kind;
+
 pub use super::{
     statement_changes::{confirm, discard, replace_result},
     statement_files::file_in_use,
@@ -58,6 +60,14 @@ pub struct NewStatement<'a> {
 }
 
 pub(super) const COLUMNS: &str = "id, file_sha256, file_name, format, kind, status, outcome, result, uploaded_at, confirmed_at, read_at, reader_version";
+
+impl StatementRow {
+    /// What the file holds, once it has been read.
+    #[must_use]
+    pub fn file_kind(&self) -> Option<Kind> {
+        self.kind.as_deref().and_then(Kind::from_id)
+    }
+}
 
 /// Adds an unconfirmed Statement and returns its id.
 ///

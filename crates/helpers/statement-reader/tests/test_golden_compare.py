@@ -9,7 +9,7 @@ def tx(amount, direction):
 
 def result(**overrides):
     base = {
-        "outcome": "read", "kind": "statement", "payment_records": [],
+        "outcome": "read", "kind": "statement",
         "statements": [{"transactions": [tx(500, "debit"), tx(200, "credit")],
                         "checks": [{"name": "balance_chain", "outcome": "passed", "detail": {}}]}],
     }
@@ -48,25 +48,28 @@ def test_checks_not_listed_in_the_expectation_are_ignored():
 
 
 def test_a_stopped_file_reports_the_outcome_and_missing_statements():
-    stopped = {"outcome": "no_table", "kind": None, "statements": [], "payment_records": []}
+    stopped = {"outcome": "no_table", "kind": None, "statements": []}
     assert compare(EXPECTED, stopped) == [
         "outcome: no_table != read", "kind: None != statement", "statement_count: 0 != 1"]
 
 
-def test_payment_history_counts_and_sums():
-    expected = {"outcome": "read", "kind": "payment_history", "statement_count": 0, "statements": [],
-                "payment_records": {"count": 2, "debit_paise": 300, "credit_paise": 50}}
-    got = {"outcome": "read", "kind": "payment_history", "statements": [],
-           "payment_records": [tx(300, "debit"), tx(50, "credit")]}
+def test_payment_history_sections_compare_per_instrument():
+    def section(mask, rows):
+        return {"account": {"mask": mask}, "transactions": rows, "checks": []}
+
+    expected = {"outcome": "read", "kind": "payment_history", "statement_count": 2,
+                "statements": [{"transactions": 2, "debit_paise": 300, "credit_paise": 50, "mask": "A"},
+                               {"transactions": 1, "debit_paise": 7, "credit_paise": 0, "mask": "B"}]}
+    got = {"outcome": "read", "kind": "payment_history",
+           "statements": [section("A", [tx(300, "debit"), tx(50, "credit")]), section("B", [tx(7, "debit")])]}
     assert compare(expected, got) == []
-    got["payment_records"].pop()
-    assert compare(expected, got) == ["payment_records.count: 1 != 2",
-                                      "payment_records.credit_paise: 0 != 50"]
+    got["statements"][0]["transactions"].pop()
+    assert compare(expected, got) == ["s0.transactions: 1 != 2", "s0.credit_paise: 0 != 50"]
 
 
 def _result(*descriptions):
     rows = [{"description": d, "amount_paise": 1, "direction": "debit"} for d in descriptions]
-    return {"statements": [{"transactions": rows, "checks": []}], "payment_records": []}
+    return {"statements": [{"transactions": rows, "checks": []}]}
 
 
 def test_empty_descriptions_and_descriptions_edged_by_an_amount_are_flagged_by_index_only():

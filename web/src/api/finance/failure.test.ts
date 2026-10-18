@@ -9,7 +9,9 @@ describe("toFinanceFailure", () => {
     "new_account_required",
     "account_ambiguous",
     "statement_sections_changed",
+    "statement_sections_unplaced",
     "confirm_in_progress",
+    "statement_has_rows",
   ])("reads the %s code", (code) => {
     expect(toFinanceFailure(rejected(code))).toEqual({ kind: code });
   });

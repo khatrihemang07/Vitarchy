@@ -8,6 +8,7 @@ use crate::reader::contract::{Direction, Transaction};
 pub fn tx(description: &str, amount_paise: i64) -> Transaction {
     Transaction {
         date: NaiveDate::from_ymd_opt(2026, 7, 2).expect("valid date"),
+        time: None,
         description: description.to_owned(),
         amount_paise,
         direction: Direction::Debit,

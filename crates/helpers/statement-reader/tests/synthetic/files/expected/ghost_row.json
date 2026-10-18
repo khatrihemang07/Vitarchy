@@ -30,7 +30,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "500000000000",
-          "source_id": null
+          "source_id": null,
+          "time": null
         },
         {
           "date": "2026-07-04",
@@ -41,7 +42,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "500000000001",
-          "source_id": null
+          "source_id": null,
+          "time": null
         },
         {
           "date": "2026-07-06",
@@ -52,7 +54,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "500000000002",
-          "source_id": null
+          "source_id": null,
+          "time": null
         },
         {
           "date": "2026-07-07",
@@ -63,7 +66,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "118326283710",
-          "source_id": null
+          "source_id": null,
+          "time": null
         },
         {
           "date": "2026-07-09",
@@ -74,7 +78,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "500000000004",
-          "source_id": null
+          "source_id": null,
+          "time": null
         },
         {
           "date": "2026-07-11",
@@ -85,7 +90,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "500000000005",
-          "source_id": null
+          "source_id": null,
+          "time": null
         },
         {
           "date": "2026-07-12",
@@ -96,7 +102,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "500000000006",
-          "source_id": null
+          "source_id": null,
+          "time": null
         },
         {
           "date": "2026-07-14",
@@ -107,7 +114,8 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "500000000007",
-          "source_id": null
+          "source_id": null,
+          "time": null
         }
       ]
     }

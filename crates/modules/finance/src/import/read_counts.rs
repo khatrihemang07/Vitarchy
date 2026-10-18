@@ -9,7 +9,6 @@ use crate::reader::ReaderResult;
 pub struct ReadCounts {
     sections: usize,
     transactions: usize,
-    payment_records: usize,
 }
 
 impl ReadCounts {
@@ -19,7 +18,6 @@ impl ReadCounts {
         Self {
             sections: result.statements.len(),
             transactions: result.statements.iter().map(|s| s.transactions.len()).sum(),
-            payment_records: result.payment_records.len(),
         }
     }
 }

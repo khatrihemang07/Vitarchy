@@ -1,9 +1,9 @@
 //! `finance.transactions`.
 
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use sqlx::PgExecutor;
 
-use crate::reader::contract::{Direction, Transaction};
+use crate::reader::contract::Transaction;
 
 pub use super::transactions_read_again::stored_keys;
 
@@ -18,6 +18,8 @@ pub struct TransactionRow {
     pub statement_id: i64,
     /// The printed date.
     pub date: NaiveDate,
+    /// The local time, when any Statement printed one.
+    pub time: Option<NaiveTime>,
     /// The printed description.
     pub description: String,
     /// Amount, always above 0.
@@ -40,7 +42,7 @@ pub struct TransactionRow {
     pub created_at: DateTime<Utc>,
 }
 
-const COLUMNS: &str = "id, account_id, statement_id, date, description, amount_paise, direction, balance_paise, foreign_amount, foreign_currency, reference, source_id, no_longer_found_at, created_at";
+const COLUMNS: &str = "id, account_id, statement_id, date, time, description, amount_paise, direction, balance_paise, foreign_amount, foreign_currency, reference, source_id, no_longer_found_at, created_at";
 
 /// Stores one Transaction under an Account and Statement.
 ///
@@ -54,13 +56,14 @@ pub async fn insert(
 ) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(
         "INSERT INTO finance.transactions
-           (account_id, statement_id, date, description, amount_paise, direction, balance_paise,
-            foreign_amount, foreign_currency, reference, source_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+           (account_id, statement_id, date, time, description, amount_paise, direction,
+            balance_paise, foreign_amount, foreign_currency, reference, source_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id",
     )
     .bind(account_id)
     .bind(statement_id)
     .bind(tx.date)
+    .bind(tx.time)
     .bind(&tx.description)
     .bind(tx.amount_paise)
     .bind(tx.direction.id())
@@ -93,69 +96,4 @@ pub async fn list(
     .bind(to)
     .fetch_all(db)
     .await
-}
-
-/// A Transaction that carries no Payment record yet, with the Account details linking
-/// checks the record's instrument against.
-#[derive(Debug, Clone, sqlx::FromRow)]
-pub struct LinkCandidate {
-    /// The Transaction.
-    #[sqlx(flatten)]
-    pub row: TransactionRow,
-    /// Its Account's issuer.
-    pub account_issuer: String,
-    /// Its Account's number as printed.
-    pub account_mask: Option<String>,
-}
-
-/// Transactions that carry no Payment record yet, for linking.
-///
-/// # Errors
-/// The database failed.
-pub async fn without_payment_record(
-    db: impl PgExecutor<'_>,
-) -> Result<Vec<LinkCandidate>, sqlx::Error> {
-    sqlx::query_as(
-        "SELECT t.*, a.issuer AS account_issuer, a.mask AS account_mask
-         FROM finance.transactions t JOIN finance.accounts a ON a.id = t.account_id
-         WHERE NOT EXISTS (SELECT 1 FROM finance.payment_records p WHERE p.transaction_id = t.id)
-         ORDER BY t.date, t.id",
-    )
-    .fetch_all(db)
-    .await
-}
-
-/// An Account's Transactions as the reader's row shape (their resolved view), in id order.
-///
-/// # Errors
-/// The database failed.
-pub async fn rows_of_account(
-    db: impl PgExecutor<'_>,
-    account_id: i64,
-) -> Result<Vec<(i64, Transaction)>, sqlx::Error> {
-    let rows: Vec<TransactionRow> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT {COLUMNS} FROM finance.transactions WHERE account_id = $1 ORDER BY id"
-    )))
-    .bind(account_id)
-    .fetch_all(db)
-    .await?;
-    Ok(rows
-        .into_iter()
-        .filter_map(|r| {
-            Some((
-                r.id,
-                Transaction {
-                    date: r.date,
-                    description: r.description,
-                    amount_paise: r.amount_paise,
-                    direction: Direction::from_id(&r.direction)?,
-                    balance_paise: r.balance_paise,
-                    foreign_amount: r.foreign_amount,
-                    foreign_currency: r.foreign_currency,
-                    reference: r.reference,
-                    source_id: r.source_id,
-                },
-            ))
-        })
-        .collect())
 }

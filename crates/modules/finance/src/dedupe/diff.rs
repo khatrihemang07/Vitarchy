@@ -2,7 +2,7 @@
 
 use std::{collections::HashMap, hash::BuildHasher};
 
-use super::{StoredEvidence, pair};
+use super::{Origin, StoredEvidence, pair};
 use crate::reader::contract::Transaction;
 
 /// An incoming row that is a Transaction another Statement stored: it gains a Printing.
@@ -29,19 +29,20 @@ pub struct ReadAgainDiff {
     pub gone_transaction_ids: Vec<i64>,
 }
 
-/// Compares what the engine reads now with what is stored. `stored` is every row of the
+/// Compares what the engine reads now (from a file of `origin`) with what is stored. `stored` is every row of the
 /// Account in id order; `here` holds the rows this Statement printed (id to whether that
 /// Printing is gone). Nothing is ever deleted. Rows this Statement printed pair first, so a
 /// twin it printed is never swapped for one it did not.
 #[must_use]
 pub fn read_again_diff<S: BuildHasher>(
     incoming: &[Transaction],
+    origin: Origin,
     stored: &[StoredEvidence],
     here: &HashMap<i64, bool, S>,
 ) -> ReadAgainDiff {
     let mut ordered = stored.to_vec();
     ordered.sort_by_key(|row| !here.contains_key(&row.id));
-    let paired = pair(incoming, &ordered);
+    let paired = pair(incoming, origin, &ordered);
     let mut diff = ReadAgainDiff::default();
     let mut found = Vec::new();
     for (index, slot) in paired.iter().enumerate() {

@@ -1,19 +1,20 @@
 import { ChevronDown } from "lucide-react";
 import { useId, useState } from "react";
-import type { AccountSummary, SectionPreview } from "@/api/finance";
+import type { AccountSummary, SectionPreview, StatementKind } from "@/api/finance";
 import { cn, Expand } from "@/design";
 import { formatPeriod } from "../dates";
-import { formatMask } from "../mask";
 import { formatCount, formatInr } from "../money";
 import { previewCountLine } from "./importCopy";
 import type { ChoiceDraft } from "../sectionChoice";
-import { accountKindLabel } from "../statementCopy";
+import { sectionHeading } from "../statementCopy";
 import { AccountPicker } from "./AccountPicker";
 import { ChecksList } from "./ChecksList";
 import { StatementRowsTable } from "../StatementRowsTable";
 
 interface SectionViewProps {
   section: SectionPreview;
+  /** The Statement's kind: a Payment history names its sections by Instrument. */
+  statementKind: StatementKind | null | undefined;
   accounts: readonly AccountSummary[];
   draft: ChoiceDraft;
   onDraft: (next: ChoiceDraft) => void;
@@ -22,12 +23,11 @@ interface SectionViewProps {
 }
 
 /** One Account section of a Statement: what the reader found, where it goes, its Checks and rows. */
-export function SectionView({ section, accounts, draft, onDraft, locked }: SectionViewProps) {
+export function SectionView({ section, statementKind, accounts, draft, onDraft, locked }: SectionViewProps) {
   const tableId = useId();
   const [open, setOpen] = useState(false);
   const countLine = previewCountLine(section);
-  const { issuer, kind, mask } = section.proposed;
-  const heading = [issuer ?? "Unknown issuer", accountKindLabel(kind), formatMask(mask)].filter(Boolean).join(" · ");
+  const heading = sectionHeading(statementKind, section.proposed);
   return (
     <section aria-label={heading} className="flex flex-col gap-4 rounded-xl border bg-muted/30 p-4">
       <div className="flex flex-col gap-1">

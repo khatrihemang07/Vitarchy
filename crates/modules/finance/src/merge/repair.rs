@@ -7,7 +7,6 @@ use sqlx::PgPool;
 use super::{apply::merge_into, groups::duplicate_groups};
 use crate::{
     error::FinanceError,
-    import::link_waiting,
     repo::{accounts, confirm_lock},
 };
 
@@ -24,8 +23,6 @@ pub struct MergeReport {
     pub folded: usize,
     /// Printings that moved onto kept Transactions.
     pub printings: u64,
-    /// Payment records linked again afterwards.
-    pub relinked: usize,
 }
 
 /// Merges Accounts with the same issuer, kind and visible digits into the oldest of each
@@ -60,14 +57,12 @@ pub async fn merge_duplicate_accounts(pool: &PgPool) -> Result<MergeReport, Fina
             report.printings += merged.printings;
         }
     }
-    report.relinked = link_waiting::link_waiting(&mut tx).await?;
     tx.commit().await?;
     tracing::info!(
         groups = report.groups,
         accounts_merged = report.accounts_merged,
         moved = report.moved,
         folded = report.folded,
-        relinked = report.relinked,
         duration_ms = u64::try_from(timer.elapsed().as_millis()).unwrap_or(u64::MAX),
         "duplicate accounts merged"
     );

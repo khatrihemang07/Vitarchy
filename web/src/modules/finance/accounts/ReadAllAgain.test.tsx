@@ -13,7 +13,6 @@ function item(id: number, name: string, add: number, lost: number) {
     preview: {
       statement: preview({ id, status: "confirmed" }),
       sections: [{ position: 0, add_count: add, unchanged_count: 10, no_longer_found_count: lost, added: [], new_printings: [] }],
-      payment_records: null,
     },
   };
 }
@@ -23,7 +22,7 @@ describe("ReadAllAgain", () => {
     const fetchMock = stubApi({
       "POST /api/finance/statements/read-again": () => jsonResponse(200, [item(1, "march.pdf", 2, 1), item(2, "april.pdf", 0, 0)]),
       "POST /api/finance/statements/read-again/confirm": () =>
-        jsonResponse(200, { statements: 1, added: 2, no_longer_found: 1, linked: 3, failed: 0 }),
+        jsonResponse(200, { statements: 1, added: 2, no_longer_found: 1, failed: 0 }),
     });
     renderWithClient(<ReadAllAgain />);
 
@@ -37,7 +36,7 @@ describe("ReadAllAgain", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Apply all changes" }));
 
-    expect(await screen.findByText(/1 Statements changed: 2 added, 1 no longer found, 3 Payment records linked/)).toBeInTheDocument();
+    expect(await screen.findByText(/1 Statements changed: 2 added, 1 no longer found/)).toBeInTheDocument();
     expect(requestsOf(fetchMock)).toContain("POST /api/finance/statements/read-again/confirm");
   });
 

@@ -102,7 +102,7 @@ pub async fn get_statement(
     responses(
         (status = 204, description = "Discarded"),
         (status = 404, description = "No such Statement (`statement_not_found`)", body = ProblemBody),
-        (status = 409, description = "Already confirmed (`statement_confirmed`)", body = ProblemBody),
+        (status = 409, description = "Already confirmed, or its rows are already Transactions' Printings (`statement_confirmed`, `statement_has_rows`)", body = ProblemBody),
     )
 )]
 #[tracing::instrument(skip_all, fields(statement_id = id))]
@@ -113,7 +113,12 @@ pub async fn delete_statement(
 ) -> Result<StatusCode, FinanceError> {
     let row = load(&state, id).await?;
     if !statements::discard(&state.pool, id).await? {
-        return Err(Refusal::CONFIRMED.into());
+        let refusal = if row.status == "confirmed" {
+            Refusal::CONFIRMED
+        } else {
+            Refusal::HAS_ROWS
+        };
+        return Err(refusal.into());
     }
     let kept = statements::file_in_use(&state.pool, &row.file_sha256).await?;
     if !kept {

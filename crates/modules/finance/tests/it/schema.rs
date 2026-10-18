@@ -20,7 +20,7 @@ async fn creates_the_finance_schema_tables() {
         [
             "account_identifiers",
             "accounts",
-            "payment_records",
+            "instrument_accounts",
             "printings",
             "runs",
             "statement_accounts",

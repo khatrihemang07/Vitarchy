@@ -13,6 +13,7 @@ fn printing(description: &str) -> Printing {
         statement_id: 1,
         printed: PrintedFields {
             date: chrono::NaiveDate::from_ymd_opt(2026, 3, 1).unwrap(),
+            time: None,
             description: description.to_owned(),
             balance_paise: None,
             reference: None,
@@ -32,6 +33,7 @@ fn gone(mut p: Printing) -> Printing {
 fn row(description: &str, reference: Option<&str>) -> Transaction {
     Transaction {
         date: chrono::NaiveDate::from_ymd_opt(2026, 3, 1).unwrap(),
+        time: None,
         description: description.to_owned(),
         amount_paise: 100,
         direction: Direction::Debit,

@@ -1,4 +1,5 @@
-import type { CheckView, StatementPreview } from "@/api/finance";
+import { formatMask } from "./mask";
+import type { CheckView, StatementKind, StatementPreview } from "@/api/finance";
 
 /** The kinds of Account, as the person names them. */
 export const ACCOUNT_KINDS = [
@@ -19,8 +20,23 @@ export function formatLabel(format: string | null | undefined): string {
 }
 
 /** What kind of file it is, in the Glossary's words. */
-export function statementKindLabel(kind: string | null | undefined): string {
+export function statementKindLabel(kind: StatementKind | null | undefined): string {
   return kind === "payment_history" ? "Payment history" : "Statement";
+}
+
+/**
+ * A section's heading. A Payment history section is an Instrument ("Instrument: ICICI R", with the
+ * issuer when known); a bank Statement section is "issuer · kind · number".
+ */
+export function sectionHeading(
+  statementKind: StatementKind | null | undefined,
+  proposed: { issuer?: string | null; kind?: string | null; mask?: string | null },
+): string {
+  const mask = formatMask(proposed.mask);
+  if (statementKind === "payment_history") {
+    return [`Instrument: ${mask || "not printed"}`, proposed.issuer].filter(Boolean).join(" · ");
+  }
+  return [proposed.issuer ?? "Unknown issuer", accountKindLabel(proposed.kind), mask].filter(Boolean).join(" · ");
 }
 
 const STAGE_WORDS: Record<string, string> = {

@@ -7,10 +7,7 @@ use sqlx::PgPool;
 pub use super::read_again_counts::{Apply, ReadAgainCounts};
 pub use super::read_again_preview::preview;
 use super::{
-    link_waiting::link_waiting,
-    read_again_diff::{Diff, compute},
-    read_again_preview::fresh,
-    read_again_write::write_section,
+    read_again_diff::compute, read_again_preview::fresh, read_again_write::write_section,
     stored_result::StoredResult,
 };
 use crate::{
@@ -19,7 +16,7 @@ use crate::{
     problem::Refusal,
     reader::StatementReader,
     repo::{
-        confirm_lock, payment_records, runs,
+        confirm_lock, runs, statement_accounts,
         statements::{self, StatementRow},
     },
 };
@@ -64,7 +61,6 @@ pub(super) async fn apply_row(
             printings_added = counts.printings_added,
             enriched = counts.enriched,
             no_longer_found = counts.no_longer_found,
-            linked = counts.linked,
             "read again applied"
         );
     } else if let Err(error) = &outcome {
@@ -98,28 +94,19 @@ async fn apply_inner(
         return Err(FinanceError::ConfirmInProgress);
     }
     let diff = compute(&mut tx, id, &result).await?;
+    for slot in &diff.rebuilt {
+        statement_accounts::insert(&mut *tx, id, slot).await?;
+    }
     if mode == Apply::OnlyChanges && !diff.has_changes() {
+        tx.commit().await?;
         return Ok(None);
     }
     let mut counts = ReadAgainCounts::default();
-    match &diff {
-        Diff::Sections(sections) => {
-            for (section, read) in sections.iter().zip(&result.statements) {
-                write_section(&mut tx, id, section, &read.transactions, &mut counts).await?;
-            }
-        }
-        Diff::Records { add, unchanged } => {
-            for index in add {
-                if payment_records::insert(&mut *tx, id, &result.payment_records[*index]).await? {
-                    counts.added += 1;
-                }
-            }
-            counts.unchanged = *unchanged;
-        }
+    for (section, read) in diff.sections.iter().zip(&result.statements) {
+        write_section(&mut tx, id, section, &read.transactions, &mut counts).await?;
     }
     let stored = StoredResult::from_result(&result);
     statements::replace_result(&mut *tx, id, &stored.row(&row.file_sha256, &row.file_name)).await?;
-    counts.linked = link_waiting(&mut tx).await?;
     tx.commit().await?;
     Ok(Some(counts))
 }

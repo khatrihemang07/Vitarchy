@@ -1,34 +1,96 @@
 {
-  "version": 1,
+  "version": 2,
   "outcome": "read",
   "format": "csv",
   "encrypted": false,
   "unlocked_with": null,
   "kind": "payment_history",
-  "statements": [],
-  "payment_records": [
+  "statements": [
     {
-      "occurred_at": "2026-10-18T11:20:00",
-      "description": "Paid to SOME MERCHANT",
-      "amount_paise": 25000,
-      "direction": "debit",
-      "source_id": "T2610181120000000000001",
-      "utr": "512345678901",
-      "instrument": "XXXXXX4321",
-      "instrument_issuer": null,
-      "instrument_digits": "4321"
+      "account": {
+        "issuer": null,
+        "kind": null,
+        "mask": "XXXXXX4321"
+      },
+      "period": {
+        "start": "2026-10-18",
+        "end": "2026-10-18"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-10-18",
+          "description": "Paid to SOME MERCHANT",
+          "amount_paise": 25000,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "512345678901",
+          "source_id": "T2610181120000000000001",
+          "time": "11:20:00"
+        }
+      ],
+      "checks": []
     },
     {
-      "occurred_at": "2026-09-19T00:05:00",
-      "description": "Received from SOME PERSON",
-      "amount_paise": 120050,
-      "direction": "credit",
-      "source_id": null,
-      "utr": null,
-      "instrument": null,
-      "instrument_issuer": null,
-      "instrument_digits": null
+      "account": {
+        "issuer": "Example Bank",
+        "kind": null,
+        "mask": "EXAMPLE R"
+      },
+      "period": {
+        "start": "2026-09-19",
+        "end": "2026-09-20"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-09-20",
+          "description": "Paid to OTHER SHOP",
+          "amount_paise": 9900,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "source_id": null,
+          "time": "23:59:00"
+        },
+        {
+          "date": "2026-09-19",
+          "description": "Received from SOME PERSON",
+          "amount_paise": 120050,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "512345678902",
+          "source_id": null,
+          "time": "00:05:00"
+        }
+      ],
+      "checks": []
     }
   ],
-  "diagnostics": {"stage": null, "code": null, "pages": null, "rows": 2}
+  "diagnostics": {
+    "stage": null,
+    "code": null,
+    "pages": null,
+    "rows": 3
+  }
 }

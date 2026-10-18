@@ -1,11 +1,11 @@
-"""Spreadsheet or CSV -> header row -> rows -> Statement, or Payment records for a payment app."""
+"""Spreadsheet or CSV -> header row -> rows -> Statement (one per instrument for a payment app)."""
 
 from __future__ import annotations
 
 from .contract import Diagnostics, Result
 from .locate.grid_header import find_grid_header
 from .metadata.surface import sheet_surface
-from .normalize.payments import build_payment_records
+from .normalize.payments import payment_history_statements
 from .normalize.rows import NormaliseError
 from .read.sheet import Grid
 from .segment.grid_rows import grid_rows
@@ -25,8 +25,8 @@ def read_sheet(grid: Grid) -> Result:
     diagnostics = Diagnostics(rows=len(rows))
     try:
         if set(vocab.payment_history["header_fields"]) <= header.layout.fields:
-            records = build_payment_records([r for r in rows if r.pseudo is None], vocab)
-            return Result(outcome="read", kind="payment_history", payment_records=records,
+            sections = payment_history_statements([r for r in rows if r.pseudo is None], vocab)
+            return Result(outcome="read", kind="payment_history", statements=sections,
                           diagnostics=diagnostics)
         surface = sheet_surface(grid, range(header.first, header.last + 1))
         statements = make_statements(rows, statement_facts(surface, None, vocab), surface, vocab)

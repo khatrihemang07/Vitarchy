@@ -1,6 +1,8 @@
 //! The view of a Transaction, derived from its Printings (ADR 0015). Pure: the same
 //! Printings always give the same view, so the rule can change and be re-applied.
 
+use chrono::NaiveTime;
+
 use super::Printing;
 use crate::dedupe::normalise;
 
@@ -10,6 +12,8 @@ use crate::dedupe::normalise;
 pub struct Detail {
     /// The fullest description.
     pub description: String,
+    /// The local time, when any Printing prints one.
+    pub time: Option<NaiveTime>,
     /// Balance after.
     pub balance_paise: Option<i64>,
     /// A UPI or NEFT reference.
@@ -46,6 +50,7 @@ pub fn resolve(printings: &[Printing]) -> Resolved {
     Resolved {
         detail: Detail {
             description: fullest_description(&counted),
+            time: counted.iter().find_map(|p| p.printed.time),
             balance_paise: counted.iter().find_map(|p| p.printed.balance_paise),
             reference: first(|p| p.printed.reference.clone()),
             source_id: first(|p| p.printed.source_id.clone()),

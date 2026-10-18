@@ -20,11 +20,10 @@ pub async fn repoint_transactions(
     Ok(done.rows_affected())
 }
 
-/// Folds a Transaction into another: its Printings and Payment record link move onto `into_id`,
-/// then the emptied Transaction row goes. A Printing in `identical` (the ones
-/// `printings::identical_to_live` found) is dropped, as is one from a Statement `into_id`
-/// already has; and a link is kept only when `into_id` has none (the record then waits to link
-/// again). Returns how many Printings moved.
+/// Folds a Transaction into another: its Printings move onto `into_id`, then the emptied
+/// Transaction row goes. A Printing in `identical` (the ones `printings::identical_to_live`
+/// found) is dropped, as is one from a Statement `into_id` already has. Returns how many
+/// Printings moved.
 ///
 /// # Errors
 /// The database failed.
@@ -54,21 +53,6 @@ pub async fn fold_transaction(
         .bind(from_id)
         .execute(&mut *db)
         .await?;
-    sqlx::query(
-        "UPDATE finance.payment_records SET transaction_id = $2
-         WHERE transaction_id = $1
-           AND NOT EXISTS (SELECT 1 FROM finance.payment_records WHERE transaction_id = $2)",
-    )
-    .bind(from_id)
-    .bind(into_id)
-    .execute(&mut *db)
-    .await?;
-    sqlx::query(
-        "UPDATE finance.payment_records SET transaction_id = NULL WHERE transaction_id = $1",
-    )
-    .bind(from_id)
-    .execute(&mut *db)
-    .await?;
     sqlx::query("DELETE FROM finance.transactions WHERE id = $1")
         .bind(from_id)
         .execute(&mut *db)
@@ -76,7 +60,8 @@ pub async fn fold_transaction(
     Ok(moved)
 }
 
-/// Moves an Account's Statement slots and remembered identifiers to another Account, then
+/// Moves an Account's Statement slots and remembered identifiers and instruments to another
+/// Account, then
 /// deletes the emptied Account row.
 ///
 /// # Errors
@@ -100,6 +85,11 @@ pub async fn absorb_account(
     .bind(keep_id)
     .execute(&mut *db)
     .await?;
+    sqlx::query("UPDATE finance.instrument_accounts SET account_id = $2 WHERE account_id = $1")
+        .bind(from_id)
+        .bind(keep_id)
+        .execute(&mut *db)
+        .await?;
     sqlx::query("DELETE FROM finance.accounts WHERE id = $1")
         .bind(from_id)
         .execute(&mut *db)

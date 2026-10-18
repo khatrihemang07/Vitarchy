@@ -31,24 +31,14 @@ pub struct SectionChanges {
     pub new_printings: Vec<TransactionView>,
 }
 
-/// The changes to a Payment history.
-#[derive(Serialize, ToSchema)]
-pub struct RecordChanges {
-    /// Records that would be added.
-    pub add_count: usize,
-    /// Records already stored.
-    pub unchanged_count: usize,
-}
-
 /// A Read again: the Statement as it is now, and what reading it again would change.
 #[derive(Serialize, ToSchema)]
 pub struct ReadAgainPreview {
     /// The Statement as stored (an unconfirmed one is already re-read).
     pub statement: StatementPreview,
-    /// Per Account section; empty for an unconfirmed Statement or a Payment history.
+    /// Per Account section (a payment app's instrument is a section too); empty for an
+    /// unconfirmed Statement.
     pub sections: Vec<SectionChanges>,
-    /// For a confirmed Payment history.
-    pub payment_records: Option<RecordChanges>,
 }
 
 /// One Statement's part of Read all again: its preview, or why it could not be read again.
@@ -93,15 +83,6 @@ fn section(diff: &SectionDiff, result: &ReaderResult) -> SectionChanges {
 
 /// The changes `diff` describes, for the file `result` it was computed from.
 #[must_use]
-pub fn of_diff(diff: &Diff, result: &ReaderResult) -> (Vec<SectionChanges>, Option<RecordChanges>) {
-    match diff {
-        Diff::Sections(sections) => (sections.iter().map(|d| section(d, result)).collect(), None),
-        Diff::Records { add, unchanged } => (
-            vec![],
-            Some(RecordChanges {
-                add_count: add.len(),
-                unchanged_count: *unchanged,
-            }),
-        ),
-    }
+pub fn of_diff(diff: &Diff, result: &ReaderResult) -> Vec<SectionChanges> {
+    diff.sections.iter().map(|d| section(d, result)).collect()
 }

@@ -1,5 +1,5 @@
-//! Confirming a Statement: write its new Transactions (or Payment records) and link what can
-//! be linked, all in one transaction under the confirm lock.
+//! Confirming a Statement: write its new Transactions and Printings, all in one transaction
+//! under the confirm lock.
 
 use std::time::Instant;
 
@@ -10,29 +10,27 @@ use utoipa::ToSchema;
 
 use super::{
     choice::Choice,
-    link_waiting::link_waiting,
-    resolve::account_for,
+    resolve::{Known, account_for},
     store_rows::{RowCounts, store_rows},
 };
 use crate::{
+    dedupe::Origin,
     error::FinanceError,
     problem::Refusal,
-    reader::contract::{Kind, ReaderResult, Statement},
-    repo::{accounts, confirm_lock, payment_records, runs, statement_accounts, statements},
+    reader::contract::{Kind, Statement},
+    repo::{confirm_lock, runs, statement_accounts, statements},
     view::summary::parse_result,
 };
 
 /// What a confirm did.
 #[derive(Debug, Clone, Copy, Serialize, ToSchema)]
 pub struct ConfirmCounts {
-    /// Transactions (or Payment records) stored.
+    /// Transactions stored.
     pub added: usize,
     /// Rows that were already stored: each gained a Printing, not a Transaction.
     pub already_stored: usize,
     /// Of those, rows whose Printing made the Transaction show more detail.
     pub enriched: usize,
-    /// Payment records linked to a Transaction by this confirm.
-    pub linked: usize,
 }
 
 /// Confirms Statement `id` with one choice per Account section.
@@ -56,7 +54,6 @@ pub async fn confirm(
             added = counts.added,
             already_stored = counts.already_stored,
             enriched = counts.enriched,
-            linked = counts.linked,
             duration_ms,
             "statement confirmed"
         ),
@@ -82,49 +79,23 @@ async fn apply(pool: &PgPool, id: i64, choices: &[Choice]) -> Result<ConfirmCoun
         return Err(Refusal::CONFIRMED.into());
     }
     let result = parse_result(&row)
-        .filter(|r| row.outcome == "read" && r.kind.is_some())
+        .filter(|_| row.outcome == "read")
         .ok_or(Refusal::NOT_READABLE)?;
-    let rows = if result.kind == Some(Kind::PaymentHistory) {
-        write_records(&mut tx, id, &result, choices).await?
-    } else {
-        write_sections(&mut tx, id, &result.statements, choices).await?
-    };
+    let kind = result.kind.ok_or(Refusal::NOT_READABLE)?;
+    let rows = write_sections(&mut tx, id, kind, &result.statements, choices).await?;
     statements::confirm(&mut *tx, id).await?;
-    let linked = link_waiting(&mut tx).await?;
     tx.commit().await?;
     Ok(ConfirmCounts {
         added: rows.added,
         already_stored: rows.already_stored,
         enriched: rows.enriched,
-        linked,
-    })
-}
-
-async fn write_records(
-    db: &mut PgConnection,
-    id: i64,
-    result: &ReaderResult,
-    choices: &[Choice],
-) -> Result<RowCounts, FinanceError> {
-    if !choices.is_empty() {
-        return Err(Refusal::SECTIONS_MISMATCH.into());
-    }
-    let mut added = 0;
-    for record in &result.payment_records {
-        if payment_records::insert(&mut *db, id, record).await? {
-            added += 1;
-        }
-    }
-    Ok(RowCounts {
-        added,
-        already_stored: result.payment_records.len() - added,
-        enriched: 0,
     })
 }
 
 async fn write_sections(
     db: &mut PgConnection,
     id: i64,
+    kind: Kind,
     sections: &[Statement],
     choices: &[Choice],
 ) -> Result<RowCounts, FinanceError> {
@@ -133,11 +104,18 @@ async fn write_sections(
     }
     let mut total = RowCounts::default();
     for (index, (section, choice)) in sections.iter().zip(choices).enumerate() {
-        let known = accounts::identities(&mut *db).await?;
-        let account_id = account_for(db, &section.account, choice, &known).await?;
+        let known = Known::load(db).await?;
+        let account_id = account_for(db, Some(kind), &section.account, choice, &known).await?;
         let position = i32::try_from(index).unwrap_or(i32::MAX);
         statement_accounts::assign(&mut *db, id, position, account_id).await?;
-        let counts = store_rows(db, account_id, id, &section.transactions).await?;
+        let counts = store_rows(
+            db,
+            account_id,
+            id,
+            Origin::from(kind),
+            &section.transactions,
+        )
+        .await?;
         total.added += counts.added;
         total.already_stored += counts.already_stored;
         total.enriched += counts.enriched;

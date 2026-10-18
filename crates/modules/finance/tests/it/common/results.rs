@@ -1,8 +1,8 @@
 //! Canned reader results for the route tests.
 
 use vitarchy_finance::reader::contract::{
-    AccountKind, Check, CheckOutcome, Diagnostics, Direction, Format, Kind, Outcome, PaymentRecord,
-    Period, ProposedAccount, ReaderResult, Statement, Summary, Transaction,
+    AccountKind, Check, CheckOutcome, Diagnostics, Direction, Format, Kind, Outcome, Period,
+    ProposedAccount, ReaderResult, Statement, Summary, Transaction,
 };
 
 use super::{date, tx};
@@ -91,14 +91,13 @@ pub fn failing(mut section: Statement) -> Statement {
 /// A read Statement file with these sections.
 pub fn read(sections: Vec<Statement>) -> ReaderResult {
     ReaderResult {
-        version: 1,
+        version: 2,
         outcome: Outcome::Read,
         format: Some(Format::Pdf),
         encrypted: false,
         unlocked_with: None,
         kind: Some(Kind::Statement),
         statements: sections,
-        payment_records: vec![],
         diagnostics: diagnostics(),
     }
 }
@@ -126,12 +125,30 @@ pub fn locked() -> ReaderResult {
     }
 }
 
-/// A Payment history with these records.
-pub fn history(records: Vec<PaymentRecord>) -> ReaderResult {
+/// A payment app's history with these sections (one per instrument).
+pub fn history(sections: Vec<Statement>) -> ReaderResult {
     ReaderResult {
         format: Some(Format::Csv),
         kind: Some(Kind::PaymentHistory),
-        payment_records: records,
-        ..read(vec![])
+        ..read(sections)
     }
+}
+
+/// One instrument's section of a payment app's history; the issuer is what the helper
+/// recognised in it, if anything.
+pub fn instrument(issuer: Option<&str>, mask: &str, rows: Vec<Transaction>) -> Statement {
+    section(issuer, None, mask, rows)
+}
+
+/// The row as a payment app prints it: a time, the app's id and the UTR.
+pub fn app_row(
+    mut row: Transaction,
+    time: (u32, u32),
+    source_id: Option<&str>,
+    utr: Option<&str>,
+) -> Transaction {
+    row.time = chrono::NaiveTime::from_hms_opt(time.0, time.1, 0);
+    row.source_id = source_id.map(str::to_owned);
+    row.reference = utr.map(str::to_owned);
+    row
 }

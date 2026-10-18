@@ -4,7 +4,10 @@ use chrono::{DateTime, Utc};
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use crate::{reader::ReaderResult, repo::statements::StatementRow};
+use crate::{
+    reader::{ReaderResult, contract::Kind},
+    repo::statements::StatementRow,
+};
 
 /// One line of the Statements list.
 #[derive(Serialize, ToSchema)]
@@ -15,8 +18,8 @@ pub struct StatementSummary {
     pub file_name: String,
     /// `pdf`, `csv`, `xls` or `xlsx`.
     pub format: Option<String>,
-    /// `statement` or `payment_history`.
-    pub kind: Option<String>,
+    /// What the file holds.
+    pub kind: Option<Kind>,
     /// `read`, `locked`, `unsupported`, `no_table` or `crashed`.
     pub outcome: String,
     /// `unconfirmed` or `confirmed`.
@@ -27,7 +30,7 @@ pub struct StatementSummary {
     pub confirmed_at: Option<DateTime<Utc>>,
     /// Accounts listed in the file.
     pub account_count: usize,
-    /// Transactions (or Payment records) in the file.
+    /// Transactions in the file.
     pub row_count: usize,
 }
 
@@ -38,13 +41,13 @@ impl StatementSummary {
         let result = parse_result(row);
         let (account_count, row_count) = result.as_ref().map_or((0, 0), |r| {
             let transactions: usize = r.statements.iter().map(|s| s.transactions.len()).sum();
-            (r.statements.len(), transactions + r.payment_records.len())
+            (r.statements.len(), transactions)
         });
         Self {
             id: row.id,
             file_name: row.file_name.clone(),
             format: row.format.clone(),
-            kind: row.kind.clone(),
+            kind: row.file_kind(),
             outcome: row.outcome.clone(),
             status: row.status.clone(),
             uploaded_at: row.uploaded_at,

@@ -59,7 +59,7 @@ describe("StatementCard", () => {
   it("confirms with the matched Account and reports what was added", async () => {
     const fetchMock = stubApi({
       "GET /api/finance/accounts": accounts,
-      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 2, already_stored: 1, enriched: 1, linked: 0 }),
+      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 2, already_stored: 1, enriched: 1 }),
       ...invalidations,
     });
     renderWithClient(<StatementCard preview={preview()} />);
@@ -87,7 +87,7 @@ describe("StatementCard", () => {
   it("asks for a New Account's details and sends them", async () => {
     const fetchMock = stubApi({
       "GET /api/finance/accounts": accounts,
-      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 3, already_stored: 0, linked: 0 }),
+      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 3, already_stored: 0 }),
       ...invalidations,
     });
     const unmatched = section({ matched_account: null, proposed: { issuer: "SBI", kind: "loan", mask: "XX9876" } });
@@ -108,6 +108,27 @@ describe("StatementCard", () => {
     const unknown = section({ matched_account: null, proposed: { issuer: null, kind: null, mask: null } });
     renderWithClient(<StatementCard preview={preview({ sections: [unknown] })} />);
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+  });
+
+  it("reviews a Payment history by Instrument and makes the person choose a kind", () => {
+    stubApi({ "GET /api/finance/accounts": accounts });
+    const instrument = section({ matched_account: null, proposed: { issuer: null, kind: null, mask: "ICICI R" } });
+    renderWithClient(<StatementCard preview={preview({ kind: "payment_history", sections: [instrument] })} />);
+    expect(screen.getByRole("heading", { name: "Instrument: ICICI R" })).toBeInTheDocument();
+    expect(screen.queryByText(/waiting for the bank/i)).toBeNull();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+  });
+
+  it("explains a discard refused because the rows are already Printings", async () => {
+    stubApi({
+      "GET /api/finance/accounts": accounts,
+      "DELETE /api/finance/statements/1": () => jsonResponse(409, { status: 409, detail: "x", code: "statement_has_rows" }),
+      ...invalidations,
+    });
+    renderWithClient(<StatementCard preview={preview()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/cannot be discarded/);
+    expect(screen.getByText("april.pdf")).toBeInTheDocument();
   });
 
   it("explains a confirm the server refused", async () => {
@@ -131,15 +152,6 @@ describe("StatementCard", () => {
     await userEvent.click(screen.getByRole("button", { name: "Discard" }));
     await vi.waitFor(() => { expect(screen.queryByText("april.pdf")).not.toBeInTheDocument(); });
     expect(requestsOf(fetchMock)).toContain("DELETE /api/finance/statements/1");
-  });
-
-  it("summarises a Payment history: its records and how many link now", () => {
-    stubApi({ "GET /api/finance/accounts": accounts });
-    const history = preview({ kind: "payment_history", sections: [], payment_history: { record_count: 195, would_link_now: 39 } });
-    renderWithClient(<StatementCard preview={history} />);
-    expect(screen.getByText("195 Payment records")).toBeInTheDocument();
-    expect(screen.getByText(/39 link to a Transaction now/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
   });
 
   it("explains a locked file, links to the passwords, and reads it again", async () => {
@@ -188,7 +200,7 @@ describe("StatementCard after another Statement was confirmed", () => {
     const fetchMock = stubApi({
       "GET /api/finance/accounts": () => jsonResponse(200, [account({ id: 7, name: "Existing card" })]),
       "GET /api/finance/statements/1": () => jsonResponse(200, matched()),
-      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 0, already_stored: 0, enriched: 0, linked: 0 }),
+      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 0, already_stored: 0, enriched: 0 }),
       ...invalidations,
     });
     renderWithClient(<StatementCard preview={unmatched()} />);

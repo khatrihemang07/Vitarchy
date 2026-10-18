@@ -110,6 +110,28 @@ async fn discarding_an_unconfirmed_statement_removes_its_row_and_file() {
 }
 
 #[tokio::test]
+async fn an_unconfirmed_statement_that_already_printed_transactions_cannot_be_discarded() {
+    let env = Env::new("st_discard_printed", vec![card()]).await;
+    let id = env.upload_one("a.pdf", b"reopened").await;
+    env.confirm_proposed(id, 1).await;
+    // What the payment-app migration leaves for a history it reopened: unconfirmed, yet still printing.
+    sqlx::query("UPDATE finance.statements SET status = 'unconfirmed', confirmed_at = NULL")
+        .execute(&env.db.pool)
+        .await
+        .unwrap();
+
+    let reply = env
+        .json_call("DELETE", &format!("/statements/{id}"), None)
+        .await;
+
+    assert_eq!(
+        (reply.status, reply.json["code"].as_str()),
+        (409, Some("statement_has_rows"))
+    );
+    env.finish().await;
+}
+
+#[tokio::test]
 async fn discarding_keeps_a_file_another_statement_still_uses() {
     let env = Env::new("st_discard_shared", vec![card()]).await;
     let id = env.upload_one("a.pdf", b"shared").await;

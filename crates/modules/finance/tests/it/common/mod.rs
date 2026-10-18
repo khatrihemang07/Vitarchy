@@ -2,13 +2,16 @@
 #![allow(dead_code)]
 
 pub mod app;
+pub mod app_files;
 pub mod cards;
+pub mod instruments;
+pub mod old_shape;
 pub mod pairs;
 pub mod results;
 
 use chrono::NaiveDate;
 use vitarchy_core::test_db::TestDb;
-use vitarchy_finance::reader::contract::{AccountKind, Direction, PaymentRecord, Transaction};
+use vitarchy_finance::reader::contract::{AccountKind, Direction, Transaction};
 use vitarchy_finance::repo::{
     accounts::{self, AccountRow},
     statements::{self, NewStatement},
@@ -33,6 +36,7 @@ pub fn date(day: u32) -> NaiveDate {
 pub fn tx(day: u32, description: &str, amount_paise: i64) -> Transaction {
     Transaction {
         date: date(day),
+        time: None,
         description: description.to_owned(),
         amount_paise,
         direction: Direction::Debit,
@@ -41,20 +45,6 @@ pub fn tx(day: u32, description: &str, amount_paise: i64) -> Transaction {
         foreign_currency: None,
         reference: None,
         source_id: None,
-    }
-}
-
-pub fn payment(source_id: Option<&str>, utr: Option<&str>, amount_paise: i64) -> PaymentRecord {
-    PaymentRecord {
-        occurred_at: date(5).and_hms_opt(11, 20, 0).unwrap(),
-        description: "Paid to SOME MERCHANT".to_owned(),
-        amount_paise,
-        direction: Direction::Debit,
-        source_id: source_id.map(str::to_owned),
-        utr: utr.map(str::to_owned),
-        instrument: Some("XXXXXX4321".to_owned()),
-        instrument_issuer: None,
-        instrument_digits: Some("4321".to_owned()),
     }
 }
 

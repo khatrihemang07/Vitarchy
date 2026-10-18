@@ -100,7 +100,7 @@ async fn a_row_another_statement_stored_gains_a_printing_instead_of_a_second_tra
 
     assert_eq!(
         applied,
-        json!({"added": 0, "unchanged": 1, "printings_added": 1, "enriched": 1, "no_longer_found": 0, "linked": 0})
+        json!({"added": 0, "unchanged": 1, "printings_added": 1, "enriched": 1, "no_longer_found": 0})
     );
     let shared = row(&env, "UPI").await;
     assert_eq!(

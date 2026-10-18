@@ -9,7 +9,6 @@ from statement_reader.contract import (
     Account,
     Check,
     Diagnostics,
-    PaymentRecord,
     Period,
     Request,
     Result,
@@ -81,31 +80,28 @@ def read_statement() -> Result:
 
 
 def payment_history() -> Result:
-    records = [
-        PaymentRecord(
-            occurred_at="2026-10-18T11:20:00",
-            description="Paid to SOME MERCHANT",
-            amount_paise=25000,
-            direction="debit",
-            source_id="T2610181120000000000001",
-            utr="512345678901",
-            instrument="XXXXXX4321",
-            instrument_digits="4321",
+    def txn(day, clock, text, paise, direction, utr, app_id):
+        return Transaction(date=day, time=clock, description=text, amount_paise=paise,
+                           direction=direction, reference=utr, source_id=app_id)
+
+    sections = [
+        Statement(
+            account=Account(issuer=None, kind=None, mask="XXXXXX4321"),
+            period=Period(start="2026-10-18", end="2026-10-18"),
+            transactions=[txn("2026-10-18", "11:20:00", "Paid to SOME MERCHANT", 25000, "debit",
+                              "512345678901", "T2610181120000000000001")],
         ),
-        PaymentRecord(
-            occurred_at="2026-09-19T00:05:00",
-            description="Received from SOME PERSON",
-            amount_paise=120050,
-            direction="credit",
+        Statement(
+            account=Account(issuer="Example Bank", kind=None, mask="EXAMPLE R"),
+            period=Period(start="2026-09-19", end="2026-09-20"),
+            transactions=[
+                txn("2026-09-20", "23:59:00", "Paid to OTHER SHOP", 9900, "debit", None, None),
+                txn("2026-09-19", "00:05:00", "Received from SOME PERSON", 120050, "credit", "512345678902", None),
+            ],
         ),
     ]
-    return Result(
-        outcome="read",
-        format="csv",
-        kind="payment_history",
-        payment_records=records,
-        diagnostics=Diagnostics(rows=2),
-    )
+    return Result(outcome="read", format="csv", kind="payment_history", statements=sections,
+                  diagnostics=Diagnostics(rows=3))
 
 
 def locked() -> Result:
@@ -145,16 +141,16 @@ def test_to_json_is_valid_json_with_the_same_content(name):
 
 def test_request_reads_the_stdin_shape():
     request = Request.from_json(
-        '{"version": 1, "file_path": "/x", "passwords": ["a", "b"], "decrypted_out": "/y"}'
+        '{"version": 2, "file_path": "/x", "passwords": ["a", "b"], "decrypted_out": "/y"}'
     )
     assert (request.file_path, request.passwords, request.decrypted_out) == ("/x", ["a", "b"], "/y")
 
 
 def test_request_defaults_missing_optional_fields():
-    request = Request.from_json('{"version": 1, "file_path": "/x"}')
+    request = Request.from_json('{"version": 2, "file_path": "/x"}')
     assert request.passwords == [] and request.decrypted_out is None
 
 
 def test_request_rejects_an_unknown_version():
     with pytest.raises(ValueError, match="version"):
-        Request.from_json('{"version": 2, "file_path": "/x"}')
+        Request.from_json('{"version": 1, "file_path": "/x"}')

@@ -1,11 +1,11 @@
-"""Payment-app rows -> PaymentRecords (when, what, how much, which UTR and instrument)."""
+"""Payment-app rows -> one Statement per instrument (the account the app paid from or into)."""
 
 from __future__ import annotations
 
 import re
-from datetime import datetime, time
+from datetime import date
 
-from ..contract import PaymentRecord
+from ..contract import Account, Period, Statement, Summary, Transaction
 from ..segment.rows import RawRow
 from ..vocabulary import Vocabulary
 from .amounts import parse_money
@@ -24,35 +24,37 @@ def instrument_label(text: str, vocab: Vocabulary) -> str | None:
     return text or None
 
 
-def instrument_details(label: str | None, vocab: Vocabulary) -> tuple[str | None, str | None]:
-    """(issuer, trailing digits) recognised in a printed instrument such as "<BANK> R" or "XXXXXX4321"."""
-    if not label:
-        return None, None
-    words = re.findall(r"[a-z]+", label.lower())
-    issuer = next((name for name, shorts in vocab.instrument_issuers
-                   if any(s in words for s in shorts)), None)
-    digits = re.search(r"\d+$", label.strip())
-    return issuer, digits.group(0) if digits else None
+def instrument_issuer(label: str | None, vocab: Vocabulary) -> str | None:
+    """The issuer the vocabulary recognises in a printed instrument such as "<BANK> R", else None."""
+    words = re.findall(r"[a-z]+", (label or "").lower())
+    return next((name for name, shorts in vocab.instrument_issuers
+                 if any(s in words for s in shorts)), None)
 
 
-def build_payment_records(rows: list[RawRow], vocab: Vocabulary) -> list[PaymentRecord]:
-    """Records in printed order. Date and time columns combine into `occurred_at`."""
+def _transaction(raw: RawRow, day: date, decision: tuple[str, int], vocab: Vocabulary) -> Transaction:
+    moment = parse_time(raw.cells.get("time", ""), vocab)
+    return Transaction(
+        date=day.isoformat(), time=moment.strftime("%H:%M:%S") if moment else None,
+        description=raw.description,
+        amount_paise=decision[1], direction=decision[0], balance_paise=None,
+        reference=raw.cells.get("utr") or None, source_id=raw.cells.get("source_id") or None)
+
+
+def payment_history_statements(rows: list[RawRow], vocab: Vocabulary) -> list[Statement]:
+    """One Statement per distinct instrument in first-seen order, rows in printed order. The app
+    prints no balances or totals, so each summary is empty and no Check applies."""
     fmt = detect_format([r.cells.get("date", "") for r in rows], vocab)
     if rows and fmt is None:
         raise NormaliseError("unreadable_dates")
-    records = []
+    sections: dict[str | None, list[Transaction]] = {}
     for raw in rows:
         day = parse_date(raw.cells["date"], fmt or "", vocab)
         decision = decide(Figures(amount=parse_money(raw.cells.get("amount", ""), vocab),
                                   type_text=raw.cells.get("type")), vocab)
         if day is None or decision is None:
             continue
-        moment = parse_time(raw.cells.get("time", ""), vocab) or time()
-        instrument = instrument_label(raw.cells.get("instrument", ""), vocab)
-        issuer, digits = instrument_details(instrument, vocab)
-        records.append(PaymentRecord(
-            occurred_at=datetime.combine(day, moment).isoformat(), description=raw.description,
-            amount_paise=decision[1], direction=decision[0],
-            source_id=raw.cells.get("source_id") or None, utr=raw.cells.get("utr") or None,
-            instrument=instrument, instrument_issuer=issuer, instrument_digits=digits))
-    return records
+        label = instrument_label(raw.cells.get("instrument", ""), vocab)
+        sections.setdefault(label, []).append(_transaction(raw, day, decision, vocab))
+    return [Statement(Account(instrument_issuer(label, vocab), None, label),
+                      Period(min(t.date for t in found), max(t.date for t in found)), Summary(), found, [])
+            for label, found in sections.items()]

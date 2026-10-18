@@ -1,6 +1,6 @@
 use chrono::Days;
 
-use super::{Evidence, StoredEvidence, new_rows, pair, pairing::pair_evidence};
+use super::{Evidence, Origin, Origins, StoredEvidence, new_rows, pair, pairing::pair_evidence};
 use crate::{reader::contract::Transaction, test_support::tx};
 
 fn stored_of(rows: &[Transaction]) -> Vec<Evidence> {
@@ -10,7 +10,7 @@ fn stored_of(rows: &[Transaction]) -> Vec<Evidence> {
 fn keys(rows: &[Transaction]) -> Vec<StoredEvidence> {
     (1..)
         .zip(stored_of(rows))
-        .map(|(id, evidence)| StoredEvidence { id, evidence })
+        .map(|(id, evidence)| StoredEvidence::new(id, evidence))
         .collect()
 }
 
@@ -116,7 +116,10 @@ fn pairing_finds_the_same_number_of_pairs_when_the_roles_swap() {
 fn pair_names_the_stored_id_each_incoming_row_is() {
     let stored = keys(&[tx("a", 1), tx("b", 2)]);
     let incoming = [tx("b", 2), tx("fresh", 3), tx("a", 1)];
-    assert_eq!(pair(&incoming, &stored), vec![Some(2), None, Some(1)]);
+    assert_eq!(
+        pair(&incoming, Origin::Statement, &stored),
+        vec![Some(2), None, Some(1)]
+    );
 }
 
 #[test]
@@ -128,7 +131,7 @@ fn new_rows_are_exactly_the_rows_pair_leaves_unmatched() {
         tx("rent", 700),
         tx("new", 5),
     ];
-    let unmatched: Vec<usize> = pair(&incoming, &keys(&stored_rows))
+    let unmatched: Vec<usize> = pair(&incoming, Origin::Statement, &keys(&stored_rows))
         .iter()
         .enumerate()
         .filter(|(_, id)| id.is_none())
@@ -136,4 +139,43 @@ fn new_rows_are_exactly_the_rows_pair_leaves_unmatched() {
         .collect();
     assert_eq!(new_rows(&incoming, &stored_of(&stored_rows)), unmatched);
     assert_eq!(unmatched, vec![2, 3]);
+}
+
+fn with_id(mut row: Transaction, id: &str) -> Transaction {
+    row.source_id = Some(id.to_owned());
+    row
+}
+
+fn printed_by(row: &Transaction, origin: Origin) -> Evidence {
+    Evidence::from(row).with_origins(Origins::of(origin))
+}
+
+#[test]
+fn a_row_is_the_same_as_a_transaction_when_it_matches_any_of_its_printings() {
+    // The shown view carries the bank's id; the payment app's own id lives in its Printing.
+    let shown = with_id(tx("upi shop one", 100), "BANK1");
+    let app_printing = with_id(tx("paid to shop one", 100), "APP1");
+    let mut row = StoredEvidence::new(7, Evidence::from(&shown).with_origins(Origins::Both));
+    row.printed = vec![
+        printed_by(&shown, Origin::Statement),
+        printed_by(&app_printing, Origin::PaymentHistory),
+    ];
+
+    let again = with_id(tx("paid to shop one", 100), "APP1");
+
+    assert_eq!(
+        pair(&[again], Origin::PaymentHistory, &[row]),
+        vec![Some(7)]
+    );
+}
+
+#[test]
+fn a_disagreeing_id_of_the_same_kind_still_blocks_when_no_printing_agrees() {
+    let shown = with_id(tx("paid to shop one", 100), "APP1");
+    let mut row = StoredEvidence::new(7, printed_by(&shown, Origin::PaymentHistory));
+    row.printed = vec![printed_by(&shown, Origin::PaymentHistory)];
+
+    let other = with_id(tx("paid to shop one", 100), "APP9");
+
+    assert_eq!(pair(&[other], Origin::PaymentHistory, &[row]), vec![None]);
 }

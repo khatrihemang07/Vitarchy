@@ -94,7 +94,7 @@ async fn approving_applies_only_the_statements_with_changes() {
     assert_eq!(applied.status, 200, "{}", applied.text);
     assert_eq!(
         applied.json,
-        json!({"statements": 1, "added": 1, "printings_added": 0, "enriched": 0, "no_longer_found": 1, "linked": 0, "failed": 0})
+        json!({"statements": 1, "added": 1, "printings_added": 0, "enriched": 0, "no_longer_found": 1, "failed": 0})
     );
     assert_eq!(row_count(&env).await, 6);
     env.finish().await;

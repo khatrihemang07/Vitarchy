@@ -1,6 +1,5 @@
 import { type AccountSummary, type ConfirmCounts, type StatementPreview, useConfirmStatement } from "@/api/finance";
 import { CardContent } from "@/design";
-import { PaymentHistorySummary } from "./PaymentHistorySummary";
 import { SectionView } from "./SectionView";
 import { StatementActions } from "./StatementActions";
 import { useChoiceDrafts } from "./useChoiceDrafts";
@@ -20,11 +19,11 @@ export function ReviewBody({ preview, accounts, onConfirmed, onDiscarded }: Revi
   return (
     <CardContent className="flex flex-col gap-4">
       {alreadyConfirmed ? <p className="text-sm text-muted-foreground">This file was uploaded before and is already confirmed.</p> : null}
-      {preview.payment_history ? <PaymentHistorySummary history={preview.payment_history} /> : null}
       {preview.sections.map((section, index) => (
         <SectionView
           key={section.position}
           section={section}
+          statementKind={preview.kind}
           accounts={accounts}
           draft={drafts[index] ?? { mode: "existing", accountId: null }}
           onDraft={(next) => { setDraft(index, next); }}

@@ -16,8 +16,6 @@ pub struct ReadAgainCounts {
     pub enriched: usize,
     /// Printings marked no longer found.
     pub no_longer_found: usize,
-    /// Payment records linked as a result.
-    pub linked: usize,
 }
 
 /// Which confirmed Statements an apply touches.

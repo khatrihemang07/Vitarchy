@@ -1,19 +1,23 @@
 //! What a Read again would change, computed against what is stored. Nothing is ever deleted:
 //! rows the engine no longer finds are only marked (ADR 0013).
 
-use std::collections::HashSet;
-
 use sqlx::PgConnection;
 
-use super::printing_writes::{Target, plan_by_target};
+use super::{
+    printing_writes::{Target, plan_by_target},
+    rebuild_sections::rebuild,
+};
 use crate::{
-    dedupe::{PrintingToAdd, read_again_diff},
+    dedupe::{Origin, PrintingToAdd, read_again_diff},
     error::FinanceError,
     printings::Plan,
     problem::Refusal,
-    reader::{ReaderResult, contract::Kind},
-    record_key,
-    repo::{payment_records, printings, statement_accounts, transactions},
+    reader::ReaderResult,
+    repo::{
+        printings,
+        statement_accounts::{self, StatementAccountRow},
+        transactions,
+    },
 };
 
 /// The changes to one Account section.
@@ -37,32 +41,22 @@ pub struct SectionDiff {
     pub gone_transaction_ids: Vec<i64>,
 }
 
-/// The changes to a whole file.
+/// The changes to a whole file: one diff per Account section.
 #[derive(Debug)]
-pub enum Diff {
-    /// A Statement: one diff per Account section.
-    Sections(Vec<SectionDiff>),
-    /// A Payment history: the new records.
-    Records {
-        /// Indexes of incoming records that are new.
-        add: Vec<usize>,
-        /// Incoming records already stored.
-        unchanged: usize,
-    },
+pub struct Diff {
+    /// The sections, in printed order.
+    pub sections: Vec<SectionDiff>,
+    /// Sections to store because the Statement had none (see `rebuild_sections`).
+    pub rebuilt: Vec<StatementAccountRow>,
 }
 
 impl Diff {
     /// Whether applying it would add rows or Printings, or mark any as no longer found.
     #[must_use]
     pub fn has_changes(&self) -> bool {
-        match self {
-            Self::Sections(sections) => sections.iter().any(|s| {
-                !s.add.is_empty()
-                    || !s.new_printings.is_empty()
-                    || !s.gone_transaction_ids.is_empty()
-            }),
-            Self::Records { add, .. } => !add.is_empty(),
-        }
+        self.sections.iter().any(|s| {
+            !s.add.is_empty() || !s.new_printings.is_empty() || !s.gone_transaction_ids.is_empty()
+        })
     }
 }
 
@@ -75,10 +69,13 @@ pub async fn compute(
     statement_id: i64,
     result: &ReaderResult,
 ) -> Result<Diff, FinanceError> {
-    if result.kind == Some(Kind::PaymentHistory) {
-        return Ok(records(db, result).await?);
+    let origin = Origin::from(result.kind.ok_or(Refusal::NOT_READABLE)?);
+    let mut slots = statement_accounts::list(&mut *db, statement_id).await?;
+    let mut rebuilt = Vec::new();
+    if slots.is_empty() {
+        rebuilt = rebuild(&mut *db, statement_id, result).await?;
+        slots.clone_from(&rebuilt);
     }
-    let slots = statement_accounts::list(&mut *db, statement_id).await?;
     if slots.len() != result.statements.len() {
         return Err(Refusal::SECTIONS_CHANGED.into());
     }
@@ -87,7 +84,7 @@ pub async fn compute(
         let account_id = slot.account_id.ok_or(Refusal::SECTIONS_CHANGED)?;
         let stored = transactions::stored_keys(&mut *db, account_id).await?;
         let here = printings::marks_of_statement(&mut *db, account_id, statement_id).await?;
-        let diff = read_again_diff(&statement.transactions, &stored, &here);
+        let diff = read_again_diff(&statement.transactions, origin, &stored, &here);
         let targets: Vec<Target> = diff
             .new_printings
             .iter()
@@ -125,24 +122,5 @@ pub async fn compute(
             gone_transaction_ids: diff.gone_transaction_ids,
         });
     }
-    Ok(Diff::Sections(sections))
-}
-
-async fn records(db: &mut PgConnection, result: &ReaderResult) -> Result<Diff, sqlx::Error> {
-    let stored: HashSet<String> = payment_records::all(&mut *db)
-        .await?
-        .iter()
-        .map(record_key::of_stored)
-        .collect();
-    let add: Vec<usize> = result
-        .payment_records
-        .iter()
-        .enumerate()
-        .filter(|(_, record)| !stored.contains(&record_key::of_incoming(record)))
-        .map(|(index, _)| index)
-        .collect();
-    Ok(Diff::Records {
-        unchanged: result.payment_records.len() - add.len(),
-        add,
-    })
+    Ok(Diff { sections, rebuilt })
 }

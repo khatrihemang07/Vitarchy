@@ -1,4 +1,4 @@
-# statement-reader contract, version 1
+# statement-reader contract, version 2
 
 The Finance server runs `statement-reader` once per uploaded file. The two talk only through this contract. `statement_reader/contract.py` (Python) and `crates/modules/finance/src/reader/contract.rs` (Rust) both mirror it, and a contract test on each side checks that they still match `fixtures/contract/*.json`.
 
@@ -16,7 +16,7 @@ statement-reader < request.json > result.json
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "file_path": "/abs/path/to/upload",
   "passwords": ["…", "…"],
   "decrypted_out": "/abs/path/where/a/decrypted/copy/goes"
@@ -29,14 +29,13 @@ statement-reader < request.json > result.json
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "outcome": "read",
   "format": "pdf",
   "encrypted": true,
   "unlocked_with": 2,
   "kind": "statement",
   "statements": [Statement],
-  "payment_records": [PaymentRecord],
   "diagnostics": { "stage": null, "code": null, "pages": 4, "rows": 37 }
 }
 ```
@@ -46,9 +45,8 @@ statement-reader < request.json > result.json
 | `outcome` | `read` · `locked` (no password opened it) · `unsupported` (not a PDF/CSV/XLS/XLSX) · `no_table` (opened, but no transaction table found) |
 | `format` | `pdf` · `csv` · `xls` · `xlsx` · `null` when unsupported |
 | `unlocked_with` | index into `passwords` of the password whose variant worked, or `null` |
-| `kind` | `statement` (bank or card) · `payment_history` (Payment history from a payment app such as PhonePe) · `null` unless `outcome` is `read` |
-| `statements` | `[]` unless `kind` is `statement`. One file may hold several (consolidated savings + loans, or a card bill listing several cards) |
-| `payment_records` | `[]` unless `kind` is `payment_history` |
+| `kind` | `statement` (bank or card) · `payment_history` (Payment history from a payment app) · `null` unless `outcome` is `read` |
+| `statements` | `[]` unless `outcome` is `read`. For `statement`, one file may hold several (consolidated savings + loans, or a card bill listing several cards). For `payment_history`, one per distinct instrument (see below) |
 | `diagnostics.stage` | when `outcome` is not `read`, the stage that stopped: `open` · `read` · `locate` · `segment` · `normalize` |
 | `diagnostics.code` | a stable snake_case reason, e.g. `no_header_or_columns`, `no_rows` |
 
@@ -80,6 +78,7 @@ statement-reader < request.json > result.json
 ```json
 {
   "date": "2026-07-02",
+  "time": null,
   "description": "UPI/DR/512345678901/DEMO GRO/HDFC/xyautopay./Indi",
   "amount_paise": 550000,
   "direction": "debit",
@@ -93,7 +92,8 @@ statement-reader < request.json > result.json
 
 - **`description`:** the text exactly as printed. Wrapped lines are joined: with a single space normally, and with nothing when the wrap split a token. Only runs of whitespace are collapsed.
 - **`amount_paise`:** always greater than 0. `direction` is `debit` (money out of, or charged to, the Account) or `credit`.
-- **Nullable fields:** `balance_paise`, `foreign_*`, `reference` and `source_id` may be `null`.
+- **`time`:** `HH:MM:SS` local time with no offset, or `null` (the default) when the source prints no time. Bank and card Statements leave it `null` unless they print a time column; payment-app Statements fill it.
+- **Nullable fields:** `time`, `balance_paise`, `foreign_*`, `reference` and `source_id` may be `null`.
   - `reference`: a UPI RRN/UTR, or a NEFT/IMPS reference found in the description.
   - `source_id`: an id the issuer printed for this Transaction, if any.
 - **Order:** Transactions are listed in the Statement's printed order.
@@ -112,22 +112,39 @@ statement-reader < request.json > result.json
 
 `outcome` is `passed`, `failed` or `skipped` (not enough printed figures). `detail` holds only numbers and enum strings. `summary_totals` and `row_counts` carry `"scope": "bill"` when the printed figures cover every card of a bill that lists several (each card is its own Statement): they are then Checked over the rows of all those Statements and reported on each.
 
-### PaymentRecord
+### Payment history
+
+A `payment_history` file (a payment app's export) fills `statements` with **one section per distinct instrument**, in first-seen order. Each section is an ordinary Statement:
+
+- **`account`:** `{ "issuer": …, "kind": null, "mask": … }`.
+  - `mask` is the instrument exactly as printed, without the app's leading words (e.g. `XXXXXX4321` or `ICICI R`), and is `null` when the row prints none. This is what the server remembers as the **instrument**: `instrument` is now the section's `account.mask`.
+  - `issuer` is the issuer the vocabulary recognises in the instrument, else `null`.
+  - `kind` is always `null`: an instrument does not say what kind of Account it is.
+- **`period`:** the earliest and latest `date` among the section's rows.
+- **`summary`:** every figure `null`, and `checks` is `[]`: the app prints no balances or totals.
+- **`transactions`**, in printed order:
+  - `date` and `time` (`HH:MM:SS`, `null` if the export prints no time);
+  - `description`: the app's text, e.g. `Paid to SOME MERCHANT`;
+  - `amount_paise` and `direction`;
+  - `balance_paise`: always `null`;
+  - `reference`: the UTR, else `null`;
+  - `source_id`: the app's transaction id, else `null`.
 
 ```json
 {
-  "occurred_at": "2026-10-18T11:20:00",
+  "date": "2026-10-18",
+  "time": "11:20:00",
   "description": "Paid to SOME MERCHANT",
   "amount_paise": 25000,
   "direction": "debit",
-  "source_id": "T2610181120…",
-  "utr": "512345678901",
-  "instrument": "XXXXXX4321",
-  "instrument_issuer": null,
-  "instrument_digits": "4321"
+  "balance_paise": null,
+  "foreign_amount": null,
+  "foreign_currency": null,
+  "reference": "512345678901",
+  "source_id": "T2610181120000000000001"
 }
 ```
 
-`instrument` is the funding account's mask or label exactly as printed (e.g. `ICICI R`). `instrument_issuer` is the issuer the vocabulary recognises in it (e.g. `ICICI Bank`), else `null`. `instrument_digits` holds its trailing visible digits, else `null`. The server links a Payment record only to Transactions of Accounts that agree with these. When both are `null`, it links by UTR alone.
+## Changes
 
-- `occurred_at` is local time with no offset.
+- **v2:** `version` is 2 in request and result. `payment_records` and `PaymentRecord` are gone; `payment_history` fills `statements` instead. Transactions gain `time`.

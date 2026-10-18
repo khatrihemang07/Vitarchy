@@ -1,25 +1,10 @@
 //! The row shapes of the Transactions table.
 
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{NaiveDate, NaiveTime};
 use serde::Serialize;
 use utoipa::ToSchema;
 
 use crate::{reader::contract::Direction, repo::transaction_page::PageRow};
-
-/// The Payment record linked to a Transaction.
-#[derive(Serialize, ToSchema)]
-pub struct LinkedPaymentRecord {
-    /// Payment record id.
-    pub id: i64,
-    /// Local time of the payment.
-    pub occurred_at: NaiveDateTime,
-    /// With whom.
-    pub description: String,
-    /// The bank reference.
-    pub utr: Option<String>,
-    /// The funding account as printed.
-    pub instrument: Option<String>,
-}
 
 /// One Transaction row.
 #[derive(Serialize, ToSchema)]
@@ -30,6 +15,8 @@ pub struct TransactionItem {
     pub account_id: i64,
     /// The printed date.
     pub date: NaiveDate,
+    /// The local time, when any Statement printed one (payment apps do).
+    pub time: Option<NaiveTime>,
     /// The fullest description any Statement printed.
     pub description: String,
     /// Amount in paise, above 0.
@@ -48,8 +35,6 @@ pub struct TransactionItem {
     pub no_longer_found: bool,
     /// How many Statements printed it; above 1, `GET /transactions/{id}/printings` lists them.
     pub printing_count: i64,
-    /// The linked Payment record, if any.
-    pub payment_record: Option<LinkedPaymentRecord>,
 }
 
 /// A page of Transactions.
@@ -63,20 +48,11 @@ pub struct TransactionPage {
 
 impl From<PageRow> for TransactionItem {
     fn from(r: PageRow) -> Self {
-        let payment_record = match (r.record_id, r.record_occurred_at, r.record_description) {
-            (Some(id), Some(occurred_at), Some(description)) => Some(LinkedPaymentRecord {
-                id,
-                occurred_at,
-                description,
-                utr: r.record_utr,
-                instrument: r.record_instrument,
-            }),
-            _ => None,
-        };
         Self {
             id: r.id,
             account_id: r.account_id,
             date: r.date,
+            time: r.time,
             description: r.description,
             amount_paise: r.amount_paise,
             direction: r.direction,
@@ -86,7 +62,6 @@ impl From<PageRow> for TransactionItem {
             foreign_currency: r.foreign_currency,
             no_longer_found: r.no_longer_found,
             printing_count: r.printing_count,
-            payment_record,
         }
     }
 }
