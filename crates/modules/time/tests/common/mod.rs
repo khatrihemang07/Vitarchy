@@ -4,6 +4,7 @@
 pub mod activity;
 pub mod clockify_snapshot;
 pub mod snapshot;
+pub mod timeline;
 
 use std::{
     path::Path,

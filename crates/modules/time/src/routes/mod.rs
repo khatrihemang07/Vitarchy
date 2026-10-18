@@ -1,5 +1,5 @@
 //! `/api/time`: connect Toggl, see the status, run a Sync, Import Activity from a Source,
-//! read a Report and the facets that feed its filters.
+//! rebuild the Timeline, read a Report and the facets that feed its filters.
 //!
 //! **Injecting Toggl.** `AppState` (core) holds only the pool and must stay
 //! domain-free, so the Toggl client reaches handlers as an axum `Extension`
@@ -14,6 +14,8 @@ mod reports;
 mod run_info;
 mod status;
 mod sync;
+mod timeline;
+mod timeline_status;
 
 use axum::Extension;
 use utoipa_axum::router::OpenApiRouter;
@@ -39,6 +41,7 @@ pub fn router_with(factory: TogglFactory, snapshots: Snapshots) -> OpenApiRouter
         .routes(utoipa_axum::routes!(status::get_status))
         .routes(utoipa_axum::routes!(sync::post_sync))
         .routes(utoipa_axum::routes!(import::post_import))
+        .routes(utoipa_axum::routes!(timeline::post_rebuild))
         .routes(utoipa_axum::routes!(reports::get_report))
         .routes(utoipa_axum::routes!(reports::get_facets))
         .layer(Extension(factory))

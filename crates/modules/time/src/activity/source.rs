@@ -6,7 +6,12 @@ use std::path::Path;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use super::{clockify, read_snapshot::SnapshotRows, toggl};
+use super::{
+    clockify,
+    read_snapshot::SnapshotRows,
+    strengths::{Observe, Strengths},
+    toggl,
+};
 
 /// A tracking app whose Activity Vitarchy Imports.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, ToSchema)]
@@ -34,6 +39,10 @@ pub struct Descriptor {
     pub default_relative: &'static str,
     /// Reads and parses its Snapshot.
     pub reader: Reader,
+    /// What it is trusted for when Sources are merged into the Timeline.
+    pub strengths: Strengths,
+    /// Turns one of its Activity into observations for the merge.
+    pub observe: Observe,
 }
 
 const TOGGL_RELATIVE: &str = "Library/Application Support/Vitarchy/activity/latest.sqlite";
@@ -45,6 +54,14 @@ const TOGGL: Descriptor = Descriptor {
     snapshot_env: "TIME_ACTIVITY_SNAPSHOT",
     default_relative: TOGGL_RELATIVE,
     reader: toggl::read::read_snapshot_rows,
+    // Finest title boundaries and the longest history, but no page address and an idle
+    // flag that is never set.
+    strengths: Strengths {
+        boundaries: Some(2),
+        url: None,
+        away: None,
+    },
+    observe: toggl::observe::observe,
 };
 
 const CLOCKIFY: Descriptor = Descriptor {
@@ -53,6 +70,13 @@ const CLOCKIFY: Descriptor = Descriptor {
     snapshot_env: "TIME_CLOCKIFY_SNAPSHOT",
     default_relative: CLOCKIFY_RELATIVE,
     reader: clockify::read::read_snapshot_rows,
+    // Coarser boundaries, but the only page addresses and the only usable away signal.
+    strengths: Strengths {
+        boundaries: Some(1),
+        url: Some(1),
+        away: Some(1),
+    },
+    observe: clockify::observe::observe,
 };
 
 /// Every Source, in the order the status lists them.
@@ -117,5 +141,13 @@ mod tests {
     fn snapshot_env_vars_differ_between_sources() {
         let envs: Vec<_> = Source::all().map(|s| s.descriptor().snapshot_env).collect();
         assert_ne!(envs[0], envs[1]);
+    }
+
+    #[test]
+    fn toggl_decides_boundaries_and_clockify_alone_knows_urls_and_away() {
+        let (toggl, clockify) = (Source::Toggl.descriptor(), Source::Clockify.descriptor());
+        assert!(toggl.strengths.boundaries > clockify.strengths.boundaries);
+        assert_eq!((toggl.strengths.url, toggl.strengths.away), (None, None));
+        assert!(clockify.strengths.url.is_some() && clockify.strengths.away.is_some());
     }
 }

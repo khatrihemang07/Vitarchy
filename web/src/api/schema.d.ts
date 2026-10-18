@@ -181,6 +181,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/timeline/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rebuilds the whole Timeline now. Safe to repeat: the Timeline is derived from Activity. */
+        post: operations["post_rebuild"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -574,6 +591,19 @@ export interface components {
             /** @description Name. */
             name: string;
         };
+        /** @description What a rebuild produced. */
+        RebuildResult: {
+            /**
+             * Format: int32
+             * @description Activity rows read.
+             */
+            activity_count: number;
+            /**
+             * Format: int32
+             * @description Segments now stored.
+             */
+            segment_count: number;
+        };
         /**
          * @description A summary of the Time Entries in one Period, compared with the Previous Period
          *     and with the Usual.
@@ -821,8 +851,43 @@ export interface components {
              * @description Time Entries stored.
              */
             time_entry_count: number;
+            /** @description The Timeline built from that Activity. */
+            timeline: components["schemas"]["TimelineStatus"];
             /** @description The synced workspace, when connected. */
             workspace_name?: string | null;
+        };
+        /** @description The stored Timeline's figures for the status page. */
+        TimelineStatus: {
+            /**
+             * Format: int64
+             * @description Seconds of the Timeline that are Away.
+             */
+            away_secs: number;
+            /**
+             * Format: int64
+             * @description Seconds the Timeline covers (the sum of its Segments; gaps excluded).
+             */
+            covered_secs: number;
+            /**
+             * Format: date-time
+             * @description End of the latest Segment.
+             */
+            newest?: string | null;
+            /**
+             * Format: date-time
+             * @description Start of the earliest Segment.
+             */
+            oldest?: string | null;
+            /**
+             * Format: int64
+             * @description Segments stored.
+             */
+            segment_count: number;
+            /**
+             * Format: int64
+             * @description Seconds of the Timeline whose Away is unknown.
+             */
+            unknown_secs: number;
         };
         /** @description How a group compares with the Usual. */
         UsualComparison: {
@@ -1271,6 +1336,35 @@ export interface operations {
             };
             /** @description Toggl unreachable or unreadable */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    post_rebuild: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Timeline rebuilt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RebuildResult"];
+                };
+            };
+            /** @description Internal error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

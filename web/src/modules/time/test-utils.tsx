@@ -19,11 +19,15 @@ export function noActivity(source: Source): SourceActivityStatus {
 /** Every Source with nothing imported, in the server's order. */
 export const noActivities: SourceActivityStatus[] = [noActivity("toggl"), noActivity("clockify")];
 
+/** A Timeline with no Segments yet. */
+export const emptyTimeline: TimeStatus["timeline"] = { segment_count: 0, covered_secs: 0, away_secs: 0, unknown_secs: 0 };
+
 /** Status of a person who has not connected Toggl. */
 export const disconnected: TimeStatus = {
   connected: false,
   time_entry_count: 0,
   activity: noActivities,
+  timeline: emptyTimeline,
 };
 
 /** Status of a connected person who has synced once. */
@@ -32,6 +36,7 @@ export const synced: TimeStatus = {
   workspace_name: "My Workspace",
   time_entry_count: 2,
   activity: noActivities,
+  timeline: emptyTimeline,
   oldest_entry: "2026-04-01T10:00:00Z",
   newest_entry: "2026-04-05T10:00:00Z",
   last_sync: {

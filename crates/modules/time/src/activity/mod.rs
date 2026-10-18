@@ -13,12 +13,14 @@ mod read_snapshot;
 mod snapshot_path;
 mod snapshots;
 mod source;
+mod strengths;
 mod toggl;
 
 pub use counts::ImportCounts;
 pub use error::ActivityError;
 pub use import::run_import;
-pub use model::Activity;
+pub use model::{Activity, Extras};
 pub use snapshot_path::SnapshotFile;
 pub use snapshots::Snapshots;
 pub use source::Source;
+pub use strengths::Strengths;

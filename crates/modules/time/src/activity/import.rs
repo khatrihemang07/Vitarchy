@@ -1,4 +1,5 @@
-//! One Import, start to finish: read the Snapshot, parse, upsert, record the run.
+//! One Import, start to finish: read the Snapshot, parse, upsert, rebuild the Timeline over
+//! what changed, record the run.
 
 use std::time::Instant;
 
@@ -10,7 +11,8 @@ use super::{
 };
 use crate::{
     error::TimeError,
-    repo::{activities, runs},
+    repo::{activities, runs, timeline as timeline_repo},
+    timeline,
 };
 
 /// Runs an Import of `source` that started at `started_at`. A `runs` row is written either
@@ -57,7 +59,16 @@ async fn import(
 ) -> Result<ImportCounts, TimeError> {
     let rows = read_snapshot(source, file).await?;
     let activities = &rows.parsed.activities;
-    let written = activities::upsert_all(pool, activities).await?;
+    // One transaction, so a failed rebuild also undoes the upsert: the next Import then finds
+    // the rows changed again and retries both, and the Timeline cannot stay stale.
+    let mut tx = pool.begin().await?;
+    timeline_repo::lock_rebuilds(&mut tx).await?;
+    let written = activities::upsert_all(&mut tx, activities).await?;
+    // Stored Activity changed (where it was and where it is), so the Timeline there is stale.
+    if let Some(range) = written.range {
+        timeline::rebuild_within(&mut tx, range).await?;
+    }
+    tx.commit().await?;
     Ok(ImportCounts::tally(
         rows.read,
         activities.len(),

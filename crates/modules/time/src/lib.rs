@@ -9,6 +9,7 @@ mod report;
 mod routes;
 mod saturating;
 mod sync;
+mod timeline;
 pub mod toggl;
 
 use vitarchy_core::Module;

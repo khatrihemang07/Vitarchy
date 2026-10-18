@@ -1,3 +1,5 @@
+> [ADR 0011](0011-a-stored-timeline-merged-per-trait.md) amends "combining happens only when Activity is read": combining now happens when the Timeline is built.
+
 # Activity from several Sources
 
 Activity comes from more than one tracking app: Toggl Track for Mac and Clockify Desktop both record the frontmost app and window, and each misses days the other has. We keep all of it in one table, `time.activities`, with a `source` column. Shared columns hold what every Source records; a few nullable columns hold what only one does (Toggl's device and idle flag, Clockify's page address and idle seconds), and a check keeps each Source's columns empty for the other. The primary key is `(source, source_id)`, so the same id under two Sources is two rows.

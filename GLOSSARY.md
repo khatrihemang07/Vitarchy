@@ -38,10 +38,22 @@ _Avoid_: Log, record
 
 **Activity**:
 What a tracking app passively noticed on this computer: which app and window was in use, and when. Each piece of Activity comes from exactly one Source. It is separate from Time Entries and is analysed separately.
-_Avoid_: Timeline, tracking
+_Avoid_: Tracking
+
+**Timeline**:
+The single account of what happened on this computer, built from every Source's Activity by drawing on what each Source records best. It never overlaps itself, so every moment is counted at most once. It is always derived from Activity and can be rebuilt from it at any time; it is never edited by hand. With one Source it follows that Source's Activity, and with none it is empty.
+_Avoid_: Merged activity, combined activity
+
+**Segment**:
+One stretch of the Timeline in a single app and window, which notes the Sources that back it. Each Segment is Away, not Away, or of unknown Away when no Source that covers it can tell.
+_Avoid_: Block, slice, span
+
+**Away**:
+Time when the person was not using the computer, even though a Source kept recording the frontmost app. Only Sources that notice inactivity can say a stretch was Away; where none does, Away is unknown, not assumed.
+_Avoid_: Idle, inactive, AFK
 
 **Source**:
-A tracking app whose local data Vitarchy Imports Activity from, such as Toggl Track or Clockify Desktop. Each Source's Activity is kept as that Source recorded it; Activity from several Sources is combined only when it is read.
+A tracking app whose local data Vitarchy Imports Activity from, such as Toggl Track or Clockify Desktop. Each Source's Activity is kept as that Source recorded it; Activity from several Sources is combined only when it is read. Toggl Track plays two separate roles: the Mac app is a Source of Activity, and the Toggl connection is where Time Entries are Synced from. The two never mix.
 _Avoid_: Tracker, provider, integration
 
 **Sync**:
@@ -49,7 +61,7 @@ Bringing the person's Time Entries from Toggl into Vitarchy so the copy matches 
 _Avoid_: Refresh, pull, update
 
 **Import**:
-Adding Activity from one Source's latest Snapshot to Vitarchy. It only adds, so Vitarchy keeps Activity that the Source later discards. The person starts it with a button.
+Bringing Activity from one Source's latest Snapshot into Vitarchy. It adds new Activity and updates Activity it already holds (such as one that has grown longer), but never removes any, so Vitarchy keeps Activity that the Source later discards. The person starts it with a button.
 _Avoid_: Sync, load
 
 **Snapshot**:

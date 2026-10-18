@@ -9,6 +9,7 @@ use vitarchy_core::{ApiError, AppState, Problem};
 use super::{
     activity_status::{self, SourceActivityStatus},
     run_info::RunInfo,
+    timeline_status::{self, TimelineStatus},
 };
 use crate::{
     activity::Snapshots,
@@ -32,6 +33,8 @@ pub struct TimeStatus {
     pub newest_entry: Option<DateTime<Utc>>,
     /// Imported Activity, Snapshot and latest Import for each Source, in a fixed order.
     pub activity: Vec<SourceActivityStatus>,
+    /// The Timeline built from that Activity.
+    pub timeline: TimelineStatus,
 }
 
 /// Connection, latest runs and how much has been mirrored.
@@ -60,5 +63,6 @@ pub async fn get_status(
         oldest_entry: mirrored.oldest,
         newest_entry: mirrored.newest,
         activity: activity_status::load_all(pool, &snapshots).await?,
+        timeline: timeline_status::load(pool).await?,
     }))
 }

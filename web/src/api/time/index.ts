@@ -5,6 +5,7 @@ export { useFacets } from "./facets";
 export { useReport } from "./report";
 export { useTimeStatus } from "./status";
 export { useSyncTime } from "./sync";
+export { useRebuildTimeline } from "./timeline";
 export type {
   ActivityStatus,
   DailyPoint,
@@ -19,9 +20,11 @@ export type {
   ReportStats,
   ReportStatsChange,
   ImportCounts,
+  RebuildResult,
   Source,
   SourceActivityStatus,
   SyncCounts,
   TimeRun,
+  TimelineStatus,
   TimeStatus,
 } from "./types";

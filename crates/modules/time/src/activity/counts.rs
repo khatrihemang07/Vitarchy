@@ -49,6 +49,7 @@ mod tests {
         let written = Written {
             inserted: 2,
             updated: 1,
+            range: None,
         };
         let counts = ImportCounts::tally(10, 8, &written, 2);
         assert_eq!((counts.read, counts.unchanged, counts.skipped), (10, 5, 2));

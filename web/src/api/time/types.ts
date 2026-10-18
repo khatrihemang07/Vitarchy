@@ -38,3 +38,8 @@ export type Facets = components["schemas"]["Facets"];
 export type ProjectFacet = components["schemas"]["ProjectFacet"];
 /** Query of `GET /api/time/report`. */
 export type ReportQuery = NonNullable<paths["/api/time/report"]["get"]["parameters"]["query"]>;
+
+/** The stored Timeline's figures in the Time status. */
+export type TimelineStatus = components["schemas"]["TimelineStatus"];
+/** What a Timeline rebuild did. */
+export type RebuildResult = components["schemas"]["RebuildResult"];
