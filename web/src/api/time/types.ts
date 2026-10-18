@@ -41,10 +41,6 @@ export type ReportQuery = NonNullable<paths["/api/time/report"]["get"]["paramete
 
 /** The stored Timeline's figures in the Time status. */
 export type TimelineStatus = components["schemas"]["TimelineStatus"];
-/** What `GET /api/time/timeline/away-preview` returns: the Away rules and what each threshold would give. */
-export type AwayPreview = components["schemas"]["AwayPreview"];
-/** Away and Active time per Day under one threshold. */
-export type PreviewChoice = components["schemas"]["PreviewChoice"];
 /** What a Timeline rebuild did. */
 export type RebuildResult = components["schemas"]["RebuildResult"];
 

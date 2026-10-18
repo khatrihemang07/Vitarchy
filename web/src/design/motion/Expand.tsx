@@ -1,6 +1,6 @@
 import { AnimatePresence, m } from "motion/react";
 import type { ReactNode } from "react";
-import { springs } from "./springs";
+import { expandTween } from "./springs";
 import { useMotionReduced } from "./useMotionReduced";
 
 interface ExpandProps {
@@ -30,7 +30,7 @@ export function Expand({ open, id, children }: ExpandProps) {
             initial={{ height: 0, opacity: 0, overflow: "hidden" }}
             animate={{ height: "auto", opacity: 1, transitionEnd: { overflow: "visible" } }}
             exit={{ height: 0, opacity: 0, overflow: "hidden" }}
-            transition={springs.smooth}
+            transition={expandTween}
           >
             {children}
           </m.div>

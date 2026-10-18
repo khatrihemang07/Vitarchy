@@ -201,26 +201,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/time/timeline/away-preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The current Away rules and, for each threshold on offer, the Away and Active time per Day
-         *     the last `PREVIEW_DAYS` Days of Clockify Activity would have had. Read-only.
-         */
-        get: operations["get_away_preview"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/time/timeline/rebuild": {
         parameters: {
             query?: never;
@@ -304,30 +284,6 @@ export interface components {
          * @enum {string}
          */
         Away: "yes" | "no" | "unknown";
-        /** @description The current rules and, for each choice of threshold, what Away and Active would be. */
-        AwayPreview: {
-            /** @description One row per threshold, lowest first. */
-            choices: components["schemas"]["PreviewChoice"][];
-            /**
-             * Format: int64
-             * @description The threshold in force, in seconds.
-             */
-            current_secs: number;
-            /**
-             * Format: int64
-             * @description How many Days back the choices look.
-             */
-            days: number;
-            /** @description Apps where no input is watching or a call. */
-            watching_apps: string[];
-            /**
-             * Format: int64
-             * @description How much no-input time watching keeps Active, in seconds.
-             */
-            watching_cap_secs: number;
-            /** @description Sites (with their subdomains) where no input is watching or a call. */
-            watching_sites: string[];
-        };
         /** @description A client with at least one Time Entry (through its projects). */
         ClientFacet: {
             /** @description True once the client was archived in Toggl. */
@@ -653,24 +609,6 @@ export interface components {
          * @enum {string}
          */
         PeriodKind: "day" | "week" | "month" | "custom";
-        /** @description Clockify's Away and Active time per Day under one threshold. */
-        PreviewChoice: {
-            /**
-             * Format: int64
-             * @description Average Active seconds per Day that has Clockify Activity.
-             */
-            active_secs_per_day: number;
-            /**
-             * Format: int64
-             * @description The threshold, in seconds.
-             */
-            away_after_secs: number;
-            /**
-             * Format: int64
-             * @description Average Away seconds per Day that has Clockify Activity.
-             */
-            away_secs_per_day: number;
-        };
         /** @description JSON body of every error response (`application/problem+json`). */
         Problem: {
             /**
@@ -1701,35 +1639,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Problem"];
-                };
-            };
-            /** @description Internal error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Problem"];
-                };
-            };
-        };
-    };
-    get_away_preview: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The Away rules and their effect */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AwayPreview"];
                 };
             };
             /** @description Internal error */

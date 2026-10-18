@@ -1,15 +1,10 @@
-import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
 import { TooltipProvider } from "@/design";
 import { summary } from "./testSummary";
 import { TimelineOverview } from "./TimelineOverview";
 
-/** Renders inside a router, since the Away tile links to the Sources page. */
 function renderOverview(data = summary()) {
-  const root = createRootRoute({ component: () => <TooltipProvider><TimelineOverview summary={data} /></TooltipProvider> });
-  const sources = createRoute({ getParentRoute: () => root, path: "/time" });
-  const router = createRouter({ routeTree: root.addChildren([sources]), history: createMemoryHistory({ initialEntries: ["/"] }) });
-  return render(<RouterProvider router={router} />);
+  return render(<TooltipProvider><TimelineOverview summary={data} /></TooltipProvider>);
 }
 
 describe("TimelineOverview", () => {
@@ -19,10 +14,10 @@ describe("TimelineOverview", () => {
     expect(screen.getByText("5h")).toBeInTheDocument();
   });
 
-  it("links the Away tile to the Sources page, where the rules are shown", async () => {
+  it("shows no link on any tile", async () => {
     renderOverview();
-    expect(await screen.findByRole("link", { name: "How Away is decided" })).toHaveAttribute("href", "/time");
-    expect(screen.getAllByRole("link")).toHaveLength(1);
+    await screen.findByText("Away");
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("badges each figure's change from the Usual and says what it is compared with", async () => {

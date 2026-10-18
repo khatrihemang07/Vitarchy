@@ -241,8 +241,9 @@
   --text-2xs: 0.55rem;
 
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --animate-flame: flame 1.2s ease-in-out infinite alternate;
-  --animate-fade-up: fade-up var(--duration-slow) var(--ease-spring) both;
+  --animate-fade-up: fade-up var(--duration-base) var(--ease-out) both;
 
   @keyframes flame {
     from {
@@ -256,7 +257,7 @@
   @keyframes fade-up {
     from {
       opacity: 0;
-      transform: translateY(0.75rem) scale(0.97);
+      transform: translateY(0.25rem);
     }
     to {
       opacity: 1;

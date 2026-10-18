@@ -13,13 +13,13 @@ describe("FadeValue", () => {
     render(tree("7h 10m", "never"));
     const el = screen.getByText("7h 10m");
     expect(el).toHaveClass("big", "tabular-nums");
-    expect(el.style.opacity).not.toBe("0.4");
+    expect(el.style.opacity).not.toBe("0.6");
   });
 
   it("starts a changed value dimmed, to fade in", () => {
     const view = render(tree("7h 10m", "never"));
     view.rerender(tree("6h 28m", "never"));
-    expect(screen.getByText("6h 28m").style.opacity).toBe("0.4");
+    expect(screen.getByText("6h 28m").style.opacity).toBe("0.6");
     expect(screen.queryByText("7h 10m")).not.toBeInTheDocument();
   });
 

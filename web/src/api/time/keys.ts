@@ -7,9 +7,6 @@ export const timeReportKey = (query: unknown) => ["time", "report", query] as co
 /** Query key of the filter choices. */
 export const timeFacetsKey = ["time", "facets"] as const;
 
-/** Query key of the Away rules preview. */
-export const timeAwayPreviewKey = ["time", "away-preview"] as const;
-
 /** Query key of a Timeline summary; the query is part of the key so each Period caches separately. */
 export const timeTimelineKey = (query: unknown) => ["time", "timeline", query] as const;
 

@@ -23,11 +23,6 @@ fn current_rules_are_an_hour_and_two_hours() {
 }
 
 #[test]
-fn preview_choices_include_the_current_threshold() {
-    assert!(PREVIEW_CHOICES.contains(&AWAY_AFTER.num_minutes()));
-}
-
-#[test]
 fn fifty_nine_fifty_nine_of_no_input_is_not_away() {
     assert_eq!(away(3599, 0), 0);
 }

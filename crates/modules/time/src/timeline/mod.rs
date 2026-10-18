@@ -12,9 +12,6 @@ pub mod model;
 pub mod no_input;
 #[cfg(test)]
 mod no_input_tests;
-pub mod preview;
-#[cfg(test)]
-mod preview_tests;
 mod rebuild;
 mod rules_fingerprint;
 mod rules_version;

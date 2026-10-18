@@ -3,17 +3,16 @@
 
 use chrono::Duration;
 
-/// How long a no-input stretch must last to count as Away. Below an hour it is reading,
-/// thinking or a call, which the person was still at; measured on real Snapshots, an hour
-/// separates those pauses from leaving the computer.
+/// How long a no-input stretch must last to count as Away. This is the one value to change:
+/// edit it here and the Timeline rebuilds itself once, the next time it is read (the rules
+/// fingerprint no longer matches). An hour is the default because below it the person is
+/// reading, thinking or on a call; measured on real Snapshots, an hour separates those
+/// pauses from leaving the computer.
 pub const AWAY_AFTER: Duration = Duration::minutes(60);
 
 /// How much no-input time in a watching place stays Active before the rest can be Away.
 /// Two hours covers a film or a long call.
 pub const WATCHING_CAP: Duration = Duration::hours(2);
-
-/// Thresholds the Sources Settings preview compares, in minutes. Contains the current one.
-pub const PREVIEW_CHOICES: [i64; 8] = [0, 1, 3, 5, 10, 15, 30, 60];
 
 /// The rules a Source applies to its no-input time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

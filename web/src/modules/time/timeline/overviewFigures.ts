@@ -12,8 +12,6 @@ export interface OverviewFigure {
   change: number | null;
   /** What the change is measured against, when that is not the Usual's total; absent without a Usual. */
   note?: string;
-  /** A link under the tile, for the figure whose rule is explained elsewhere. */
-  link?: { label: string; to: string };
 }
 
 type Usual = NonNullable<TimelineSummary["usual"]>;
@@ -37,15 +35,12 @@ function focusFigure(summary: TimelineSummary, usual: Usual | null | undefined):
   };
 }
 
-/** Where the Away rules are shown: the Sources page. */
-const AWAY_RULES_LINK = { label: "How Away is decided", to: "/time" } as const;
-
 /** The five tiles of the overview, in order. */
 export function overviewFigures(summary: TimelineSummary): OverviewFigure[] {
   const { overview, usual } = summary;
   return [
     { label: "Active", value: overview.active_secs, unit: "seconds", change: totalChange(overview.active_secs, usual?.active) },
-    { label: "Away", value: overview.away_secs, unit: "seconds", change: totalChange(overview.away_secs, usual?.away), link: AWAY_RULES_LINK },
+    { label: "Away", value: overview.away_secs, unit: "seconds", change: totalChange(overview.away_secs, usual?.away) },
     { label: "Away unknown", value: overview.unknown_secs, unit: "seconds", change: totalChange(overview.unknown_secs, usual?.unknown) },
     { label: "Switches", value: overview.switches, unit: "count", change: totalChange(overview.switches, usual?.switches) },
     { label: "Longest focus", value: overview.longest_focus_secs, unit: "seconds", ...focusFigure(summary, usual) },

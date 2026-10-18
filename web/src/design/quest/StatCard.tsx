@@ -7,8 +7,8 @@ interface StatCardProps {
   label: string;
   /** Usually a number or a NumberTicker. */
   value: ReactNode;
-  /** A short note under the value; may hold a link. */
-  hint?: ReactNode;
+  /** A short note under the value. */
+  hint?: string;
   /** Sits beside the value (e.g. a change from the last Period). */
   badge?: ReactNode;
   icon?: ComponentType<{ className?: string }>;
