@@ -181,6 +181,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/time/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Timeline of one Period, analysed and compared with the Usual. A Day also lists its
+         *     Segments and Time Entries.
+         */
+        get: operations["get_timeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/time/timeline/rebuild": {
         parameters: {
             query?: never;
@@ -240,6 +260,30 @@ export interface components {
                 [key: string]: Record<string, never>;
             };
         };
+        /** @description Active time in one app. */
+        AppUsage: {
+            /**
+             * Format: int64
+             * @description Active seconds.
+             */
+            active_secs: number;
+            /** @description The app. */
+            app: string;
+            /**
+             * Format: double
+             * @description Share (0 to 1) of all Active time.
+             */
+            share: number;
+            /** @description Its most used sites, most Active time first. */
+            sites: components["schemas"]["SiteUsage"][];
+            /** @description Its most used window titles, most Active time first (at most 10). */
+            titles: components["schemas"]["TitleUsage"][];
+        };
+        /**
+         * @description Whether the person was away during a Segment.
+         * @enum {string}
+         */
+        Away: "yes" | "no" | "unknown";
         /** @description A client with at least one Time Entry (through its projects). */
         ClientFacet: {
             /** @description True once the client was archived in Toggl. */
@@ -332,6 +376,29 @@ export interface components {
          * @enum {string}
          */
         DateFormat: "system" | "day_month_year" | "month_day_year" | "iso";
+        /** @description Seconds on one Day. */
+        DayTotals: {
+            /**
+             * Format: int64
+             * @description Active seconds.
+             */
+            active_secs: number;
+            /**
+             * Format: int64
+             * @description Away seconds.
+             */
+            away_secs: number;
+            /**
+             * Format: date
+             * @description The local Day.
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description Seconds whose Away is unknown.
+             */
+            unknown_secs: number;
+        };
         /**
          * @description Whether Postgres answered the ping.
          * @enum {string}
@@ -404,6 +471,23 @@ export interface components {
              * @description Activity already stored whose fields changed (e.g. a later end).
              */
             updated: number;
+        };
+        /** @description A Time Entry on the Day lane, clipped to the Day. */
+        LaneEntry: {
+            /** @description What the person typed; may be empty. */
+            description: string;
+            /** @description The project's name, when known. */
+            project?: string | null;
+            /**
+             * Format: date-time
+             * @description When it began.
+             */
+            start_at: string;
+            /**
+             * Format: date-time
+             * @description When it stopped.
+             */
+            stop_at: string;
         };
         /**
          * @description Motion setting: follow the system or force reduced or full.
@@ -676,6 +760,39 @@ export interface components {
              */
             started_at: string;
         };
+        /** @description A Segment clipped to the Period. */
+        SegmentView: {
+            /** @description The frontmost app. */
+            app: string;
+            /** @description Whether the person was away. */
+            away: components["schemas"]["Away"];
+            /**
+             * Format: date-time
+             * @description When it ended.
+             */
+            end_at: string;
+            /** @description Every Source that covered it. */
+            sources: components["schemas"]["Source"][];
+            /**
+             * Format: date-time
+             * @description When it began.
+             */
+            start_at: string;
+            /** @description The window title. */
+            title: string;
+            /** @description The page address, when a Source recorded one. */
+            url?: string | null;
+        };
+        /** @description Active time on one site. */
+        SiteUsage: {
+            /**
+             * Format: int64
+             * @description Active seconds.
+             */
+            active_secs: number;
+            /** @description The site's domain. */
+            domain: string;
+        };
         /**
          * @description A tracking app whose Activity Vitarchy Imports.
          * @enum {string}
@@ -856,6 +973,89 @@ export interface components {
             /** @description The synced workspace, when connected. */
             workspace_name?: string | null;
         };
+        /** @description Headline numbers of the Period. */
+        TimelineOverview: {
+            /**
+             * Format: int64
+             * @description Seconds known not to be Away.
+             */
+            active_secs: number;
+            /**
+             * Format: int64
+             * @description Seconds known to be Away.
+             */
+            away_secs: number;
+            /**
+             * Format: date-time
+             * @description Start of the first Active moment in the Period.
+             */
+            first_active?: string | null;
+            /**
+             * Format: double
+             * @description Share (0 to 1) of Active time spent in Focus stretches of 25 minutes or more.
+             */
+            focus_share: number;
+            /**
+             * Format: date-time
+             * @description End of the last Active moment in the Period.
+             */
+            last_active?: string | null;
+            /**
+             * Format: int64
+             * @description The longest Focus stretch, in seconds.
+             */
+            longest_focus_secs: number;
+            /**
+             * Format: int64
+             * @description Switches between apps.
+             */
+            switches: number;
+            /**
+             * Format: double
+             * @description Switches per Active hour; absent with no Active time.
+             */
+            switches_per_active_hour?: number | null;
+            /**
+             * Format: int64
+             * @description Seconds whose Away is unknown. Never counted as Active.
+             */
+            unknown_secs: number;
+        };
+        /** @description The Period covered and the Usual's range it is compared with. */
+        TimelinePeriod: {
+            /**
+             * Format: int64
+             * @description Days of the Period up to and including today; all of them once it is past.
+             */
+            elapsed_days: number;
+            /**
+             * Format: date
+             * @description First Day.
+             */
+            from: string;
+            /** @description How the Period was chosen. */
+            kind: components["schemas"]["PeriodKind"];
+            /**
+             * Format: date
+             * @description Last Day (inclusive).
+             */
+            to: string;
+            /**
+             * Format: int64
+             * @description Days of the Usual's range on or after the Day of the first Segment.
+             */
+            usual_available_days: number;
+            /**
+             * Format: date
+             * @description First Day of the Usual's range.
+             */
+            usual_from: string;
+            /**
+             * Format: date
+             * @description Last Day of the Usual's range (inclusive).
+             */
+            usual_to: string;
+        };
         /** @description The stored Timeline's figures for the status page. */
         TimelineStatus: {
             /**
@@ -889,12 +1089,51 @@ export interface components {
              */
             unknown_secs: number;
         };
+        /** @description The Timeline of one Period, analysed. */
+        TimelineSummary: {
+            /** @description Apps, most Active time first. */
+            apps: components["schemas"]["AppUsage"][];
+            /** @description One entry per Day of the Period. */
+            days: components["schemas"]["DayTotals"][];
+            /** @description The Day's Time Entries; only for a Day. */
+            entries?: components["schemas"]["LaneEntry"][] | null;
+            /** @description Active seconds by local hour of day, 24 values starting at midnight. */
+            hours: number[];
+            /** @description Headline numbers. */
+            overview: components["schemas"]["TimelineOverview"];
+            /** @description The Period covered. */
+            period: components["schemas"]["TimelinePeriod"];
+            /** @description The Period's Segments; only for a Day. */
+            segments?: components["schemas"]["SegmentView"][] | null;
+            usual?: components["schemas"]["UsualTimeline"] | null;
+        };
+        /** @description Active time in one window title. */
+        TitleUsage: {
+            /**
+             * Format: int64
+             * @description Active seconds.
+             */
+            active_secs: number;
+            /** @description The window title. */
+            title: string;
+        };
         /** @description How a group compares with the Usual. */
         UsualComparison: {
             change?: components["schemas"]["StatsChange"] | null;
             /** @description True when the group had no time in the Usual's range. */
             is_new: boolean;
             usual?: components["schemas"]["UsualFigures"] | null;
+        };
+        /** @description One figure of the Usual. */
+        UsualFigure: {
+            /** @description Average, shortest and longest per Day, over the Days that have Timeline. */
+            per_day: components["schemas"]["Spread"];
+            /**
+             * Format: int64
+             * @description The figure's total over those Days scaled to the Days that have passed in the Period;
+             *     absent for figures that do not add up across Days.
+             */
+            scaled_total?: number | null;
         };
         /** @description What a group usually looks like per Day and per entry, over the Days it happened. */
         UsualFigures: {
@@ -907,6 +1146,24 @@ export interface components {
             per_day: components["schemas"]["Spread"];
             /** @description Spread of each entry's time over the Usual's range (not scaled). */
             per_entry: components["schemas"]["Spread"];
+        };
+        /** @description How the Timeline usually looked over the Usual's range. */
+        UsualTimeline: {
+            /** @description Active seconds. */
+            active: components["schemas"]["UsualFigure"];
+            /** @description Away seconds. */
+            away: components["schemas"]["UsualFigure"];
+            /**
+             * Format: int64
+             * @description Days in the Usual's range that have Timeline.
+             */
+            days: number;
+            /** @description The longest Focus stretch of each Day, in seconds. */
+            longest_focus: components["schemas"]["UsualFigure"];
+            /** @description Switches. */
+            switches: components["schemas"]["UsualFigure"];
+            /** @description Seconds whose Away is unknown. */
+            unknown: components["schemas"]["UsualFigure"];
         };
         /**
          * @description First day of the week.
@@ -1341,6 +1598,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_timeline: {
+        parameters: {
+            query: {
+                /**
+                 * @description How the Period was chosen. `day` needs `from == to`, `week` 7 Days, `month` a whole
+                 *     calendar month.
+                 */
+                kind: components["schemas"]["PeriodKind"];
+                /** @description First Day, `YYYY-MM-DD`, in `tz`. */
+                from: string;
+                /** @description Last Day (inclusive), `YYYY-MM-DD`; at most 366 Days after `from`. */
+                to: string;
+                /** @description IANA time zone of the person, e.g. `Europe/Berlin`. */
+                tz: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Timeline summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelineSummary"];
+                };
+            };
+            /** @description Invalid Period or time zone */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Internal error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
                 };
             };
         };

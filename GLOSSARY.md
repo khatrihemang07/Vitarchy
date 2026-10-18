@@ -52,6 +52,18 @@ _Avoid_: Block, slice, span
 Time when the person was not using the computer, even though a Source kept recording the frontmost app. Only Sources that notice inactivity can say a stretch was Away; where none does, Away is unknown, not assumed.
 _Avoid_: Idle, inactive, AFK
 
+**Active**:
+Timeline time known not to be Away. Time whose Away is unknown is never counted as Active.
+_Avoid_: Busy, working time, productive time
+
+**Switch**:
+Moving from one app to a different app between two touching Active Segments. A new window within the same app is not a Switch, and Away, unknown Away or a gap in between means there is no Switch.
+_Avoid_: Context switch, toggle, jump
+
+**Focus stretch**:
+Continuous Active time in one app, carrying on through interruptions shorter than a minute and ended by Away or unknown Away. Stretches of 25 minutes or more count as focused time.
+_Avoid_: Session, streak, deep work
+
 **Source**:
 A tracking app whose local data Vitarchy Imports Activity from, such as Toggl Track or Clockify Desktop. Each Source's Activity is kept as that Source recorded it; Activity from several Sources is combined only when it is read. Toggl Track plays two separate roles: the Mac app is a Source of Activity, and the Toggl connection is where Time Entries are Synced from. The two never mix.
 _Avoid_: Tracker, provider, integration
@@ -91,5 +103,5 @@ The closest earlier Period of the same kind that has Time Entries matching the f
 _Avoid_: Last period, baseline
 
 **Usual**:
-How a group usually went over the 4 weeks (28 Days) just before a Period: its per-Day average, minimum and maximum over the Days it happened, and how many Days that was. When a Period is compared with the Usual, totals and counts are scaled to the Days that have passed in the Period, against the Days of history available.
+How a group usually went over the 4 weeks (28 Days) just before a Period: its per-Day average, minimum and maximum over the Days it happened, and how many Days that was. The Usual applies to Timeline figures in the same way, over the Days that have Timeline. When a Period is compared with the Usual, totals and counts are scaled to the Days that have passed in the Period, against the Days of history available.
 _Avoid_: Baseline, norm, typical

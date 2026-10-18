@@ -5,7 +5,7 @@ import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
 import { toTimeFailure } from "./failure";
-import { timeStatusKey } from "./keys";
+import { timeStatusKey, timeTimelineKeyPrefix } from "./keys";
 
 const log = createLogger("time");
 
@@ -20,6 +20,7 @@ export function useRebuildTimeline() {
     onError: (error) => {
       log.warn("timeline rebuild failed", { kind: toTimeFailure(error).kind });
     },
-    onSettled: () => client.invalidateQueries({ queryKey: timeStatusKey }),
+    onSettled: () =>
+      Promise.all([client.invalidateQueries({ queryKey: timeStatusKey }), client.invalidateQueries({ queryKey: timeTimelineKeyPrefix })]),
   });
 }

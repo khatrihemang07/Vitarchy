@@ -10,6 +10,7 @@ mod routes;
 mod saturating;
 mod sync;
 mod timeline;
+mod timeline_summary;
 pub mod toggl;
 
 use vitarchy_core::Module;

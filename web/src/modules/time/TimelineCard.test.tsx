@@ -1,10 +1,21 @@
-import { screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from "@tanstack/react-router";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import type { TimeStatus } from "@/api/time";
 
 import { TimelineCard } from "./TimelineCard";
-import { disconnected, jsonResponse, renderWithClient, stubApi } from "./test-utils";
+import { disconnected, jsonResponse, stubApi } from "./test-utils";
+
+/** Renders the card inside a router, since it links to the Timeline page. */
+function renderWithClient(ui: React.ReactElement) {
+  const root = createRootRoute({ component: () => ui });
+  const page = createRoute({ getParentRoute: () => root, path: "/time/timeline" });
+  const router = createRouter({ routeTree: root.addChildren([page]), history: createMemoryHistory({ initialEntries: ["/"] }) });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider>);
+}
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -41,6 +52,12 @@ describe("TimelineCard", () => {
     expect(screen.getByText("1h (10% of covered time)")).toBeInTheDocument();
     expect(screen.getByText("5h (50% of covered time)")).toBeInTheDocument();
     expect(screen.getByText(/no Source could tell whether you were away/)).toBeInTheDocument();
+  });
+
+  it("links to the Timeline page once there are Segments", async () => {
+    stubApi({ "GET /api/time/status": () => jsonResponse(200, populated) });
+    renderWithClient(<TimelineCard />);
+    expect(await screen.findByRole("link", { name: "View the Timeline" })).toHaveAttribute("href", "/time/timeline");
   });
 
   it("rebuilds, reports the result and refreshes the status", async () => {

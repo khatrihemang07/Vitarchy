@@ -6,3 +6,9 @@ export const timeReportKey = (query: unknown) => ["time", "report", query] as co
 
 /** Query key of the filter choices. */
 export const timeFacetsKey = ["time", "facets"] as const;
+
+/** Query key of a Timeline summary; the query is part of the key so each Period caches separately. */
+export const timeTimelineKey = (query: unknown) => ["time", "timeline", query] as const;
+
+/** Prefix of every Timeline summary key, for invalidating them all after the Timeline changes. */
+export const timeTimelineKeyPrefix = ["time", "timeline"] as const;

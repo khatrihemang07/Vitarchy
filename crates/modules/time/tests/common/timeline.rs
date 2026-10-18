@@ -86,3 +86,26 @@ pub async fn import_both(app: &Router) {
     assert_eq!(call(app, "POST", TOGGL_IMPORT, None).await.status, 200);
     assert_eq!(call(app, "POST", CLOCKIFY_IMPORT, None).await.status, 200);
 }
+
+/// Core Data seconds (what fixtures count) for an RFC 3339 moment.
+pub fn core_secs(moment: &str) -> i64 {
+    moment
+        .parse::<chrono::DateTime<chrono::Utc>>()
+        .unwrap()
+        .timestamp()
+        - CORE_DATA_EPOCH
+}
+
+/// Imports `toggl` and `clockify` rows into a new app on `db` and returns the app.
+pub async fn import_rows(
+    db: &TestDb,
+    toggl_rows: &[Row],
+    clockify_items: &[Item],
+) -> (Router, Fixture, ClockifyFixture) {
+    let (toggl, clockify) = (Fixture::new(), ClockifyFixture::new());
+    toggl.write(toggl_rows);
+    clockify.write(clockify_items);
+    let app = both_app(db, toggl.file(), clockify.file());
+    import_both(&app).await;
+    (app, toggl, clockify)
+}

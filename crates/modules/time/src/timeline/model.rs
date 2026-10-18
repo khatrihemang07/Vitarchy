@@ -107,6 +107,12 @@ pub struct Segment {
     pub sources: Vec<Source>,
 }
 
+impl From<(DateTime<Utc>, DateTime<Utc>)> for TimeRange {
+    fn from((from, to): (DateTime<Utc>, DateTime<Utc>)) -> Self {
+        Self { from, to }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

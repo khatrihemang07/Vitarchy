@@ -43,3 +43,24 @@ export type ReportQuery = NonNullable<paths["/api/time/report"]["get"]["paramete
 export type TimelineStatus = components["schemas"]["TimelineStatus"];
 /** What a Timeline rebuild did. */
 export type RebuildResult = components["schemas"]["RebuildResult"];
+
+/** What `GET /api/time/timeline` returns: one Period's Timeline, analysed. */
+export type TimelineSummary = components["schemas"]["TimelineSummary"];
+/** Headline numbers of a Timeline Period. */
+export type TimelineOverview = components["schemas"]["TimelineOverview"];
+/** How the Timeline usually looked over the Usual's range. */
+export type UsualTimeline = components["schemas"]["UsualTimeline"];
+/** One figure of the Usual. */
+export type UsualFigure = components["schemas"]["UsualFigure"];
+/** Active, Away and unknown seconds on one Day. */
+export type DayTotals = components["schemas"]["DayTotals"];
+/** Active time in one app, with its busiest titles and sites. */
+export type AppUsage = components["schemas"]["AppUsage"];
+/** A Segment clipped to the Period. */
+export type SegmentView = components["schemas"]["SegmentView"];
+/** A Time Entry on the Day lane. */
+export type LaneEntry = components["schemas"]["LaneEntry"];
+/** Whether the person was away during a Segment. */
+export type Away = components["schemas"]["Away"];
+/** Query of `GET /api/time/timeline`. */
+export type TimelineQuery = NonNullable<paths["/api/time/timeline"]["get"]["parameters"]["query"]>;

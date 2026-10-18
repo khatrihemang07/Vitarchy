@@ -90,7 +90,7 @@ async fn insert_segments(tx: &mut PgConnection, segments: &[Segment]) -> Result<
 }
 
 /// A stored Segment as the database returns it.
-type Row = (
+pub(super) type Row = (
     DateTime<Utc>,
     DateTime<Utc>,
     String,
@@ -102,7 +102,7 @@ type Row = (
 
 /// A stored row as a Segment; an Away word this build does not know is a decode error, not
 /// silently Unknown.
-fn segment_from(row: Row) -> Result<Segment, sqlx::Error> {
+pub(super) fn segment_from(row: Row) -> Result<Segment, sqlx::Error> {
     let (start_at, end_at, app, title, url, away, sources) = row;
     let away = Away::parse(&away)
         .ok_or_else(|| sqlx::Error::Decode(format!("unknown Away value {away:?}").into()))?;

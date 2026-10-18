@@ -4,10 +4,21 @@ export { failureFromCode, toTimeFailure, type TimeFailure } from "./failure";
 export { useFacets } from "./facets";
 export { useReport } from "./report";
 export { useTimeStatus } from "./status";
+export { useTimelineSummary } from "./timelineSummary";
 export { useSyncTime } from "./sync";
 export { useRebuildTimeline } from "./timeline";
 export type {
   ActivityStatus,
+  AppUsage,
+  Away,
+  DayTotals,
+  LaneEntry,
+  SegmentView,
+  TimelineOverview,
+  TimelineQuery,
+  TimelineSummary,
+  UsualFigure,
+  UsualTimeline,
   DailyPoint,
   Facets,
   Grouping,

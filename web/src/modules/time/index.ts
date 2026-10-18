@@ -4,10 +4,12 @@ import type { ModuleManifest } from "@/app/module-manifest";
 import { TIME_COMMAND_PAGES } from "./timePages";
 import { TimePageLayout } from "./TimePageLayout";
 import { parseReportSearch, toSearchParams } from "./reports/reportSearch";
+import { parseTimelineSearch, timelineParams } from "./timeline/timelineSearch";
 
-// Pages load on first visit; Reports brings the charting library with it.
+// Pages load on first visit; Reports and the Timeline bring the charting library with them.
 const TimePage = lazyRouteComponent(() => import("./TimePage"), "TimePage");
 const ReportsPage = lazyRouteComponent(() => import("./reports/ReportsPage"), "ReportsPage");
+const TimelinePage = lazyRouteComponent(() => import("./timeline/TimelinePage"), "TimelinePage");
 
 /** The Time Module: Toggl Time Entries and computer Activity. */
 export const timeModule: ModuleManifest = {
@@ -28,6 +30,12 @@ export const timeModule: ModuleManifest = {
           // non-default values are kept, so the address stays short and readable.
           validateSearch: (raw: Record<string, unknown>) => toSearchParams(parseReportSearch(raw)),
           component: ReportsPage,
+        }),
+        createRoute({
+          getParentRoute: () => layout,
+          path: "/time/timeline",
+          validateSearch: (raw: Record<string, unknown>) => timelineParams(parseTimelineSearch(raw)),
+          component: TimelinePage,
         }),
       ]),
     ];

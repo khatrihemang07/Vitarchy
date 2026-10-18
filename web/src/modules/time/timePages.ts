@@ -4,6 +4,7 @@ import { USUAL_SPAN } from "./usualWords";
 export const TIME_PAGES = {
   "/time": { tab: "Sources", title: "Time", subtitle: "Your Toggl Time Entries and computer Activity." },
   "/time/reports": { tab: "Reports", title: "Reports", subtitle: `Where your Time Entries went, compared with the Previous Period or the ${USUAL_SPAN}.` },
+  "/time/timeline": { tab: "Timeline", title: "Timeline", subtitle: `What you did on this computer, app by app, compared with the ${USUAL_SPAN}.` },
 } as const;
 
 type TimePagePath = keyof typeof TIME_PAGES;

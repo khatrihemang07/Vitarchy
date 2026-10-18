@@ -22,6 +22,8 @@ export * from "./ui/switch";
 export * from "./ui/tooltip";
 
 export { DailyBars, type DailyBarPoint } from "./charts/DailyBars";
+export { DailyStackedBars, type StackedDayPoint } from "./charts/DailyStackedBars";
+export { HourHeat } from "./charts/HourHeat";
 export { SegmentedControl, type SegmentedOption } from "./controls/SegmentedControl";
 
 export * from "./effects/border-beam";

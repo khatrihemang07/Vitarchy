@@ -4,6 +4,7 @@ describe("timePageFor", () => {
   it("titles each Time page", () => {
     expect(timePageFor("/time").title).toBe("Time");
     expect(timePageFor("/time/reports").title).toBe("Reports");
+    expect(timePageFor("/time/timeline").title).toBe("Timeline");
   });
 
   it("ignores a trailing slash and falls back to Sources for anything unknown", () => {
@@ -17,6 +18,7 @@ describe("TIME_TABS", () => {
     expect(TIME_TABS).toEqual([
       { to: "/time", label: "Sources" },
       { to: "/time/reports", label: "Reports" },
+      { to: "/time/timeline", label: "Timeline" },
     ]);
   });
 });
@@ -26,6 +28,7 @@ describe("TIME_COMMAND_PAGES", () => {
     expect(TIME_COMMAND_PAGES).toEqual([
       { id: "sources", label: "Sources", to: "/time" },
       { id: "reports", label: "Reports", to: "/time/reports" },
+      { id: "timeline", label: "Timeline", to: "/time/timeline" },
     ]);
   });
 });

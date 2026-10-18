@@ -16,6 +16,7 @@ mod status;
 mod sync;
 mod timeline;
 mod timeline_status;
+mod timeline_summary;
 
 use axum::Extension;
 use utoipa_axum::router::OpenApiRouter;
@@ -44,6 +45,7 @@ pub fn router_with(factory: TogglFactory, snapshots: Snapshots) -> OpenApiRouter
         .routes(utoipa_axum::routes!(timeline::post_rebuild))
         .routes(utoipa_axum::routes!(reports::get_report))
         .routes(utoipa_axum::routes!(reports::get_facets))
+        .routes(utoipa_axum::routes!(timeline_summary::get_timeline))
         .layer(Extension(factory))
         .layer(Extension(snapshots))
 }

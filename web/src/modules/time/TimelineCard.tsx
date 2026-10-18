@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useRebuildTimeline, useTimeStatus, type TimelineStatus } from "@/api/time";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, MotionButton } from "@/design";
 
@@ -65,15 +66,21 @@ export function TimelineCard() {
             rows.
           </p>
         ) : null}
-        <MotionButton
-          className="mt-auto self-start"
-          disabled={rebuild.isPending}
-          onClick={() => {
-            rebuild.mutate();
-          }}
-        >
-          {rebuild.isPending ? "Rebuilding…" : "Rebuild Timeline"}
-        </MotionButton>
+        <div className="mt-auto flex flex-wrap items-center gap-3">
+          <MotionButton
+            disabled={rebuild.isPending}
+            onClick={() => {
+              rebuild.mutate();
+            }}
+          >
+            {rebuild.isPending ? "Rebuilding…" : "Rebuild Timeline"}
+          </MotionButton>
+          {timeline.segment_count > 0 ? (
+            <Link to="/time/timeline" className="rounded-sm text-sm font-medium text-module hover:underline focus-ring">
+              View the Timeline
+            </Link>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );

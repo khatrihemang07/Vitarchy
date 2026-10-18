@@ -17,6 +17,11 @@ export function formatClock(date: Date, clock: Clock): string {
 
 const dateFormat = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
+/** "Fri 16 Oct": the Day an instant falls on, in the browser's time zone. */
+export function formatDate(date: Date): string {
+  return dateFormat.format(date).replace(",", "");
+}
+
 /** How one entry reads in the list. */
 export interface EntryTimes {
   /** The Day it started, e.g. "Fri 16 Oct". */
@@ -39,7 +44,7 @@ export function describeEntry(entry: ReportEntry, clock: Clock): EntryTimes {
   const start = new Date(entry.start);
   const stop = new Date(entry.stop);
   return {
-    date: dateFormat.format(start).replace(",", ""),
+    date: formatDate(start),
     start: formatClock(start, clock),
     stop: formatClock(stop, clock),
     crossesMidnight: stopsAfterMidnight(start, stop),

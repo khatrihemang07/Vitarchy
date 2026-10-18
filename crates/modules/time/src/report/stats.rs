@@ -45,7 +45,8 @@ pub struct Stats {
     pub per_entry: Spread,
 }
 
-fn spread(values: impl ExactSizeIterator<Item = i64> + Clone) -> Spread {
+/// Average (rounded), shortest and longest of `values`; all 0 with none.
+pub fn spread(values: impl ExactSizeIterator<Item = i64> + Clone) -> Spread {
     let count = i64::try_from(values.len()).unwrap_or(i64::MAX);
     if count == 0 {
         return Spread::default();

@@ -1,19 +1,12 @@
 //! The questions a Report is asked, parsed from the request's query pairs.
 
 use std::collections::BTreeSet;
-use std::str::FromStr;
-
-use chrono::NaiveDate;
-use chrono_tz::Tz;
-use serde::{
-    Deserialize,
-    de::value::{Error as ValueError, StrDeserializer},
-};
 
 use super::{
     filter::Filter,
     grouping::Grouping,
     period::{Period, PeriodError},
+    period_query::{Pairs, enum_value, parse_period},
 };
 
 /// Why a query was refused. Messages name the parameter, never its value.
@@ -54,13 +47,6 @@ impl ReportQuery {
     }
 }
 
-fn enum_value<T: for<'de> Deserialize<'de>>(
-    name: &'static str,
-    text: &str,
-) -> Result<T, QueryError> {
-    T::deserialize(StrDeserializer::<ValueError>::new(text)).map_err(|_| QueryError::Invalid(name))
-}
-
 /// Toggl ids: positive whole numbers. Empty values (`project=`) are skipped, like an empty tag.
 fn numbers(name: &'static str, values: &[&str]) -> Result<BTreeSet<i64>, QueryError> {
     values
@@ -77,23 +63,9 @@ impl ReportQuery {
     /// Reads `kind`, `from`, `to`, `tz`, repeated `project`/`tag`/`client`, `q`, `group1`
     /// and `group2`. Unknown names and empty list values are ignored; a repeated single-value name keeps its last; `q` is trimmed.
     pub fn parse(pairs: &[(String, String)]) -> Result<Self, QueryError> {
-        let all = |name: &str| -> Vec<&str> {
-            pairs
-                .iter()
-                .filter(|(k, _)| k == name)
-                .map(|(_, v)| v.as_str())
-                .collect()
-        };
-        let one = |name: &'static str| all(name).last().copied().filter(|v| !v.is_empty());
-        let required = |name: &'static str| one(name).ok_or(QueryError::Missing(name));
-        let date = |name: &'static str| {
-            NaiveDate::from_str(required(name)?).map_err(|_| QueryError::Invalid(name))
-        };
-        let tz: Tz = required("tz")?
-            .parse()
-            .map_err(|_| QueryError::Invalid("tz"))?;
-        let kind = enum_value("kind", required("kind")?)?;
-        let period = Period::new(kind, date("from")?, date("to")?, tz)?;
+        let pairs = Pairs(pairs);
+        let (all, one) = (|name| pairs.all(name), |name| pairs.one(name));
+        let period = parse_period(&pairs)?;
         let group1 =
             one("group1").map_or(Ok(Grouping::Description), |v| enum_value("group1", v))?;
         let group2 = one("group2").map(|v| enum_value("group2", v)).transpose()?;

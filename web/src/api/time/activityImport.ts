@@ -5,7 +5,7 @@ import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
 import { toTimeFailure } from "./failure";
-import { timeStatusKey } from "./keys";
+import { timeStatusKey, timeTimelineKeyPrefix } from "./keys";
 import type { Source } from "./types";
 
 const log = createLogger("time");
@@ -21,6 +21,7 @@ export function useImportActivity(source: Source) {
     onError: (error) => {
       log.warn("activity import failed", { source, kind: toTimeFailure(error).kind });
     },
-    onSettled: () => client.invalidateQueries({ queryKey: timeStatusKey }),
+    onSettled: () =>
+      Promise.all([client.invalidateQueries({ queryKey: timeStatusKey }), client.invalidateQueries({ queryKey: timeTimelineKeyPrefix })]),
   });
 }

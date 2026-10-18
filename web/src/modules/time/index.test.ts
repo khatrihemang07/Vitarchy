@@ -7,7 +7,7 @@ describe("timeModule", () => {
     expect(timeModule.accent).toBe("var(--module-time)");
   });
 
-  it("lists Sources and Reports as pages for the command bar", () => {
-    expect(timeModule.pages?.map((page) => page.to)).toEqual(["/time", "/time/reports"]);
+  it("lists Sources, Reports and Timeline as pages for the command bar", () => {
+    expect(timeModule.pages?.map((page) => page.to)).toEqual(["/time", "/time/reports", "/time/timeline"]);
   });
 });
