@@ -101,7 +101,7 @@ async fn gaps_are_filled_from_a_later_printing() {
 }
 
 #[tokio::test]
-async fn repeated_identical_rows_stay_separate_each_printed_once() {
+async fn repeated_identical_rows_stay_separate_and_keep_one_printing_each() {
     let twice = vec![
         tx(5, "coffee shop visit", 100),
         tx(5, "coffee shop visit", 100),
@@ -111,7 +111,7 @@ async fn repeated_identical_rows_stay_separate_each_printed_once() {
     let rows = items(&env).await;
 
     assert_eq!(rows.len(), 2);
-    assert!(rows.iter().all(|r| r["printing_count"] == 2));
+    assert!(rows.iter().all(|r| r["printing_count"] == 1));
     env.finish().await;
 }
 

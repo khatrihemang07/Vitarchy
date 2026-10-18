@@ -226,6 +226,10 @@ def assert_printings(stage_url: str, expected: dict, gains: dict[str, int]) -> N
                     "(SELECT 1 FROM finance.printings p WHERE p.transaction_id = t.id)")
     print(f"  {transactions} Transactions, {printings} Printings, {gains['confirmed_gain']} enriched by confirms")
     check(orphans == 0 and printings >= transactions, f"every Transaction has a Printing ({orphans} without)")
+    identical = count("SELECT count(*) FROM (SELECT 1 FROM finance.printings GROUP BY transaction_id, date, "
+                      "description, balance_paise, reference, source_id, foreign_amount, foreign_currency "
+                      "HAVING count(*) > 1) twins")
+    check(identical == 0, f"no two Printings of one Transaction are identical ({identical} such groups)")
     check(gains["previewed_gain"] > 0, f"previews said some rows would gain detail ({gains['previewed_gain']})")
     check(gains["previewed_gain"] == gains["confirmed_gain"],
           f"confirms enriched exactly what the previews promised ({gains['confirmed_gain']} of {gains['previewed_gain']})")

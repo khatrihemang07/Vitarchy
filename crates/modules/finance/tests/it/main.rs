@@ -13,6 +13,7 @@ mod module;
 mod passwords_routes;
 mod payment_linking;
 mod printings_confirm;
+mod printings_identical;
 mod printings_migration;
 mod printings_read_again;
 mod printings_routes;

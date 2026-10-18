@@ -5,10 +5,11 @@ use std::collections::HashSet;
 
 use sqlx::PgConnection;
 
-use super::printing_writes::{Target, gains_by_target};
+use super::printing_writes::{Target, plan_by_target};
 use crate::{
     dedupe::{PrintingToAdd, read_again_diff},
     error::FinanceError,
+    printings::Plan,
     problem::Refusal,
     reader::{ReaderResult, contract::Kind},
     record_key,
@@ -95,19 +96,31 @@ pub async fn compute(
                 row: &statement.transactions[p.index],
             })
             .collect();
-        let gains = gains_by_target(db, statement_id, &targets).await?;
-        let gaining = diff
-            .new_printings
-            .iter()
-            .zip(gains)
-            .filter_map(|(p, gains)| gains.then_some(p.index))
-            .collect();
+        let plans = plan_by_target(db, statement_id, &targets).await?;
+        let mut new_printings = Vec::new();
+        let mut gaining = Vec::new();
+        let mut skipped_identical = 0;
+        for (p, plan) in diff.new_printings.into_iter().zip(plans) {
+            match plan {
+                Plan::Add { gains } => {
+                    gaining.extend(gains.then_some(p.index));
+                    new_printings.push(p);
+                }
+                Plan::IdenticalKept => skipped_identical += 1,
+                Plan::ThisStatement => {}
+            }
+        }
+        tracing::debug!(
+            statement_id,
+            skipped_identical,
+            "read again printings planned"
+        );
         sections.push(SectionDiff {
             position: slot.position,
             account_id,
             add: diff.add,
             unchanged: diff.unchanged,
-            new_printings: diff.new_printings,
+            new_printings,
             gaining,
             gone_transaction_ids: diff.gone_transaction_ids,
         });

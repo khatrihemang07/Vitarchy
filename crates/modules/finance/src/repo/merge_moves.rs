@@ -21,8 +21,9 @@ pub async fn repoint_transactions(
 }
 
 /// Folds a Transaction into another: its Printings and Payment record link move onto `into_id`,
-/// then the emptied Transaction row goes. A Printing from a Statement `into_id` already has
-/// is dropped, and a link is kept only when `into_id` has none (the record then waits to link
+/// then the emptied Transaction row goes. A Printing in `identical` (the ones
+/// `printings::identical_to_live` found) is dropped, as is one from a Statement `into_id`
+/// already has; and a link is kept only when `into_id` has none (the record then waits to link
 /// again). Returns how many Printings moved.
 ///
 /// # Errors
@@ -31,7 +32,13 @@ pub async fn fold_transaction(
     db: &mut PgConnection,
     from_id: i64,
     into_id: i64,
+    identical: &[i64],
 ) -> Result<u64, sqlx::Error> {
+    sqlx::query("DELETE FROM finance.printings WHERE transaction_id = $1 AND id = ANY($2)")
+        .bind(from_id)
+        .bind(identical)
+        .execute(&mut *db)
+        .await?;
     let moved = sqlx::query(
         "UPDATE finance.printings p SET transaction_id = $2
          WHERE p.transaction_id = $1 AND NOT EXISTS (

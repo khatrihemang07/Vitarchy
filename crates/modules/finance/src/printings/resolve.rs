@@ -46,23 +46,25 @@ pub fn resolve(printings: &[Printing]) -> Resolved {
     Resolved {
         detail: Detail {
             description: fullest_description(&counted),
-            balance_paise: counted.iter().find_map(|p| p.balance_paise),
-            reference: first(|p| p.reference.clone()),
-            source_id: first(|p| p.source_id.clone()),
-            foreign_amount: first(|p| p.foreign_amount.clone()),
-            foreign_currency: first(|p| p.foreign_currency.clone()),
+            balance_paise: counted.iter().find_map(|p| p.printed.balance_paise),
+            reference: first(|p| p.printed.reference.clone()),
+            source_id: first(|p| p.printed.source_id.clone()),
+            foreign_amount: first(|p| p.printed.foreign_amount.clone()),
+            foreign_currency: first(|p| p.printed.foreign_currency.clone()),
         },
         no_longer_found: !printings.is_empty() && printings.iter().all(|p| p.gone),
     }
 }
 
 fn fullest_description(printings: &[&Printing]) -> String {
-    let mut shown = printings.first().map_or("", |p| p.description.as_str());
+    let mut shown = printings
+        .first()
+        .map_or("", |p| p.printed.description.as_str());
     let mut shown_key = normalise(shown);
     for next in &printings[printings.len().min(1)..] {
-        let key = normalise(&next.description);
+        let key = normalise(&next.printed.description);
         if key.len() > shown_key.len() && key.contains(&shown_key) {
-            shown = &next.description;
+            shown = &next.printed.description;
             shown_key = key;
         }
     }

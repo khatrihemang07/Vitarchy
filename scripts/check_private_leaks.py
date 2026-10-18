@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scans git-tracked and intent-to-add files for entries of the private denylist.
+"""Scans files for entries of the private denylist: by default every file the next commit could include (tracked, changed or new), or with `--commits A..B` what each of those commits contains.
 
     scripts/check-private-leaks.sh        (wraps this; run by `make check`)
 
@@ -11,6 +11,7 @@ so this output is safe to paste anywhere. Exit 1 on any hit.
 
 from __future__ import annotations
 
+import argparse
 import re
 import subprocess
 import sys
@@ -65,14 +66,45 @@ def tail_pattern(digits: str) -> re.Pattern[str]:
     return re.compile(after_mask)
 
 
-def tracked_files() -> list[Path]:
-    """Cached files plus working-tree changes (intent-to-add shows up in both)."""
-    def git(*args: str) -> list[str]:
-        out = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=True).stdout
-        return [name for name in out.split("\n") if name]
+def run_git(*args: str) -> bytes:
+    """Runs git in the repo; a failure stops the scan, since a silent empty result would pass a leak."""
+    done = subprocess.run(["git", *args], cwd=ROOT, capture_output=True)
+    if done.returncode != 0:
+        raise SystemExit(f"check-private-leaks: git {args[0]} failed (exit {done.returncode})")
+    return done.stdout
 
-    names = sorted(set(git("ls-files", "--cached")) | set(git("diff", "--name-only")))
-    return [ROOT / n for n in names if not n.endswith(SKIP_SUFFIXES)]
+
+def git(*args: str) -> list[str]:
+    return [name for name in run_git(*args).decode().split("\n") if name]
+
+
+def working_files() -> list[tuple[str, bytes]]:
+    """Every file that could be committed: tracked, changed, and new but not ignored.
+
+    New files count too: a file not yet `git add`ed is exactly what the next commit picks up.
+    """
+    names = set(git("ls-files", "--cached")) | set(git("diff", "--name-only"))
+    names |= set(git("ls-files", "--others", "--exclude-standard"))
+    files = []
+    for name in sorted(names):
+        path = ROOT / name
+        if not name.endswith(SKIP_SUFFIXES) and path.is_file():
+            files.append((name, path.read_bytes()))
+    return files
+
+
+def committed_files(commits: str) -> list[tuple[str, bytes]]:
+    """The files each commit in `commits` (e.g. origin/main..HEAD) added or changed, as committed.
+
+    Root commits and merge commits count (`--root`, `-m`).
+    """
+    files = []
+    for rev in git("rev-list", commits):
+        names = git("diff-tree", "--root", "-m", "--no-commit-id", "--name-only", "-r", "--diff-filter=AM", rev)
+        for name in sorted(set(names)):
+            if not name.endswith(SKIP_SUFFIXES):
+                files.append((f"{rev[:7]}:{name}", run_git("show", f"{rev}:{name}")))
+    return files
 
 
 def main() -> int:
@@ -80,16 +112,17 @@ def main() -> int:
         print("check-private-leaks: no denylist (no private data here); skipping")
         return 0
     denylist = Denylist(DENYLIST.read_text().splitlines())
+    parser = argparse.ArgumentParser(description="Scan files for private denylist entries.")
+    parser.add_argument("--commits", metavar="RANGE", help="scan what each commit in RANGE contains, not the working tree")
+    args = parser.parse_args()
+    files = committed_files(args.commits) if args.commits else working_files()
     leaks = 0
-    for path in tracked_files():
-        if not path.is_file():
-            continue
-        data = path.read_bytes()
+    for name, data in files:
         if b"\0" in data:
             continue
         for number, line in enumerate(data.decode("utf-8", errors="ignore").splitlines(), start=1):
             for index in sorted(denylist.hits(line)):
-                print(f"{path.relative_to(ROOT)}:{number}: denylist entry #{index}")
+                print(f"{name}:{number}: denylist entry #{index}")
                 leaks += 1
     if leaks:
         print(f"check-private-leaks: {leaks} hit(s); replace them with synthetic values", file=sys.stderr)

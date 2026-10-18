@@ -72,7 +72,7 @@ async fn three_duplicate_accounts_merge_into_the_oldest() {
 }
 
 #[tokio::test]
-async fn overlapping_rows_become_printings_of_one_transaction_and_nothing_is_lost() {
+async fn overlapping_identical_rows_fold_into_one_transaction_with_one_printing() {
     let (env, _) = three_duplicates("mg_overlap").await;
     assert_eq!(
         (
@@ -90,16 +90,33 @@ async fn overlapping_rows_become_printings_of_one_transaction_and_nothing_is_los
             count(&env, "transactions").await,
             count(&env, "printings").await
         ),
-        (4, 6)
+        (4, 4),
+        "identical Printings are not moved onto the kept Transaction"
     );
-    let shared: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM (SELECT transaction_id FROM finance.printings
-         GROUP BY transaction_id HAVING count(*) = 2) two",
-    )
-    .fetch_one(&env.db.pool)
-    .await
-    .unwrap();
-    assert_eq!(shared, 2);
+    assert_eq!(report.printings, 0);
+    env.finish().await;
+}
+
+#[tokio::test]
+async fn a_folded_row_that_prints_differently_still_moves_its_printing() {
+    let files = [vec![tx(3, "bravo", 200)], vec![tx(3, "bravo", 200)]];
+    let mut richer = files[1].clone();
+    richer[0].reference = Some("R-1".into());
+    let env = Env::new("mg_differs", vec![card(files[0].clone()), card(richer)]).await;
+    for name in ["a", "b"] {
+        let id = account(&env.db, MASK).await.id;
+        let statement = env
+            .upload_one(&format!("{name}.pdf"), name.as_bytes())
+            .await;
+        let body = json!({"sections": [{"account_id": id}]});
+        let path = format!("/statements/{statement}/confirm");
+        assert_eq!(env.post(&path, &body.to_string()).await.status, 200);
+    }
+
+    let report = merge_duplicate_accounts(&env.db.pool).await.unwrap();
+
+    assert_eq!((report.folded, report.printings), (1, 1));
+    assert_eq!(count(&env, "printings").await, 2);
     env.finish().await;
 }
 

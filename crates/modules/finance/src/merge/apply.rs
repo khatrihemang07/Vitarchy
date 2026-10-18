@@ -5,7 +5,8 @@ use sqlx::PgConnection;
 use super::plan::{Move, Row, plan};
 use crate::{
     import::refresh,
-    repo::{merge_moves, transactions},
+    printings::identical_to_live,
+    repo::{merge_moves, printings, transactions},
 };
 
 /// What merging one Account did.
@@ -36,7 +37,19 @@ pub async fn merge_into(
         match step {
             Move::Repoint { id } => repoint.push(id),
             Move::Fold { from_id, into_id } => {
-                done.printings += merge_moves::fold_transaction(&mut *db, from_id, into_id).await?;
+                let both = printings::for_transactions(&mut *db, &[from_id, into_id]).await?;
+                let identical = identical_to_live(
+                    both.get(&from_id).map_or(&[][..], Vec::as_slice),
+                    both.get(&into_id).map_or(&[][..], Vec::as_slice),
+                );
+                tracing::debug!(
+                    from_id,
+                    into_id,
+                    skipped_identical = identical.len(),
+                    "folding transaction"
+                );
+                done.printings +=
+                    merge_moves::fold_transaction(&mut *db, from_id, into_id, &identical).await?;
                 done.folded += 1;
                 touched.push(into_id);
             }

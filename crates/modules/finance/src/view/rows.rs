@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use super::transaction::TransactionView;
 use crate::{
     dedupe::{StoredEvidence, pair},
-    printings::{Printing, gains_detail},
+    printings::{Plan, Printing, plan_for},
     reader::contract::Transaction,
 };
 
@@ -35,7 +35,8 @@ pub fn build(
     };
     for (tx, found) in incoming.iter().zip(pair(incoming, stored)) {
         let gains = found.is_some_and(|id| {
-            gains_detail(statement_id, tx, printings.get(&id).map(Vec::as_slice))
+            plan_for(statement_id, tx, printings.get(&id).map(Vec::as_slice))
+                == Plan::Add { gains: true }
         });
         rows.new_count += usize::from(found.is_none());
         rows.enriched_count += usize::from(gains);

@@ -4,12 +4,14 @@ use std::collections::HashMap;
 
 use sqlx::PgExecutor;
 
-use crate::printings::Printing;
+use crate::printings::{PrintedFields, Printing};
 
 #[derive(sqlx::FromRow)]
 struct Row {
+    id: i64,
     transaction_id: i64,
     statement_id: i64,
+    date: chrono::NaiveDate,
     description: String,
     balance_paise: Option<i64>,
     reference: Option<String>,
@@ -24,20 +26,24 @@ impl From<Row> for (i64, Printing) {
         (
             r.transaction_id,
             Printing {
+                id: r.id,
                 statement_id: r.statement_id,
-                description: r.description,
-                balance_paise: r.balance_paise,
-                reference: r.reference,
-                source_id: r.source_id,
-                foreign_amount: r.foreign_amount,
-                foreign_currency: r.foreign_currency,
+                printed: PrintedFields {
+                    date: r.date,
+                    description: r.description,
+                    balance_paise: r.balance_paise,
+                    reference: r.reference,
+                    source_id: r.source_id,
+                    foreign_amount: r.foreign_amount,
+                    foreign_currency: r.foreign_currency,
+                },
                 gone: r.gone,
             },
         )
     }
 }
 
-const COLUMNS: &str = "transaction_id, statement_id, description, balance_paise, reference, source_id, foreign_amount, foreign_currency, gone_at IS NOT NULL AS gone";
+const COLUMNS: &str = "id, transaction_id, statement_id, date, description, balance_paise, reference, source_id, foreign_amount, foreign_currency, gone_at IS NOT NULL AS gone";
 
 /// The Printings of these Transactions, each list in creation order.
 ///

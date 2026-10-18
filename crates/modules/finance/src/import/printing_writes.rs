@@ -5,7 +5,7 @@ use sqlx::PgConnection;
 
 use super::refresh::refresh;
 use crate::{
-    printings::gains_detail,
+    printings::{Plan, plan_for},
     reader::contract::Transaction,
     repo::{printings, transactions},
 };
@@ -22,29 +22,29 @@ pub struct Target<'a> {
 /// What adding Printings did.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PrintingsAdded {
-    /// Printings stored (a Statement that already printed the row adds none).
+    /// Printings stored (a row already printed, or printed exactly like a kept one, adds none).
     pub added: usize,
     /// Of those, ones that made the Transaction show more detail.
     pub enriched: usize,
 }
 
-/// For each target, whether Statement `statement_id` printing it would add detail. Preview,
-/// Read again and confirm all count through this, so their numbers agree.
+/// For each target, what Statement `statement_id` printing it would do. Preview, Read again
+/// and confirm all count through this, so their numbers agree.
 ///
 /// # Errors
 /// The database failed.
-pub async fn gains_by_target(
+pub async fn plan_by_target(
     db: &mut PgConnection,
     statement_id: i64,
     targets: &[Target<'_>],
-) -> Result<Vec<bool>, sqlx::Error> {
+) -> Result<Vec<Plan>, sqlx::Error> {
     let ids: Vec<i64> = targets.iter().map(|t| t.transaction_id).collect();
     let existing = printings::for_transactions(&mut *db, &ids).await?;
     Ok(targets
         .iter()
         .map(|t| {
             let list = existing.get(&t.transaction_id).map(Vec::as_slice);
-            gains_detail(statement_id, t.row, list)
+            plan_for(statement_id, t.row, list)
         })
         .collect())
 }
@@ -76,10 +76,20 @@ pub async fn add_printings(
     statement_id: i64,
     targets: &[Target<'_>],
 ) -> Result<PrintingsAdded, sqlx::Error> {
-    let gains = gains_by_target(db, statement_id, targets).await?;
+    let plans = plan_by_target(db, statement_id, targets).await?;
+    let skipped_identical = plans.iter().filter(|p| **p == Plan::IdenticalKept).count();
+    tracing::debug!(
+        statement_id,
+        rows = targets.len(),
+        skipped_identical,
+        "printings planned"
+    );
     let mut done = PrintingsAdded::default();
     let mut touched = Vec::new();
-    for (target, gains) in targets.iter().zip(gains) {
+    for (target, plan) in targets.iter().zip(plans) {
+        let Plan::Add { gains } = plan else {
+            continue;
+        };
         if printings::insert(&mut *db, target.transaction_id, statement_id, target.row).await? {
             done.added += 1;
             done.enriched += usize::from(gains);

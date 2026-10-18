@@ -125,7 +125,7 @@ One movement of money on one Account, exactly as its Statement printed it: the d
 _Avoid_: Entry, record, txn
 
 **Printing**:
-What one Statement printed for a Transaction, exactly as it printed it. A Transaction has one or more Printings; Vitarchy keeps them all and shows the fullest.
+What one Statement printed for a Transaction, exactly as it printed it. A Transaction has one or more Printings; Vitarchy keeps them all and shows the fullest. A Statement that prints a Transaction exactly as a kept Printing adds no new one.
 _Avoid_: Copy, version, duplicate
 
 **Payment record**:
