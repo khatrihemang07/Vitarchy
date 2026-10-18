@@ -1,0 +1,147 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "credit_card",
+        "mask": "5200XXXXXXXX3333"
+      },
+      "period": {
+        "start": "2026-05-01",
+        "end": "2026-05-31"
+      },
+      "summary": {
+        "opening_paise": 4500000,
+        "closing_paise": 7829796,
+        "total_debit_paise": 4216099,
+        "total_credit_paise": 886303,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-05-05",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 250713,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-07",
+          "description": "UPI/232860129040/ZETA TRAVELS",
+          "amount_paise": 868576,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "232860129040",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-09",
+          "description": "UPI/697251027346/ZETA TRAVELS",
+          "amount_paise": 821811,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "697251027346",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-11",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 573082,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-12",
+          "description": "UPI/441177151620/ORCHID SWEETS",
+          "amount_paise": 313167,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "441177151620",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-12",
+          "description": "ACME GROCERS",
+          "amount_paise": 12584,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-12",
+          "description": "UPI/649420555266/TEST BOOKS",
+          "amount_paise": 487774,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "649420555266",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-12",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 831693,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-12",
+          "description": "ZETA TRAVELS",
+          "amount_paise": 623006,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-05-13",
+          "description": "UPI/749952525594/FAKE FUELS",
+          "amount_paise": 319996,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "749952525594",
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

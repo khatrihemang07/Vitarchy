@@ -7,6 +7,7 @@ mod error;
 pub mod log_capture;
 mod log_level;
 mod module;
+mod request_id;
 mod state;
 pub mod telemetry;
 #[cfg(any(test, feature = "test-support"))]
@@ -16,4 +17,5 @@ pub use api_json::ApiJson;
 pub use error::{ApiError, Problem};
 pub use log_level::level_for_status;
 pub use module::Module;
+pub use request_id::{REQUEST_ID_HEADER, RequestId};
 pub use state::AppState;

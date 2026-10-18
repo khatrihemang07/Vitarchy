@@ -9,7 +9,7 @@ use vitarchy_core::Module;
 
 const CORE: &[fn() -> Module] = &[vitarchy_settings::feature];
 
-const MODULES: &[fn() -> Module] = &[vitarchy_time::module];
+const MODULES: &[fn() -> Module] = &[vitarchy_time::module, vitarchy_finance::module];
 
 /// The Core features (built in), in the order they are migrated and mounted.
 #[must_use]

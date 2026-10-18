@@ -1,0 +1,123 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "XXXXXX0911"
+      },
+      "period": {
+        "start": "2026-08-01",
+        "end": "2026-08-31"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-08-14",
+          "description": "DEMO CAFE",
+          "amount_paise": 236776,
+          "direction": "debit",
+          "balance_paise": 763224,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-14",
+          "description": "DEMO CAFE",
+          "amount_paise": 656156,
+          "direction": "credit",
+          "balance_paise": 1419380,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-15",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 564506,
+          "direction": "debit",
+          "balance_paise": 854874,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-16",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 392610,
+          "direction": "debit",
+          "balance_paise": 462264,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-18",
+          "description": "UPI/342191735829/PIXEL STORE",
+          "amount_paise": 110222,
+          "direction": "debit",
+          "balance_paise": 352042,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "342191735829",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-18",
+          "description": "UPI/660230308715/ACME GROCERS",
+          "amount_paise": 21744,
+          "direction": "debit",
+          "balance_paise": 330298,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "660230308715",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-19",
+          "description": "ACME GROCERS",
+          "amount_paise": 686053,
+          "direction": "credit",
+          "balance_paise": 1016351,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-20",
+          "description": "UPI/162075629613/FAKE FUELS",
+          "amount_paise": 577311,
+          "direction": "debit",
+          "balance_paise": 439040,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "162075629613",
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

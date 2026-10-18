@@ -17,6 +17,7 @@ path = "src/main.rs"
 vitarchy-core.workspace = true
 vitarchy-settings.workspace = true
 vitarchy-time.workspace = true
+vitarchy-finance.workspace = true
 axum.workspace = true
 tokio.workspace = true
 sqlx.workspace = true

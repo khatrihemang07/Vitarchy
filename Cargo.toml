@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/settings", "crates/server", "crates/modules/time", "crates/helpers/activity-snapshot"]
+members = ["crates/core", "crates/settings", "crates/server", "crates/modules/time", "crates/modules/finance", "crates/helpers/activity-snapshot"]
 # Module crates (crates/modules/*) are added here, one line each.
 
 [workspace.package]
@@ -13,8 +13,9 @@ publish = false
 vitarchy-core = { path = "crates/core" }
 vitarchy-settings = { path = "crates/settings" }
 vitarchy-time = { path = "crates/modules/time" }
+vitarchy-finance = { path = "crates/modules/finance" }
 
-axum = "0.8.9"
+axum = { version = "0.8.9", features = ["multipart"] }
 tokio = { version = "1.53", features = ["macros", "rt-multi-thread", "net", "signal", "time"] }
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate"] }
 utoipa = "6.0.0"
@@ -33,6 +34,8 @@ chrono = { version = "0.4", default-features = false, features = ["std", "clock"
 chrono-tz = "0.10"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 async-trait = "0.1"
+sha2 = "0.10"
+strsim = "0.11"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

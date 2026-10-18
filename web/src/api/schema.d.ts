@@ -4,6 +4,253 @@
  */
 
 export interface paths {
+    "/api/finance/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every Account with its figures, oldest first. */
+        get: operations["list_accounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Renames an Account. */
+        patch: operations["patch_account"];
+        trace?: never;
+    };
+    "/api/finance/statement-passwords": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The saved passwords, oldest first, without their secrets. */
+        get: operations["list_passwords"];
+        put?: never;
+        /** Saves a Statement password. Locked files are tried with every saved password. */
+        post: operations["post_password"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/statement-passwords/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forgets a saved password. */
+        delete: operations["delete_password"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Statements, newest upload first. */
+        get: operations["list_statements"];
+        put?: never;
+        /**
+         * Reads each file into an unconfirmed Statement and returns its preview. A file already
+         *     stored comes back as that Statement with `duplicate_file` set, without being read again.
+         */
+        post: operations["post_statements"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/statements/read-again": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reads every Statement's original again and returns one preview each. Confirmed Statements
+         *     are only compared; unconfirmed ones are re-read in place, as their own Read again does.
+         *     A Statement that fails comes back with its error code and does not stop the others.
+         */
+        post: operations["post_read_all_again"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/statements/read-again/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Applies the Read again of every confirmed Statement that has changes, one at a time under
+         *     the confirm lock. Statements without changes are left alone; nothing is deleted.
+         */
+        post: operations["post_read_all_again_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/statements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One Statement as a preview. */
+        get: operations["get_statement"];
+        put?: never;
+        post?: never;
+        /** Discards an unconfirmed Statement and its stored file (unless another Statement uses it). */
+        delete: operations["delete_statement"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/statements/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Writes the Statement's new rows to the chosen Accounts and links Payment records. Rows
+         *     already stored are skipped; a failed Check does not stop a confirm.
+         */
+        post: operations["post_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/statements/{id}/read-again": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reads the stored original again. An unconfirmed Statement is simply re-read with the
+         *     passwords saved now (this is how a locked file opens). A confirmed one is compared with
+         *     what is stored and nothing is written until `read-again/confirm`.
+         */
+        post: operations["post_read_again"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/statements/{id}/read-again/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Applies a Read again to a confirmed Statement: adds the new rows, clears marks on rows
+         *     found again and marks rows no longer found. Nothing is deleted.
+         */
+        post: operations["post_read_again_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts, whether the reader is available, and the latest runs. */
+        get: operations["get_finance_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Transactions, newest first, with their linked Payment record. Rows a Read again no longer
+         *     finds are included and flagged.
+         */
+        get: operations["list_transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -222,6 +469,57 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description An existing Account, by id and name. */
+        AccountRef: {
+            /**
+             * Format: int64
+             * @description Account id.
+             */
+            id: number;
+            /** @description The name the person gave it. */
+            name: string;
+        };
+        /** @description An Account with its figures. */
+        AccountSummary: {
+            /**
+             * Format: date
+             * @description Date of the earliest Transaction.
+             */
+            first_date?: string | null;
+            /**
+             * Format: int64
+             * @description Account id.
+             */
+            id: number;
+            /** @description The issuer's name. */
+            issuer: string;
+            /** @description `savings`, `credit_card` or `loan`. */
+            kind: string;
+            /**
+             * Format: date
+             * @description Date of the latest Transaction.
+             */
+            last_date?: string | null;
+            /**
+             * Format: int64
+             * @description Balance after the latest-dated Transaction that printed one.
+             */
+            latest_balance_paise?: number | null;
+            /** @description The number as printed. */
+            mask?: string | null;
+            /** @description The name the person sees. */
+            name: string;
+            /**
+             * Format: int64
+             * @description Confirmed Statements that list this Account.
+             */
+            statement_count: number;
+            /**
+             * Format: int64
+             * @description Transactions stored (rows a Read again no longer finds are not counted).
+             */
+            transaction_count: number;
+        };
         /** @description One Source's Activity figures for the status page. */
         ActivityStatus: {
             /**
@@ -284,6 +582,15 @@ export interface components {
          * @enum {string}
          */
         Away: "yes" | "no" | "unknown";
+        /** @description A test of the section against itself. */
+        CheckView: {
+            /** @description Numbers and enum strings only. */
+            detail: Record<string, never>;
+            /** @description `balance_chain`, `summary_totals` or `row_counts`. */
+            name: string;
+            /** @description `passed`, `failed` or `skipped`. */
+            outcome: string;
+        };
         /** @description A client with at least one Time Entry (through its projects). */
         ClientFacet: {
             /** @description True once the client was archived in Toggl. */
@@ -311,6 +618,23 @@ export interface components {
             change?: components["schemas"]["StatsChange"] | null;
             /** @description True when the group has no time in the reference. */
             is_new: boolean;
+        };
+        /** @description What a confirm did. */
+        ConfirmCounts: {
+            /** @description Transactions (or Payment records) stored. */
+            added: number;
+            /** @description Rows left out because an equal one was already stored. */
+            duplicates: number;
+            /** @description Payment records linked to a Transaction by this confirm. */
+            linked: number;
+        };
+        /**
+         * @description Body of the confirm: one choice per Account listed in the Statement, in printed order.
+         *     A Payment history takes none.
+         */
+        ConfirmRequest: {
+            /** @description The choices. */
+            sections?: components["schemas"]["SectionChoice"][];
         };
         /** @description Body of `PUT /api/time/connection`. */
         ConnectRequest: {
@@ -404,6 +728,28 @@ export interface components {
          * @enum {string}
          */
         DbStatus: "ok" | "down";
+        /** @description Why a file was not read, without content. */
+        DiagnosticsView: {
+            /** @description A stable `snake_case` reason. */
+            code?: string | null;
+            /**
+             * Format: int32
+             * @description Pages read.
+             */
+            pages?: number | null;
+            /**
+             * Format: int32
+             * @description Rows found.
+             */
+            rows?: number | null;
+            /** @description `open`, `read`, `locate`, `segment` or `normalize`. */
+            stage?: string | null;
+        };
+        /**
+         * @description Which way money moved on the Account.
+         * @enum {string}
+         */
+        Direction: "debit" | "credit";
         /** @description Body of `GET /api/time/facets`; each list is sorted by `last_used`, newest first. */
         Facets: {
             /** @description Clients with entries (archived ones included). */
@@ -412,6 +758,54 @@ export interface components {
             projects: components["schemas"]["ProjectFacet"][];
             /** @description Tags with entries. */
             tags: components["schemas"]["TagFacet"][];
+        };
+        /** @description A read, confirm or Read again attempt. */
+        FinanceRunInfo: {
+            /** @description What it did (counts only); empty when it failed. */
+            counts: Record<string, never>;
+            /** @description Why it failed. */
+            error_code?: string | null;
+            /**
+             * Format: date-time
+             * @description When it ended.
+             */
+            finished_at: string;
+            /** @description `read`, `confirm` or `read_again`. */
+            kind: string;
+            /** @description `success` or `failed`. */
+            outcome: string;
+            /**
+             * Format: date-time
+             * @description When it began.
+             */
+            started_at: string;
+            /**
+             * Format: int64
+             * @description The Statement it was about.
+             */
+            statement_id?: number | null;
+        };
+        /** @description Body of `GET /api/finance/status`. */
+        FinanceStatus: {
+            /**
+             * Format: int64
+             * @description Accounts stored.
+             */
+            account_count: number;
+            /** @description The latest run of each kind that has run, in read, confirm, read again order. */
+            latest_runs: components["schemas"]["FinanceRunInfo"][];
+            /** @description Whether the statement-reader helper can be found. */
+            reader_available: boolean;
+            /**
+             * Format: int64
+             * @description Statements waiting to be confirmed.
+             */
+            unconfirmed_statement_count: number;
+            /**
+             * Format: int64
+             * @description Payment records not linked to a Transaction yet.
+             */
+            unlinked_payment_record_count: number;
         };
         /** @description One row of the summary: a description, project or tag, with its numbers. */
         Group: {
@@ -489,11 +883,46 @@ export interface components {
              */
             stop_at: string;
         };
+        /** @description The Payment record linked to a Transaction. */
+        LinkedPaymentRecord: {
+            /** @description With whom. */
+            description: string;
+            /**
+             * Format: int64
+             * @description Payment record id.
+             */
+            id: number;
+            /** @description The funding account as printed. */
+            instrument?: string | null;
+            /**
+             * Format: date-time
+             * @description Local time of the payment.
+             */
+            occurred_at: string;
+            /** @description The bank reference. */
+            utr?: string | null;
+        };
         /**
          * @description Motion setting: follow the system or force reduced or full.
          * @enum {string}
          */
         Motion: "system" | "reduced" | "full";
+        /** @description A new Account to create for a section. */
+        NewAccountInput: {
+            /** @description The issuer's name. */
+            issuer: string;
+            /** @description `savings`, `credit_card` or `loan`. */
+            kind: string;
+            /** @description The name the person sees. */
+            name: string;
+        };
+        /** @description Body of `POST /api/finance/statement-passwords`. */
+        NewPassword: {
+            /** @description A name to recognise it by; trimmed, not empty. */
+            label: string;
+            /** @description The password; trimmed, not empty. Stored, never returned. */
+            secret: string;
+        };
         /** @description The Period's headline numbers. An entry with several tags is counted once here. */
         Overview: {
             /**
@@ -552,6 +981,33 @@ export interface components {
              */
             total_s: number;
         };
+        /** @description A saved password as listed: never its secret. */
+        PasswordItem: {
+            /**
+             * Format: date-time
+             * @description When it was saved.
+             */
+            created_at: string;
+            /**
+             * Format: int64
+             * @description Password id.
+             */
+            id: number;
+            /** @description The name the person gave it. */
+            label: string;
+            /**
+             * Format: date-time
+             * @description When it last opened a file.
+             */
+            last_used_at?: string | null;
+        };
+        /** @description What a Payment history holds. */
+        PaymentHistoryPreview: {
+            /** @description Payment records in the file. */
+            record_count: number;
+            /** @description How many would link to a stored Transaction right now. */
+            would_link_now: number;
+        };
         /** @description The Period the Report covers, the Previous Period and the Usual's range it is compared with. */
         PeriodInfo: {
             /**
@@ -609,6 +1065,19 @@ export interface components {
          * @enum {string}
          */
         PeriodKind: "day" | "week" | "month" | "custom";
+        /** @description A printed period; either end may be unknown. */
+        PeriodView: {
+            /**
+             * Format: date
+             * @description Last day.
+             */
+            end?: string | null;
+            /**
+             * Format: date
+             * @description First day.
+             */
+            start?: string | null;
+        };
         /** @description JSON body of every error response (`application/problem+json`). */
         Problem: {
             /**
@@ -675,6 +1144,60 @@ export interface components {
             /** @description Name. */
             name: string;
         };
+        /** @description The Account the reader thought a section belongs to. */
+        ProposedAccountView: {
+            /** @description The issuer, if found. */
+            issuer?: string | null;
+            /** @description `savings`, `credit_card` or `loan`, if found. */
+            kind?: string | null;
+            /** @description The number as printed. */
+            mask?: string | null;
+        };
+        /** @description What applying a Read again did. */
+        ReadAgainCounts: {
+            /** @description Rows added. */
+            added: number;
+            /** @description Payment records linked as a result. */
+            linked: number;
+            /** @description Rows marked no longer found. */
+            no_longer_found: number;
+            /** @description Stored rows still found. */
+            unchanged: number;
+        };
+        /** @description One Statement's part of Read all again: its preview, or why it could not be read again. */
+        ReadAgainItem: {
+            /** @description Why it failed (a problem code such as `statement_not_readable`). */
+            error_code?: string | null;
+            /** @description The uploaded file's name. */
+            file_name: string;
+            preview?: components["schemas"]["ReadAgainPreview"] | null;
+            /**
+             * Format: int64
+             * @description The Statement.
+             */
+            statement_id: number;
+        };
+        /** @description A Read again: the Statement as it is now, and what reading it again would change. */
+        ReadAgainPreview: {
+            payment_records?: components["schemas"]["RecordChanges"] | null;
+            /** @description Per Account section; empty for an unconfirmed Statement or a Payment history. */
+            sections: components["schemas"]["SectionChanges"][];
+            /** @description The Statement as stored (an unconfirmed one is already re-read). */
+            statement: components["schemas"]["StatementPreview"];
+        };
+        /** @description What applying Read all again did, summed over the Statements it changed. */
+        ReadAllAgainCounts: {
+            /** @description Rows added. */
+            added: number;
+            /** @description Statements that could not be read again and were left as they were. */
+            failed: number;
+            /** @description Payment records linked as a result. */
+            linked: number;
+            /** @description Rows marked no longer found. */
+            no_longer_found: number;
+            /** @description Statements that changed and were applied. */
+            statements: number;
+        };
         /** @description What a rebuild produced. */
         RebuildResult: {
             /**
@@ -687,6 +1210,18 @@ export interface components {
              * @description Segments now stored.
              */
             segment_count: number;
+        };
+        /** @description The changes to a Payment history. */
+        RecordChanges: {
+            /** @description Records that would be added. */
+            add_count: number;
+            /** @description Records already stored. */
+            unchanged_count: number;
+        };
+        /** @description Body of `PATCH /api/finance/accounts/{id}`. */
+        RenameAccount: {
+            /** @description The new name; trimmed, not empty. */
+            name: string;
         };
         /**
          * @description A summary of the Time Entries in one Period, compared with the Previous Period
@@ -759,6 +1294,74 @@ export interface components {
              * @description When it began.
              */
             started_at: string;
+        };
+        /** @description The changes to one Account section. */
+        SectionChanges: {
+            /** @description Rows that would be added. */
+            add_count: number;
+            /** @description The rows that would be added. */
+            added: components["schemas"]["TransactionView"][];
+            /** @description Stored rows the engine no longer finds: marked, never deleted. */
+            no_longer_found_count: number;
+            /**
+             * Format: int32
+             * @description The section's printed order.
+             */
+            position: number;
+            /** @description Stored rows the engine still finds. */
+            unchanged_count: number;
+        };
+        /**
+         * @description The choice for one section as the request spells it. Leave both out to accept the proposal:
+         *     the matched Account, or a new one made from what the reader found.
+         */
+        SectionChoice: {
+            /**
+             * Format: int64
+             * @description Assign the section to this existing Account.
+             */
+            account_id?: number | null;
+            new_account?: components["schemas"]["NewAccountInput"] | null;
+        };
+        /** @description One Account's part of a Statement. */
+        SectionPreview: {
+            /** @description When several Accounts fit, which. */
+            candidate_accounts: components["schemas"]["AccountRef"][];
+            /** @description How the figures agree. */
+            checks: components["schemas"]["CheckView"][];
+            /** @description Rows already stored. */
+            duplicate_count: number;
+            matched_account?: components["schemas"]["AccountRef"] | null;
+            /**
+             * @description True when the file printed no account number and this Account was proposed because it
+             *     is the only one with that issuer and kind.
+             */
+            matched_without_number: boolean;
+            /** @description Rows not stored yet. */
+            new_count: number;
+            /** @description The printed period. */
+            period: components["schemas"]["PeriodView"];
+            /**
+             * Format: int32
+             * @description Printed order, from 0.
+             */
+            position: number;
+            /** @description What the reader found. */
+            proposed: components["schemas"]["ProposedAccountView"];
+            /**
+             * Format: int64
+             * @description Sum of credits.
+             */
+            total_credit_paise: number;
+            /**
+             * Format: int64
+             * @description Sum of debits.
+             */
+            total_debit_paise: number;
+            /** @description Transactions in the section. */
+            transaction_count: number;
+            /** @description The rows, in printed order. */
+            transactions: components["schemas"]["TransactionView"][];
         };
         /** @description A Segment clipped to the Period. */
         SegmentView: {
@@ -838,6 +1441,74 @@ export interface components {
              * @description Change in the shortest.
              */
             min_s: number;
+        };
+        /** @description A Statement as the person reviews it before (or after) confirming. */
+        StatementPreview: {
+            /** @description Where reading stopped and counts, for a file that was not read. */
+            diagnostics: components["schemas"]["DiagnosticsView"];
+            /** @description Set when this upload repeated a file already stored: nothing was read again. */
+            duplicate_file: boolean;
+            /** @description Whether the file was encrypted. */
+            encrypted: boolean;
+            /** @description The uploaded file's name. */
+            file_name: string;
+            /** @description `pdf`, `csv`, `xls` or `xlsx`; absent when unsupported. */
+            format?: string | null;
+            /**
+             * Format: int64
+             * @description Statement id.
+             */
+            id: number;
+            /** @description `statement` or `payment_history`; absent until read. */
+            kind?: string | null;
+            /** @description `read`, `locked`, `unsupported`, `no_table` or `crashed`. */
+            outcome: string;
+            payment_history?: components["schemas"]["PaymentHistoryPreview"] | null;
+            /** @description The printed period across all Accounts in the file. */
+            period: components["schemas"]["PeriodView"];
+            /** @description One section per Account listed (Statements only). */
+            sections: components["schemas"]["SectionPreview"][];
+            /** @description `unconfirmed` or `confirmed`. */
+            status: string;
+            /** @description The label (never the secret) of the Statement password that opened it. */
+            unlocked_with_label?: string | null;
+            /**
+             * Format: date-time
+             * @description When it was uploaded.
+             */
+            uploaded_at: string;
+        };
+        /** @description One line of the Statements list. */
+        StatementSummary: {
+            /** @description Accounts listed in the file. */
+            account_count: number;
+            /**
+             * Format: date-time
+             * @description When it was confirmed.
+             */
+            confirmed_at?: string | null;
+            /** @description The uploaded file's name. */
+            file_name: string;
+            /** @description `pdf`, `csv`, `xls` or `xlsx`. */
+            format?: string | null;
+            /**
+             * Format: int64
+             * @description Statement id.
+             */
+            id: number;
+            /** @description `statement` or `payment_history`. */
+            kind?: string | null;
+            /** @description `read`, `locked`, `unsupported`, `no_table` or `crashed`. */
+            outcome: string;
+            /** @description Transactions (or Payment records) in the file. */
+            row_count: number;
+            /** @description `unconfirmed` or `confirmed`. */
+            status: string;
+            /**
+             * Format: date-time
+             * @description When it was uploaded.
+             */
+            uploaded_at: string;
         };
         /** @description What a group amounts to over the Period. */
         Stats: {
@@ -1117,6 +1788,99 @@ export interface components {
             /** @description The window title. */
             title: string;
         };
+        /** @description One Transaction row. */
+        TransactionItem: {
+            /**
+             * Format: int64
+             * @description Its Account.
+             */
+            account_id: number;
+            /** @description The add-on card. */
+            addon_card?: string | null;
+            /**
+             * Format: int64
+             * @description Amount in paise, above 0.
+             */
+            amount_paise: number;
+            /**
+             * Format: int64
+             * @description Balance after, when printed.
+             */
+            balance_paise?: number | null;
+            /**
+             * Format: date
+             * @description The printed date.
+             */
+            date: string;
+            /** @description The printed description. */
+            description: string;
+            /** @description Which way the money moved. */
+            direction: components["schemas"]["Direction"];
+            /** @description Foreign amount as printed. */
+            foreign_amount?: string | null;
+            /** @description Foreign currency code. */
+            foreign_currency?: string | null;
+            /**
+             * Format: int64
+             * @description Transaction id.
+             */
+            id: number;
+            /** @description True when a Read again no longer finds this row. */
+            no_longer_found: boolean;
+            payment_record?: components["schemas"]["LinkedPaymentRecord"] | null;
+            /** @description A UPI or NEFT reference. */
+            reference?: string | null;
+        };
+        /** @description A page of Transactions. */
+        TransactionPage: {
+            /** @description This page, newest first. */
+            items: components["schemas"]["TransactionItem"][];
+            /**
+             * Format: int64
+             * @description Rows matching the filter in all.
+             */
+            total: number;
+        };
+        /** @description A Transaction as printed. */
+        TransactionView: {
+            /** @description The add-on card, on a card bill. */
+            addon_card?: string | null;
+            /**
+             * Format: int64
+             * @description Amount in paise, above 0.
+             */
+            amount_paise: number;
+            /**
+             * Format: int64
+             * @description Balance after, when printed.
+             */
+            balance_paise?: number | null;
+            /**
+             * Format: date
+             * @description The printed date.
+             */
+            date: string;
+            /** @description The printed description. */
+            description: string;
+            /** @description Which way the money moved. */
+            direction: components["schemas"]["Direction"];
+            /** @description Foreign amount as printed. */
+            foreign_amount?: string | null;
+            /** @description Foreign currency code. */
+            foreign_currency?: string | null;
+            /** @description Whether an equal row is already stored. */
+            is_duplicate: boolean;
+            /** @description A UPI or NEFT reference. */
+            reference?: string | null;
+        };
+        /**
+         * @description The multipart body: one or more `file` parts. Documentation only; the handler reads the
+         *     stream itself.
+         */
+        UploadForm: {
+            /** @description The Statement files (PDF, CSV, XLS or XLSX). */
+            file: string[];
+        };
         /** @description How a group compares with the Usual. */
         UsualComparison: {
             change?: components["schemas"]["StatsChange"] | null;
@@ -1179,6 +1943,558 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_accounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Accounts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSummary"][];
+                };
+            };
+        };
+    };
+    patch_account: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Account id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenameAccount"];
+            };
+        };
+        responses: {
+            /** @description Renamed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountSummary"];
+                };
+            };
+            /** @description Empty name (`empty_name`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description No such Account */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_passwords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The saved passwords */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordItem"][];
+                };
+            };
+        };
+    };
+    post_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPassword"];
+            };
+        };
+        responses: {
+            /** @description Saved */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordItem"];
+                };
+            };
+            /** @description Empty label or password (`empty_name`, `empty_secret`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    delete_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Password id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forgotten */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such password */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_statements: {
+        parameters: {
+            query?: {
+                /** @description Only Statements with this status; all when absent. */
+                status?: "unconfirmed" | "confirmed";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Statements */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementSummary"][];
+                };
+            };
+            /** @description Unknown status (`invalid_query`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    post_statements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["UploadForm"];
+            };
+        };
+        responses: {
+            /** @description One preview per file, in upload order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementPreview"][];
+                };
+            };
+            /** @description No files, or unreadable form (`no_files`, `bad_upload`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description The upload is too large (`upload_too_large`) */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    post_read_all_again: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One item per Statement with a stored original */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadAgainItem"][];
+                };
+            };
+        };
+    };
+    post_read_all_again_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadAllAgainCounts"];
+                };
+            };
+            /** @description A confirm is running (`confirm_in_progress`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_statement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Statement id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The preview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementPreview"];
+                };
+            };
+            /** @description No such Statement (`statement_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    delete_statement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Statement id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Discarded */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such Statement (`statement_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Already confirmed (`statement_confirmed`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    post_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Statement id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Confirmed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmCounts"];
+                };
+            };
+            /** @description A choice is missing or invalid (`sections_mismatch`, `invalid_section`, `new_account_required`, `invalid_new_account`, `account_ambiguous`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description No such Statement or Account (`statement_not_found`, `account_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Not readable, already confirmed, or another confirm is running (`statement_not_readable`, `statement_confirmed`, `confirm_in_progress`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    post_read_again: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Statement id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Statement and what would change */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadAgainPreview"];
+                };
+            };
+            /** @description No such Statement (`statement_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description The engine no longer reads the file as before (`statement_not_readable`, `statement_sections_changed`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description The statement reader failed */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    post_read_again_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Statement id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadAgainCounts"];
+                };
+            };
+            /** @description No such Statement (`statement_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description Unconfirmed, unreadable or a confirm is running (`statement_unconfirmed`, `statement_not_readable`, `statement_sections_changed`, `confirm_in_progress`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description The statement reader failed */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    get_finance_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceStatus"];
+                };
+            };
+        };
+    };
+    list_transactions: {
+        parameters: {
+            query?: {
+                /** @description Only this Account. */
+                account_id?: number;
+                /** @description Only on or after this date, `YYYY-MM-DD`. */
+                from?: string;
+                /** @description Only on or before this date, `YYYY-MM-DD`. */
+                to?: string;
+                /** @description Rows per page: 1 to 500, default 100. */
+                limit?: number;
+                /** @description Rows to skip, default 0. */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of Transactions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionPage"];
+                };
+            };
+            /** @description Invalid filter (`invalid_query`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
     health: {
         parameters: {
             query?: never;

@@ -19,10 +19,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing::{Level, Span};
-use vitarchy_core::level_for_status;
-
-/// Header carrying the request id, in both directions.
-pub const REQUEST_ID_HEADER: &str = "x-request-id";
+use vitarchy_core::{REQUEST_ID_HEADER, level_for_status};
 
 /// The frontend polls this every few seconds; logging each poll at `info`
 /// would bury everything else.

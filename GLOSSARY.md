@@ -70,7 +70,7 @@ _Avoid_: Session, streak, deep work
 
 **Source**:
 A tracking app whose local data Vitarchy Imports Activity from, such as Toggl Track or Clockify Desktop. Each Source's Activity is kept as that Source recorded it; Activity from several Sources is combined only when it is read. Toggl Track plays two separate roles: the Mac app is a Source of Activity, and the Toggl connection is where Time Entries are Synced from. The two never mix.
-_Avoid_: Tracker, provider, integration
+_Avoid_: Tracker, provider, integration (Source is a Time word; Finance's files are Statements)
 
 **Sync**:
 Bringing the person's Time Entries from Toggl into Vitarchy so the copy matches Toggl, including deletions. The person starts it with a button.
@@ -109,3 +109,37 @@ _Avoid_: Last period, baseline
 **Usual**:
 How a group usually went over the 4 weeks (28 Days) just before a Period: its per-Day average, minimum and maximum over the Days it happened, and how many Days that was. The Usual applies to Timeline figures in the same way, over the Days that have Timeline. When a Period is compared with the Usual, totals and counts are scaled to the Days that have passed in the Period, against the Days of history available.
 _Avoid_: Baseline, norm, typical
+
+## Finance
+
+**Statement**:
+A file from a bank or card issuer (PDF, CSV, XLS or XLSX) that lists the Transactions of one or more Accounts over a period. It is unconfirmed until the person checks its preview and confirms it; only then do its Transactions count. Vitarchy keeps the original file so it can be Read again.
+_Avoid_: Source, feed, export, report
+
+**Account**:
+A savings account, credit card or loan at one issuer, known by its masked number. A card bill is one Account even when it lists add-on cards.
+_Avoid_: Wallet, card (as a general word)
+
+**Transaction**:
+One movement of money on one Account, exactly as its Statement printed it: the date, the description, the amount, whether it was a debit or a credit, and the balance after it when printed. The same Transaction appearing in two overlapping Statements is stored once.
+_Avoid_: Entry, record, txn
+
+**Payment record**:
+What a payment app such as PhonePe noted about one payment: when, with whom, its ids, and the Account it used. It is never money on its own; it links to at most one Transaction, and it waits unlinked until that Account's Statement arrives.
+_Avoid_: UPI record, payment detail
+
+**Payment history**:
+A payment app's export of Payment records. It is not a Statement and creates no Transactions.
+_Avoid_: Statement (for app exports)
+
+**Statement password**:
+A password the person saved for opening locked Statements. Each one is tried on every locked file and never shown again.
+_Avoid_: PIN, key
+
+**Check**:
+A test that a Statement's Transactions agree with each other and with the totals it prints: the running balance follows row to row, the debits and credits sum to the printed totals, and the counts match. A failed Check is a warning, not a rejection, because issuers sometimes print inconsistent figures.
+_Avoid_: Validation, reconciliation
+
+**Read again**:
+Running the current reading engine over a stored Statement, to find Transactions an earlier engine missed. It adds what is new and marks what it no longer finds, but never deletes.
+_Avoid_: Re-import, reparse, refresh

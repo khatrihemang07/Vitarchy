@@ -1,0 +1,135 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "XXXXXX0909"
+      },
+      "period": {
+        "start": "2026-03-01",
+        "end": "2026-03-31"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-03-04",
+          "description": "UPI/647378288300/ZETA TRAVELS",
+          "amount_paise": 394070,
+          "direction": "debit",
+          "balance_paise": 3605930,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "647378288300",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-05",
+          "description": "TEST BOOKS",
+          "amount_paise": 29352,
+          "direction": "credit",
+          "balance_paise": 3635282,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-05",
+          "description": "ACME GROCERS",
+          "amount_paise": 823161,
+          "direction": "credit",
+          "balance_paise": 4458443,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-05",
+          "description": "DEMO CAFE",
+          "amount_paise": 530797,
+          "direction": "debit",
+          "balance_paise": 3927646,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-07",
+          "description": "FAKE FUELS",
+          "amount_paise": 643479,
+          "direction": "debit",
+          "balance_paise": 3284167,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-07",
+          "description": "UPI/255594312126/SAMPLE PHARMACY",
+          "amount_paise": 398085,
+          "direction": "credit",
+          "balance_paise": 3682252,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "255594312126",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-08",
+          "description": "ZETA TRAVELS",
+          "amount_paise": 465569,
+          "direction": "debit",
+          "balance_paise": 3216683,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-10",
+          "description": "UPI/404406326152/ACME GROCERS",
+          "amount_paise": 163543,
+          "direction": "debit",
+          "balance_paise": 3053140,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "404406326152",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-11",
+          "description": "SAMPLE PHARMACY",
+          "amount_paise": 327937,
+          "direction": "credit",
+          "balance_paise": 3381077,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

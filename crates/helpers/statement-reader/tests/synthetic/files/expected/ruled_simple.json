@@ -1,0 +1,171 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "XXXXXX0123"
+      },
+      "period": {
+        "start": "2026-03-01",
+        "end": "2026-03-31"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-03-03",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 458789,
+          "direction": "debit",
+          "balance_paise": 41211,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-05",
+          "description": "UPI/391500080636/FAKE FUELS",
+          "amount_paise": 766111,
+          "direction": "credit",
+          "balance_paise": 807322,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "391500080636",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-07",
+          "description": "LUMEN ELECTRIC",
+          "amount_paise": 664924,
+          "direction": "debit",
+          "balance_paise": 142398,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-07",
+          "description": "NOVA MART",
+          "amount_paise": 508554,
+          "direction": "credit",
+          "balance_paise": 650952,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-09",
+          "description": "UPI/585178128657/SAMPLE PHARMACY",
+          "amount_paise": 773360,
+          "direction": "credit",
+          "balance_paise": 1424312,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "585178128657",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-11",
+          "description": "UPI/283038836859/SAMPLE PHARMACY",
+          "amount_paise": 375434,
+          "direction": "debit",
+          "balance_paise": 1048878,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "283038836859",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-11",
+          "description": "UPI/828836075983/ZETA TRAVELS",
+          "amount_paise": 991724,
+          "direction": "debit",
+          "balance_paise": 57154,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "828836075983",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-12",
+          "description": "ZETA TRAVELS",
+          "amount_paise": 582509,
+          "direction": "debit",
+          "balance_paise": -525355,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-13",
+          "description": "UPI/110704341925/ACME GROCERS",
+          "amount_paise": 309385,
+          "direction": "credit",
+          "balance_paise": -215970,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "110704341925",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-14",
+          "description": "FAKE FUELS",
+          "amount_paise": 275973,
+          "direction": "credit",
+          "balance_paise": 60003,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-15",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 877672,
+          "direction": "credit",
+          "balance_paise": 937675,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-17",
+          "description": "UPI/806956042304/TEST BOOKS",
+          "amount_paise": 79162,
+          "direction": "debit",
+          "balance_paise": 858513,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "806956042304",
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

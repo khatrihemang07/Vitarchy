@@ -1,0 +1,190 @@
+# The helper's vocabulary: every bank-, issuer- or format-specific fact lives here, never in Python.
+# Header synonyms are matched after normalising (lower case, letters and digits only), so
+# "Withdrawal Amount (INR)" and "withdrawal amount(inr)" are the same entry.
+# Seeded from the research reports on real statements; extend it when a new layout needs a word.
+
+[fields]
+# Canonical field -> header texts seen on real statements (verbatim where noted).
+date = ["Date", "Txn Date", "Tran Date", "Transaction Date", "Post Date", "Posting Date", "Posted On"]
+value_date = ["Value Date", "Value Dt"]
+time = ["Time"]
+description = [
+  "Transaction Details", "Transactions", "Transaction Reference", "Transaction Remarks",
+  "Description", "Narration", "Narrative", "Particulars", "Remarks", "Details",
+]
+reference = [
+  "Ref No./Cheque No.", "Ref.No./Chq.No.", "Ref No", "Ref No/Cheque No",
+  "Chq/Ref No", "Cheque No", "Cheque Number",
+]
+# An id the issuer printed for each Transaction (not a row counter), and a UPI/bank reference column.
+source_id = ["SerNo.", "Transaction ID", "Txn ID"]
+utr = ["UTR", "UTR No", "RRN"]
+type = ["Transaction Type", "Dr/Cr", "Credit/Debit", "Type", "Mode"]
+debit = ["Debit", "Outflow", "Withdrawal", "Withdrawals", "Withdrawal Amt.", "Withdrawal Amount (INR)", "Dr"]
+credit = ["Credit", "Inflow", "Deposit", "Deposits", "Deposit Amt.", "Deposit Amount (INR)", "Cr"]
+amount = ["Amount", "Amount (in `)", "Amount (in Rs.)", "Amount (Rs.)"]
+balance = ["Balance", "Balance (INR)", "Closing Balance", "Running Balance", "Running Bal"]
+instrument = ["Credit/debit instrument", "Instrument", "Account"]
+serial = ["S No.", "Sr No", "Serial No"]  # a row counter, not an id
+foreign_amount = ["Intl.# amount", "Intl. amount", "Foreign Amount"]
+# Columns that carry nothing a Transaction needs; locating them keeps them out of descriptions.
+ignored = ["Reward Points", "Points"]
+
+[dates]
+# strptime formats, tried per column; the engine settles day-first from the whole column.
+formats = [
+  "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y", "%d/%m/%y", "%d-%m-%y", "%d %b %y", "%d %b %Y",
+  "%d %b, %Y", "%b %d, %Y", "%B %d, %Y", "%d %B %Y", "%d %B, %Y", "%d-%b-%Y", "%d-%b-%y",
+  "%d/%b/%Y", "%d.%m.%y", "%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d", "%Y-%m-%dT%H:%M:%S",
+  "%Y-%m-%d %H:%M:%S", "%m/%d/%Y", "%m-%d-%Y",
+]
+# Month spellings that strptime rejects, mapped to the 3-letter form it accepts.
+month_aliases = { sept = "sep" }
+time_formats = ["%I:%M %p", "%H:%M", "%H:%M:%S"]
+# Lines such as "Statement period : June 29, 2026 to July 28, 2026" or "01-08-2026 to 31-08-2026".
+period_labels = ["statement period", "statement from", "for the period", "transaction date from",
+  "duration", "period"]
+period_separators = [" to ", " - ", " – "]
+
+[directions]
+# Words in a type column, and suffix tokens after an amount (all matched case-insensitively).
+debit_words = ["debit", "dr", "d", "withdrawal", "debited"]
+credit_words = ["credit", "cr", "c", "deposit", "credited"]
+debit_suffixes = ["dr", "d"]
+credit_suffixes = ["cr", "c"]
+
+[amounts]
+# Text stripped before parsing an amount. Lakh grouping needs no handling: commas are dropped.
+currency_marks = ["₹", "`", "rs.", "rs", "inr"]
+# Cell texts that mean "nothing here" in a debit or credit column.
+zero_marks = ["", "-", "--", "0", "0.00", "nil"]
+
+[rows]
+# Rows that are not Transactions but carry figures: opening balance rows and per-page totals.
+opening_markers = ["b/f", "brought forward", "your opening balance", "opening balance"]
+closing_markers = ["your closing balance", "closing balance", "c/f", "carried forward"]
+page_total_markers = ["total:"]
+# Lines inside a table that are furniture, not description: they are skipped when rows take their lines.
+noise_startswith = ["for statement period"]
+
+[stops]
+# A line that starts with, or contains, one of these ends the Transaction table.
+startswith = [
+  "total:", "statement summary", "your closing balance", "transaction overview",
+  "account related other information", "legends", "legends used in account statement",
+  "legends for transactions", "# international spends", "* indicates international spends",
+  "for any query", "important messages", "important information", "sincerly", "sincerely",
+  "c=credit", "this is a system generated", "this is an automatically generated",
+  "disclaimer", "*all dates are in",
+]
+contains = ["page no.", "visit https://"]
+
+[sections]
+# Lines that open a new account or card section inside one table.
+masked_number = '(?<![\dXx*])\d{4}[Xx*]{4,}\d{2,4}(?![\dXx*])'
+# One printed account or card number, possibly in groups ("xxxx xxxx xxxx 9876"): a run of these tokens.
+mask_token = '(?i)^(?:[x*•]+\d*|\d{2,4}[x*•]+\d*|\d{2,4})$'
+masked_account = '(?i)\b[xX*]{3,}\d{3,4}\b'
+# "TRANSACTIONS FOR <NAME>" style dividers: a cardholder section, not a description line.
+cardholder_divider = '(?i)^transactions for\b'
+account_label_kinds = [
+  { pattern = '(?i)\bsaving[s]? account\b', kind = "savings" },
+  { pattern = '(?i)\bdl/tl account\b|\bloan account\b', kind = "loan" },
+]
+
+[kinds]
+# Phrases anywhere in a Statement that tell the Account kind (first match in order wins).
+credit_card = ["credit card statement", "total amount due"]
+loan = ["loan / od accounts", "dl/tl account", "loan account"]
+savings = ["savings account", "saving account", "statement of account", "account statement"]
+
+[payment_history]
+# A file whose header or preamble matches is a payment-app export (Payment records, no balances).
+preamble_markers = ["transaction statement for"]
+header_fields = ["instrument", "utr", "time", "type"]
+# Words before the funding account in an instrument cell ("Paid by XXXX4321").
+instrument_prefixes = ["paid by", "credited to", "debited from", "received in"]
+
+[facts]
+# Label phrases (lower case) that introduce a printed figure. Matching is longest-phrase-first.
+opening = ["previous balance", "opening balance", "your opening balance", "brought forward"]
+closing = ["total amount due", "total outstanding", "billed amount", "your closing balance",
+  "closing balance"]
+total_debit = ["purchases / charges", "purchases & other debits", "purchases / debits", "purchases",
+  "total debits"]
+total_credit = ["payments / credits", "payment / credits", "payments, reversals & other credits",
+  "payments", "total credits"]
+debit_count = ["dr count"]
+credit_count = ["cr count"]
+charges = ["fee, taxes & interest charges", "finance charges"]
+period_start = ["your opening balance on", "opening balance on"]
+period_end = ["your closing balance on", "closing balance on", "as on"]
+mask = ["credit card number", "card number", "card no", "account number", "account no"]
+
+[references]
+# Patterns that pull a UPI RRN/UTR or a NEFT/IMPS reference out of a description (group 1).
+patterns = [
+  'UPI/(?:DR|CR)/(\d{12})',
+  'UPI-(\d{12})-',
+  'UPI/(\d{12})/',
+  '(?:IMPS|NEFT)[/-](\d{12})\b',
+  'NEFT\*[A-Z]{4}0[A-Z0-9]{6}\*([A-Za-z0-9]+)',
+]
+
+# Issuer markers. `names` are phrases found in the document, `ifsc_prefix` the first four letters
+# of an IFSC code, `gstin_pan` the PAN inside the issuer's GSTIN. `kind` is the Account kind to
+# assume when no kind phrase is found.
+[[issuers]]
+name = "State Bank of India"
+names = ["state bank of india"]
+ifsc_prefix = ["SBIN"]
+gstin_pan = []
+kind = "savings"
+
+[[issuers]]
+name = "SBI Card"
+names = ["sbi card"]
+ifsc_prefix = []
+gstin_pan = []
+kind = "credit_card"
+
+[[issuers]]
+name = "ICICI Bank"
+names = ["icici bank"]
+ifsc_prefix = ["ICIC"]
+gstin_pan = []
+kind = "savings"
+
+[[issuers]]
+name = "Uni Cards (BOBCARD)"
+names = ["bobcard", "uni cards"]
+ifsc_prefix = []
+gstin_pan = []
+kind = "credit_card"
+
+# Used by the synthetic test fixtures only (tests/synthetic).
+[[issuers]]
+name = "Example Bank"
+names = ["example bank"]
+ifsc_prefix = ["EXMP"]
+gstin_pan = []
+kind = "savings"
+
+# Short forms a payment app prints for the funding account ("ICICI R"), matched as whole words.
+# They name the bank, never a card issuer ("BOB R" is the bank, whatever card sits on it).
+[[instrument_issuers]]
+name = "State Bank of India"
+names = ["sbi"]
+
+[[instrument_issuers]]
+name = "ICICI Bank"
+names = ["icici"]
+
+[[instrument_issuers]]
+name = "Bank of Baroda"
+names = ["bob"]
+
+# Used by the synthetic test fixtures only.
+[[instrument_issuers]]
+name = "Example Bank"
+names = ["example"]

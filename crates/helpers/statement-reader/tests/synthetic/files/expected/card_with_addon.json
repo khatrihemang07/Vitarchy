@@ -1,0 +1,135 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "credit_card",
+        "mask": "4000XXXXXXXX1111"
+      },
+      "period": {
+        "start": "2026-06-29",
+        "end": "2026-07-28"
+      },
+      "summary": {
+        "opening_paise": 5000000,
+        "closing_paise": 8190027,
+        "total_debit_paise": 3649660,
+        "total_credit_paise": 459633,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-07-04",
+          "description": "UPI/542205879158/ORCHID SWEETS",
+          "amount_paise": 986871,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "542205879158",
+          "addon_card": null,
+          "source_id": "14000000000"
+        },
+        {
+          "date": "2026-07-06",
+          "description": "UPI/762230128916/SAMPLE PHARMACY",
+          "amount_paise": 832950,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "762230128916",
+          "addon_card": null,
+          "source_id": "14000000001"
+        },
+        {
+          "date": "2026-07-07",
+          "description": "TEST BOOKS",
+          "amount_paise": 62450,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "14000000002"
+        },
+        {
+          "date": "2026-07-08",
+          "description": "UPI/361901933501/ACME GROCERS",
+          "amount_paise": 144652,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "361901933501",
+          "addon_card": null,
+          "source_id": "14000000003"
+        },
+        {
+          "date": "2026-07-08",
+          "description": "UPI/783616319229/ORCHID SWEETS",
+          "amount_paise": 759592,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "783616319229",
+          "addon_card": null,
+          "source_id": "14000000004"
+        },
+        {
+          "date": "2026-07-09",
+          "description": "UPI/901632980589/FAKE FUELS",
+          "amount_paise": 597688,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "901632980589",
+          "addon_card": "4000XXXXXXXX2222",
+          "source_id": "14000000005"
+        },
+        {
+          "date": "2026-07-10",
+          "description": "UPI/957363906950/DEMO CAFE",
+          "amount_paise": 459633,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "957363906950",
+          "addon_card": "4000XXXXXXXX2222",
+          "source_id": "14000000006"
+        },
+        {
+          "date": "2026-07-11",
+          "description": "NOVA MART",
+          "amount_paise": 207500,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": "25.00",
+          "foreign_currency": "USD",
+          "reference": null,
+          "addon_card": "4000XXXXXXXX2222",
+          "source_id": "14000000007"
+        },
+        {
+          "date": "2026-07-11",
+          "description": "ZETA TRAVELS",
+          "amount_paise": 57957,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": "4000XXXXXXXX2222",
+          "source_id": "14000000008"
+        }
+      ]
+    }
+  ]
+}

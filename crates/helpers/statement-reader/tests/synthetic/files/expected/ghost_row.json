@@ -1,0 +1,123 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "XXXXXX0555"
+      },
+      "period": {
+        "start": "2026-07-01",
+        "end": "2026-07-31"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-07-04",
+          "description": "UPI/500000000000/NA/PIXEL STORE",
+          "amount_paise": 323139,
+          "direction": "credit",
+          "balance_paise": 8323139,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "500000000000",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-07-04",
+          "description": "UPI/500000000001/NA/ORCHID SWEETS",
+          "amount_paise": 633745,
+          "direction": "credit",
+          "balance_paise": 8956884,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "500000000001",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-07-06",
+          "description": "UPI/500000000002/NA/ORCHID SWEETS",
+          "amount_paise": 747192,
+          "direction": "debit",
+          "balance_paise": 8209692,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "500000000002",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-07-07",
+          "description": "UPI/118326283710/NA/fake@exb/Example Bank/IBL9e92608a512345712db51c8c511c8d33/2e2e47d78cb1487e1bc79e69/",
+          "amount_paise": 977074,
+          "direction": "debit",
+          "balance_paise": 7232618,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "118326283710",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-07-09",
+          "description": "UPI/500000000004/NA/ZETA TRAVELS",
+          "amount_paise": 263356,
+          "direction": "debit",
+          "balance_paise": 6969262,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "500000000004",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-07-11",
+          "description": "UPI/500000000005/NA/LUMEN ELECTRIC",
+          "amount_paise": 228205,
+          "direction": "credit",
+          "balance_paise": 7197467,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "500000000005",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-07-12",
+          "description": "UPI/500000000006/NA/ACME GROCERS",
+          "amount_paise": 815223,
+          "direction": "debit",
+          "balance_paise": 6382244,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "500000000006",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-07-14",
+          "description": "UPI/500000000007/NA/DEMO CAFE",
+          "amount_paise": 620798,
+          "direction": "debit",
+          "balance_paise": 5761446,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "500000000007",
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

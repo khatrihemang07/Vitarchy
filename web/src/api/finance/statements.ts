@@ -1,0 +1,55 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createLogger } from "@/lib/log";
+import { callApi } from "../callApi";
+import { api } from "../client";
+import { toFinanceFailure } from "./failure";
+import { financeStatusKey, statementsKey, statementsKeyPrefix } from "./keys";
+
+const log = createLogger("finance");
+
+/** Statements waiting to be confirmed, newest upload first. */
+export function useUnconfirmedStatements() {
+  return useQuery({
+    queryKey: statementsKey("unconfirmed"),
+    queryFn: () => callApi(() => api.GET("/api/finance/statements", { params: { query: { status: "unconfirmed" } } })),
+    retry: false,
+  });
+}
+
+/** Confirmed Statements, newest upload first. */
+export function useConfirmedStatements() {
+  return useQuery({
+    queryKey: statementsKey("confirmed"),
+    queryFn: () => callApi(() => api.GET("/api/finance/statements", { params: { query: { status: "confirmed" } } })),
+    retry: false,
+  });
+}
+
+/** One Statement as a preview; loads only when `enabled`. */
+export function useStatementPreview(id: number, enabled: boolean) {
+  return useQuery({
+    queryKey: [...statementsKeyPrefix, "preview", id] as const,
+    queryFn: () => callApi(() => api.GET("/api/finance/statements/{id}", { params: { path: { id } } })),
+    enabled,
+    retry: false,
+  });
+}
+
+/** Discards an unconfirmed Statement and its stored file. */
+export function useDiscardStatement() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => callApi(() => api.DELETE("/api/finance/statements/{id}", { params: { path: { id } } })),
+    onSuccess: (_, id) => {
+      log.info("statement discarded", { statementId: id });
+    },
+    onError: (error, id) => {
+      log.warn("discard failed", { statementId: id, kind: toFinanceFailure(error).kind });
+    },
+    onSettled: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: statementsKeyPrefix }),
+        client.invalidateQueries({ queryKey: financeStatusKey }),
+      ]),
+  });
+}

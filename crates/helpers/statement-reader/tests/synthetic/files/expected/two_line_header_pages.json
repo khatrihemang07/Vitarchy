@@ -1,0 +1,315 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "XXXXXX0234"
+      },
+      "period": {
+        "start": "2026-03-01",
+        "end": "2026-04-30"
+      },
+      "summary": {
+        "opening_paise": 30000000,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-03-03",
+          "description": "UPI/167211068403/FAKE FUELS",
+          "amount_paise": 550615,
+          "direction": "debit",
+          "balance_paise": 29449385,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "167211068403",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-04",
+          "description": "DEMO CAFE",
+          "amount_paise": 358792,
+          "direction": "debit",
+          "balance_paise": 29090593,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-05",
+          "description": "UPI/741840494836/TEST BOOKS",
+          "amount_paise": 449314,
+          "direction": "debit",
+          "balance_paise": 28641279,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "741840494836",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-06",
+          "description": "UPI/440107488752/TEST BOOKS",
+          "amount_paise": 711508,
+          "direction": "credit",
+          "balance_paise": 29352787,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "440107488752",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-07",
+          "description": "LUMEN ELECTRIC",
+          "amount_paise": 295957,
+          "direction": "debit",
+          "balance_paise": 29056830,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-08",
+          "description": "UPI/524700514505/DEMO CAFE",
+          "amount_paise": 308034,
+          "direction": "debit",
+          "balance_paise": 28748796,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "524700514505",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-10",
+          "description": "UPI/149374246925/ORCHID SWEETS",
+          "amount_paise": 605928,
+          "direction": "credit",
+          "balance_paise": 29354724,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "149374246925",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-11",
+          "description": "NOVA MART",
+          "amount_paise": 777927,
+          "direction": "credit",
+          "balance_paise": 30132651,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-12",
+          "description": "UPI/087935018463/ORCHID SWEETS",
+          "amount_paise": 505969,
+          "direction": "credit",
+          "balance_paise": 30638620,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "087935018463",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-14",
+          "description": "ACME GROCERS",
+          "amount_paise": 259163,
+          "direction": "debit",
+          "balance_paise": 30379457,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-16",
+          "description": "FAKE FUELS",
+          "amount_paise": 456000,
+          "direction": "credit",
+          "balance_paise": 30835457,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-17",
+          "description": "UPI/475683456714/NOVA MART",
+          "amount_paise": 663359,
+          "direction": "debit",
+          "balance_paise": 30172098,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "475683456714",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-18",
+          "description": "UPI/027976630320/FAKE FUELS",
+          "amount_paise": 644640,
+          "direction": "debit",
+          "balance_paise": 29527458,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "027976630320",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-20",
+          "description": "UPI/803295878701/TEST BOOKS",
+          "amount_paise": 40843,
+          "direction": "debit",
+          "balance_paise": 29486615,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "803295878701",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-21",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 404673,
+          "direction": "credit",
+          "balance_paise": 29891288,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-23",
+          "description": "UPI/761119586671/TEST BOOKS",
+          "amount_paise": 664126,
+          "direction": "debit",
+          "balance_paise": 29227162,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "761119586671",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-24",
+          "description": "UPI/618252225754/LUMEN ELECTRIC",
+          "amount_paise": 573184,
+          "direction": "debit",
+          "balance_paise": 28653978,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "618252225754",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-25",
+          "description": "UPI/418179781836/ACME GROCERS",
+          "amount_paise": 893741,
+          "direction": "debit",
+          "balance_paise": 27760237,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "418179781836",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-26",
+          "description": "ACME GROCERS",
+          "amount_paise": 415838,
+          "direction": "credit",
+          "balance_paise": 28176075,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-27",
+          "description": "UPI/261929245395/NOVA MART",
+          "amount_paise": 712753,
+          "direction": "debit",
+          "balance_paise": 27463322,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "261929245395",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-29",
+          "description": "SAMPLE PHARMACY",
+          "amount_paise": 171163,
+          "direction": "credit",
+          "balance_paise": 27634485,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-29",
+          "description": "DEMO CAFE",
+          "amount_paise": 246558,
+          "direction": "debit",
+          "balance_paise": 27387927,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-03-31",
+          "description": "ZETA TRAVELS",
+          "amount_paise": 731966,
+          "direction": "debit",
+          "balance_paise": 26655961,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-04-02",
+          "description": "UPI/902817594147/ZETA TRAVELS",
+          "amount_paise": 237953,
+          "direction": "debit",
+          "balance_paise": 26418008,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "902817594147",
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

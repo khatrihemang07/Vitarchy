@@ -15,7 +15,8 @@ endif
 
 .PHONY: help setup start dev stage web-build db db-stop stage-db stage-db-stop \
 	stage-seed test smoke check gen-api backup restore backup-stage restore-stage \
-	signing-setup helper-install helper-uninstall helper-run
+	signing-setup helper-install helper-uninstall helper-run \
+	finance-reader-install finance-golden finance-e2e
 
 help: ## List targets (addresses and ports are in .env and .env.stage)
 	@echo "LIVE (your real data, .env)"
@@ -73,8 +74,9 @@ stage-db: setup ## [stage] Start the throwaway stage Postgres (RAM only)
 stage-db-stop: ## [stage] Stop the stage Postgres (its data is discarded)
 	scripts/compose.sh stage rm -sf postgres-stage
 
-test: stage-db ## [stage] Run Rust and web tests against stage
+test: stage-db ## [stage] Run Rust, statement-reader and web tests against stage
 	$(STAGE) cargo test --workspace
+	cd crates/helpers/statement-reader && uv run pytest
 	pnpm --dir web test
 
 smoke: stage-db ## [stage] Start a stage server, check health and a settings save, stop it
@@ -92,8 +94,10 @@ stage-seed: stage-db ## [stage] Fill stage with fake Time data for the Reports p
 
 check: stage-db ## [stage] Lint, typecheck and test everything (the Definition of done gate)
 	scripts/test-guards.sh
+	scripts/check-private-leaks.sh
 	cargo clippy --workspace --all-targets -- -D warnings
 	$(STAGE) cargo test --workspace
+	cd crates/helpers/statement-reader && uv run ruff check . && uv run pytest
 	cd web && pnpm typecheck && pnpm lint && pnpm test
 
 # ---- OTHER -----------------------------------------------------------------
@@ -112,3 +116,12 @@ helper-uninstall: ## [other] Remove the activity helper (Snapshots are kept)
 
 helper-run: ## [other] Run the activity helper now (via launchd, so Full Disk Access applies)
 	scripts/run-activity-helper.sh
+
+finance-reader-install: ## [other] Install the Statement reader helper's Python environment (uv sync)
+	cd crates/helpers/statement-reader && uv sync
+
+finance-golden: ## [other] Read the private real Statements and compare with their expected counts
+	cd crates/helpers/statement-reader && uv run python -m tests.golden.run_golden
+
+finance-e2e: stage-db ## [stage] Import every private real Statement on a fresh stage database and check the counts
+	scripts/finance-e2e.sh

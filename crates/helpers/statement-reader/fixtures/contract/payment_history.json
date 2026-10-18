@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "outcome": "read",
+  "format": "csv",
+  "encrypted": false,
+  "unlocked_with": null,
+  "kind": "payment_history",
+  "statements": [],
+  "payment_records": [
+    {
+      "occurred_at": "2026-10-18T11:20:00",
+      "description": "Paid to SOME MERCHANT",
+      "amount_paise": 25000,
+      "direction": "debit",
+      "source_id": "T2610181120000000000001",
+      "utr": "512345678901",
+      "instrument": "XXXXXX4321",
+      "instrument_issuer": null,
+      "instrument_digits": "4321"
+    },
+    {
+      "occurred_at": "2026-09-19T00:05:00",
+      "description": "Received from SOME PERSON",
+      "amount_paise": 120050,
+      "direction": "credit",
+      "source_id": null,
+      "utr": null,
+      "instrument": null,
+      "instrument_issuer": null,
+      "instrument_digits": null
+    }
+  ],
+  "diagnostics": {"stage": null, "code": null, "pages": null, "rows": 2}
+}

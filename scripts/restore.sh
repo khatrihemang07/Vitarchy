@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Replaces a database's contents with a backup.
 #   usage: scripts/restore.sh live|stage FILE
+# If the backup has a <same name>.statements.tar.gz beside it, the Statement originals are
+# unpacked into FINANCE_STATEMENTS_DIR too (files are named by hash, so this only adds).
 # Live asks for an explicit y/N first. A fresh backup is taken beforehand so a
 # restore can itself be undone; FILE is copied aside first so that backup's
 # rotation can never take away the file being restored. Stop the app first (open
@@ -24,10 +26,20 @@ if [ "$1" = live ]; then
 fi
 
 snapshot=$(mktemp)
-trap 'rm -f "$snapshot"' EXIT
+statements_snapshot=$(mktemp)
+trap 'rm -f "$snapshot" "$statements_snapshot"' EXIT
 cp "$source_path" "$snapshot"
+statements_archive=${source_path%.sql.gz}.statements.tar.gz
+[ -f "$statements_archive" ] && cp "$statements_archive" "$statements_snapshot"
 
 scripts/backup.sh "$1" --protect "$source_path"
 # One transaction: a failed restore leaves the database as it was.
 gzip -dc "$snapshot" | compose exec -T "$SERVICE" psql -U "$DB_USER" -d "$DB_NAME" -q -v ON_ERROR_STOP=1 --single-transaction >/dev/null
 echo "restored $source_path into $1 ($DB_NAME)"
+
+statements_dir=$(statements_dir_for "$1")
+if [ -s "$statements_snapshot" ] && [ -n "$statements_dir" ]; then
+  mkdir -p "$statements_dir"
+  tar -xzf "$statements_snapshot" -C "$statements_dir"
+  echo "restored Statement originals into $statements_dir"
+fi

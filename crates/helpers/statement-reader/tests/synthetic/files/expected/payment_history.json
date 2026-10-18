@@ -1,0 +1,50 @@
+{
+  "outcome": "read",
+  "kind": "payment_history",
+  "payment_records": [
+    {
+      "occurred_at": "2026-10-18T11:20:00",
+      "description": "Paid to FAKE SHOP",
+      "amount_paise": 65000,
+      "direction": "debit",
+      "source_id": "T26101811200000000000000",
+      "utr": "512345678952",
+      "instrument": "XXXXXX0123",
+      "instrument_issuer": null,
+      "instrument_digits": "0123"
+    },
+    {
+      "occurred_at": "2026-09-30T09:05:00",
+      "description": "Received from FAKE PERSON",
+      "amount_paise": 120050,
+      "direction": "credit",
+      "source_id": "T26093009050000000000001",
+      "utr": "512345678953",
+      "instrument": "XXXXXX0123",
+      "instrument_issuer": null,
+      "instrument_digits": "0123"
+    },
+    {
+      "occurred_at": "2026-09-19T23:59:00",
+      "description": "Payment to FAKE STREAMING",
+      "amount_paise": 19900,
+      "direction": "debit",
+      "source_id": "T26091923590000000000002",
+      "utr": "512345678954",
+      "instrument": "EXAMPLE R",
+      "instrument_issuer": "Example Bank",
+      "instrument_digits": null
+    },
+    {
+      "occurred_at": "2026-09-19T00:05:00",
+      "description": "Refund from FAKE TRAVEL",
+      "amount_paise": 643980,
+      "direction": "credit",
+      "source_id": "T26091900050000000000003",
+      "utr": "512345678955",
+      "instrument": "EXAMPLE R",
+      "instrument_issuer": "Example Bank",
+      "instrument_digits": null
+    }
+  ]
+}

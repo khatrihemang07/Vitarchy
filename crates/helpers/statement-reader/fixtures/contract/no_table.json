@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "outcome": "no_table",
+  "format": "xlsx",
+  "encrypted": false,
+  "unlocked_with": null,
+  "kind": null,
+  "statements": [],
+  "payment_records": [],
+  "diagnostics": {"stage": "locate", "code": "no_header_or_columns", "pages": null, "rows": 40}
+}

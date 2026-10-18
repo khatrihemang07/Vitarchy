@@ -1,0 +1,312 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "xxxxxxx1111"
+      },
+      "period": {
+        "start": "2026-08-01",
+        "end": "2026-08-31"
+      },
+      "summary": {
+        "opening_paise": 5000000,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-08-02",
+          "description": "UPI/601815908301/SAMPLE PHARMACY",
+          "amount_paise": 459710,
+          "direction": "debit",
+          "balance_paise": 4540290,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "601815908301",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-04",
+          "description": "UPI/913909960308/ACME GROCERS",
+          "amount_paise": 905169,
+          "direction": "credit",
+          "balance_paise": 5445459,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "913909960308",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-04",
+          "description": "UPI/482199351819/ORCHID SWEETS",
+          "amount_paise": 67496,
+          "direction": "debit",
+          "balance_paise": 5377963,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "482199351819",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-06",
+          "description": "NOVA MART",
+          "amount_paise": 524167,
+          "direction": "debit",
+          "balance_paise": 4853796,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-07",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 605861,
+          "direction": "debit",
+          "balance_paise": 4247935,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-08",
+          "description": "UPI/979711471049/NOVA MART",
+          "amount_paise": 719328,
+          "direction": "debit",
+          "balance_paise": 3528607,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "979711471049",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-10",
+          "description": "NOVA MART",
+          "amount_paise": 422225,
+          "direction": "debit",
+          "balance_paise": 3106382,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-10",
+          "description": "UPI/768426846563/SAMPLE PHARMACY",
+          "amount_paise": 163252,
+          "direction": "credit",
+          "balance_paise": 3269634,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "768426846563",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-11",
+          "description": "ACME GROCERS",
+          "amount_paise": 339088,
+          "direction": "debit",
+          "balance_paise": 2930546,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-11",
+          "description": "UPI/866661760313/LUMEN ELECTRIC",
+          "amount_paise": 467030,
+          "direction": "credit",
+          "balance_paise": 3397576,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "866661760313",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-11",
+          "description": "DEMO CAFE",
+          "amount_paise": 160766,
+          "direction": "debit",
+          "balance_paise": 3236810,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-12",
+          "description": "UPI/117777412154/LUMEN ELECTRIC",
+          "amount_paise": 506871,
+          "direction": "debit",
+          "balance_paise": 2729939,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "117777412154",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-12",
+          "description": "TEST BOOKS",
+          "amount_paise": 377974,
+          "direction": "debit",
+          "balance_paise": 2351965,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-13",
+          "description": "TEST BOOKS",
+          "amount_paise": 500179,
+          "direction": "debit",
+          "balance_paise": 1851786,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-14",
+          "description": "UPI/551313735379/LUMEN ELECTRIC",
+          "amount_paise": 949041,
+          "direction": "debit",
+          "balance_paise": 902745,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "551313735379",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-15",
+          "description": "DEMO CAFE",
+          "amount_paise": 765006,
+          "direction": "credit",
+          "balance_paise": 1667751,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-15",
+          "description": "SAMPLE PHARMACY",
+          "amount_paise": 19934,
+          "direction": "debit",
+          "balance_paise": 1647817,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-15",
+          "description": "PIXEL STORE",
+          "amount_paise": 276963,
+          "direction": "debit",
+          "balance_paise": 1370854,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-15",
+          "description": "UPI/798682828807/NOVA MART",
+          "amount_paise": 819225,
+          "direction": "credit",
+          "balance_paise": 2190079,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "798682828807",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-16",
+          "description": "UPI/279180588871/SAMPLE PHARMACY",
+          "amount_paise": 931131,
+          "direction": "debit",
+          "balance_paise": 1258948,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "279180588871",
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    },
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "loan",
+        "mask": "xxxxxxx2222"
+      },
+      "period": {
+        "start": "2026-08-01",
+        "end": "2026-08-31"
+      },
+      "summary": {
+        "opening_paise": 22271900,
+        "closing_paise": 21929194,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-08-06",
+          "description": "UPI/623012383607/NOVA MART",
+          "amount_paise": 516078,
+          "direction": "debit",
+          "balance_paise": 22787978,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "623012383607",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-07",
+          "description": "ZETA TRAVELS",
+          "amount_paise": 858784,
+          "direction": "credit",
+          "balance_paise": 21929194,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

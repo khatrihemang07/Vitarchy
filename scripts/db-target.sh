@@ -30,3 +30,14 @@ compose() {
   fi
   POSTGRES_USER=$DB_USER POSTGRES_PASSWORD=$DB_PASSWORD docker compose --profile stage "$@"
 }
+
+# statements_dir_for live|stage: the folder of Statement originals (FINANCE_STATEMENTS_DIR in
+# the target's env file). Live falls back to the server's default folder; stage has no
+# fallback, so an unset stage never touches the real one. Prints nothing when unset.
+statements_dir_for() {
+  local dir
+  dir=$(env_value "$ROOT/$ENV_FILE" FINANCE_STATEMENTS_DIR)
+  [ -n "$dir" ] || dir=$(env_value "$ROOT/$ENV_FILE.example" FINANCE_STATEMENTS_DIR)
+  if [ -z "$dir" ] && [ "$1" = live ]; then dir="$HOME/Library/Application Support/Vitarchy/statements"; fi
+  printf '%s' "$dir"
+}

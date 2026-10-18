@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "outcome": "read",
+  "format": "pdf",
+  "encrypted": true,
+  "unlocked_with": 2,
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {"issuer": "Example Bank", "kind": "credit_card", "mask": "4000XXXXXXXX1111"},
+      "period": {"start": "2026-06-19", "end": "2026-07-18"},
+      "summary": {
+        "opening_paise": 1234500,
+        "closing_paise": 99900,
+        "total_debit_paise": 500000,
+        "total_credit_paise": 100000,
+        "debit_count": 2,
+        "credit_count": 1
+      },
+      "transactions": [
+        {
+          "date": "2026-07-02",
+          "description": "UPI/DR/512345678901/DEMO SHOP/EXB/pay./Indi",
+          "amount_paise": 550000,
+          "direction": "debit",
+          "balance_paise": 8021778,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "512345678901",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-07-03",
+          "description": "OVERSEAS STORE LONDON GB",
+          "amount_paise": 207500,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": "25.00",
+          "foreign_currency": "USD",
+          "reference": null,
+          "addon_card": "4000XXXXXXXX2222",
+          "source_id": "51234567907"
+        },
+        {
+          "date": "2026-07-04",
+          "description": "PAYMENT RECEIVED",
+          "amount_paise": 100000,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        }
+      ],
+      "checks": [
+        {"name": "balance_chain", "outcome": "passed", "detail": {"rows": 3, "breaks": 0, "polarity": "normal"}},
+        {"name": "summary_totals", "outcome": "failed", "detail": {"debit_diff_paise": 100, "credit_diff_paise": 0}},
+        {"name": "row_counts", "outcome": "skipped", "detail": {}}
+      ]
+    }
+  ],
+  "payment_records": [],
+  "diagnostics": {"stage": null, "code": null, "pages": 4, "rows": 3}
+}

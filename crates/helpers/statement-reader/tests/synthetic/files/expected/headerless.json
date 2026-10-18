@@ -1,0 +1,147 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "XXXXXX0456"
+      },
+      "period": {
+        "start": "2026-06-01",
+        "end": "2026-06-30"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-06-03",
+          "description": "UPI/807302157368/NOVA MART PAYMENT REF 7100 MONTHLY SETTLEMENT",
+          "amount_paise": 111927,
+          "direction": "debit",
+          "balance_paise": 7888073,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "807302157368",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-04",
+          "description": "ZETA TRAVELS PAYMENT REF 7101 MONTHLY SETTLEMENT",
+          "amount_paise": 918734,
+          "direction": "credit",
+          "balance_paise": 8806807,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-05",
+          "description": "UPI/453832364056/SAMPLE PHARMACY PAYMENT REF 7102 MONTHLY SETTLEMENT",
+          "amount_paise": 179017,
+          "direction": "debit",
+          "balance_paise": 8627790,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "453832364056",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-06",
+          "description": "UPI/990951454752/FAKE FUELS PAYMENT REF 7103 MONTHLY SETTLEMENT",
+          "amount_paise": 509594,
+          "direction": "debit",
+          "balance_paise": 8118196,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "990951454752",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-07",
+          "description": "UPI/560865690702/ACME GROCERS PAYMENT REF 7104 MONTHLY SETTLEMENT",
+          "amount_paise": 659010,
+          "direction": "debit",
+          "balance_paise": 7459186,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "560865690702",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-08",
+          "description": "UPI/585847195406/LUMEN ELECTRIC PAYMENT REF 7105 MONTHLY SETTLEMENT",
+          "amount_paise": 996743,
+          "direction": "debit",
+          "balance_paise": 6462443,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "585847195406",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-09",
+          "description": "UPI/548145421247/SAMPLE PHARMACY PAYMENT REF 7106 MONTHLY SETTLEMENT",
+          "amount_paise": 174375,
+          "direction": "debit",
+          "balance_paise": 6288068,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "548145421247",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-11",
+          "description": "ACME GROCERS PAYMENT REF 7107 MONTHLY SETTLEMENT",
+          "amount_paise": 141914,
+          "direction": "debit",
+          "balance_paise": 6146154,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-12",
+          "description": "UPI/126520642792/ZETA TRAVELS PAYMENT REF 7108 MONTHLY SETTLEMENT",
+          "amount_paise": 552560,
+          "direction": "debit",
+          "balance_paise": 5593594,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "126520642792",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-06-13",
+          "description": "LUMEN ELECTRIC PAYMENT REF 7109 MONTHLY SETTLEMENT",
+          "amount_paise": 98467,
+          "direction": "debit",
+          "balance_paise": 5495127,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

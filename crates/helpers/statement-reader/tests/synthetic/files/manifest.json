@@ -1,0 +1,104 @@
+{
+  "balance_first.pdf": {
+    "format": "pdf",
+    "pages": 1,
+    "words": 85
+  },
+  "borderless_wrapped.pdf": {
+    "format": "pdf",
+    "pages": 1,
+    "rotated_dropped": 1,
+    "words": 202
+  },
+  "card_with_addon.pdf": {
+    "format": "pdf",
+    "pages": 1,
+    "words": 102
+  },
+  "centred_narration.pdf": {
+    "bold_lines": 7,
+    "format": "pdf",
+    "pages": 1,
+    "words": 93
+  },
+  "consolidated.pdf": {
+    "format": "pdf",
+    "invisible_null": 6,
+    "pages": 3,
+    "words": 216
+  },
+  "encrypted.pdf": {
+    "encrypted": true,
+    "format": "pdf",
+    "pages": 1,
+    "password": "Synth1234",
+    "ruled": true,
+    "saved_password": "synth1234",
+    "words": 80
+  },
+  "encrypted_sheet.xlsx": {
+    "cols": 6,
+    "encrypted": true,
+    "first_data_row": 9,
+    "format": "xlsx",
+    "merged_blank": [
+      [
+        "D7",
+        "E7"
+      ],
+      [
+        "A7",
+        "A8"
+      ]
+    ],
+    "password": "XLSX2026",
+    "rows": 22,
+    "saved_password": "xlsx2026"
+  },
+  "ghost_row.xls": {
+    "cols": 9,
+    "format": "xls",
+    "ghost_rows": 1,
+    "remark_cap": 60,
+    "rows": 26
+  },
+  "headerless.pdf": {
+    "format": "pdf",
+    "invisible_null": 1,
+    "pages": 1,
+    "words": 125
+  },
+  "month_first.csv": {
+    "cols": 5,
+    "format": "csv",
+    "rows": 12
+  },
+  "payment_history.csv": {
+    "bom": true,
+    "cols": 8,
+    "format": "csv",
+    "rows": 11
+  },
+  "ruled_simple.pdf": {
+    "format": "pdf",
+    "pages": 1,
+    "ruled": true,
+    "words": 80
+  },
+  "side_panel.pdf": {
+    "format": "pdf",
+    "pages": 1,
+    "panel_right_edge": 208,
+    "words": 131
+  },
+  "signed_amount.pdf": {
+    "format": "pdf",
+    "pages": 1,
+    "words": 68
+  },
+  "two_line_header_pages.pdf": {
+    "format": "pdf",
+    "pages": 3,
+    "words": 258
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "XXXXXX0789"
+      },
+      "period": {
+        "start": "2026-09-01",
+        "end": "2026-09-30"
+      },
+      "summary": {
+        "opening_paise": 7471778,
+        "closing_paise": 6745171,
+        "total_debit_paise": 2707910,
+        "total_credit_paise": 1981303,
+        "debit_count": 6,
+        "credit_count": 4
+      },
+      "transactions": [
+        {
+          "date": "2026-09-01",
+          "description": "ZETA TRAVELS",
+          "amount_paise": 84785,
+          "direction": "credit",
+          "balance_paise": 7556563,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-02",
+          "description": "ACME GROCERS",
+          "amount_paise": 144437,
+          "direction": "debit",
+          "balance_paise": 7412126,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-03",
+          "description": "UPI/960903234853/LUMEN ELECTRIC",
+          "amount_paise": 334634,
+          "direction": "debit",
+          "balance_paise": 7077492,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "960903234853",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-05",
+          "description": "DEMO CAFE",
+          "amount_paise": 694848,
+          "direction": "credit",
+          "balance_paise": 7772340,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-05",
+          "description": "SAMPLE PHARMACY",
+          "amount_paise": 439195,
+          "direction": "debit",
+          "balance_paise": 7333145,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-06",
+          "description": "ORCHID SWEETS",
+          "amount_paise": 460827,
+          "direction": "credit",
+          "balance_paise": 7793972,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-06",
+          "description": "UPI/531476926738/NOVA MART",
+          "amount_paise": 959763,
+          "direction": "debit",
+          "balance_paise": 6834209,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "531476926738",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-08",
+          "description": "UPI/277626895867/DEMO CAFE",
+          "amount_paise": 740843,
+          "direction": "credit",
+          "balance_paise": 7575052,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "277626895867",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-10",
+          "description": "UPI/078105121977/ACME GROCERS",
+          "amount_paise": 151066,
+          "direction": "debit",
+          "balance_paise": 7423986,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "078105121977",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-09-12",
+          "description": "NOVA MART",
+          "amount_paise": 678815,
+          "direction": "debit",
+          "balance_paise": 6745171,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,195 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "credit_card",
+        "mask": "4000XXXXXXXX7777"
+      },
+      "period": {
+        "start": "2026-04-01",
+        "end": "2026-04-30"
+      },
+      "summary": {
+        "opening_paise": null,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-04-03",
+          "description": "PAYMENT TO DEMO CAFE FOR ORDER NUMBER 100000 INCLUDING DELIVERY AND HANDLING CHARGES",
+          "amount_paise": 674485,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007000"
+        },
+        {
+          "date": "2026-04-04",
+          "description": "PIXEL STORE ONLINE PURCHASE REF 100001 MEMBERSHIP RENEWAL ANNUAL PLAN",
+          "amount_paise": 592737,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007007"
+        },
+        {
+          "date": "2026-04-05",
+          "description": "NOVA MART 100002",
+          "amount_paise": 833110,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007014"
+        },
+        {
+          "date": "2026-04-07",
+          "description": "PAYMENT TO SAMPLE PHARMACY FOR ORDER NUMBER 100003 INCLUDING DELIVERY AND HANDLING CHARGES",
+          "amount_paise": 372814,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007021"
+        },
+        {
+          "date": "2026-04-09",
+          "description": "LUMEN ELECTRIC ONLINE PURCHASE REF 100004 MEMBERSHIP RENEWAL ANNUAL PLAN",
+          "amount_paise": 688057,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007028"
+        },
+        {
+          "date": "2026-04-10",
+          "description": "LUMEN ELECTRIC 100005",
+          "amount_paise": 12345678,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007035"
+        },
+        {
+          "date": "2026-04-10",
+          "description": "PAYMENT TO PIXEL STORE FOR ORDER NUMBER 100006 INCLUDING DELIVERY AND HANDLING CHARGES",
+          "amount_paise": 710445,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007042"
+        },
+        {
+          "date": "2026-04-10",
+          "description": "ACME GROCERS ONLINE PURCHASE REF 100007 MEMBERSHIP RENEWAL ANNUAL PLAN",
+          "amount_paise": 837734,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007049"
+        },
+        {
+          "date": "2026-04-10",
+          "description": "ACME GROCERS 100008",
+          "amount_paise": 950836,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007056"
+        },
+        {
+          "date": "2026-04-11",
+          "description": "PAYMENT TO LUMEN ELECTRIC FOR ORDER NUMBER 100009 INCLUDING DELIVERY AND HANDLING CHARGES",
+          "amount_paise": 348891,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007063"
+        },
+        {
+          "date": "2026-04-12",
+          "description": "FAKE FUELS ONLINE PURCHASE REF 100010 MEMBERSHIP RENEWAL ANNUAL PLAN",
+          "amount_paise": 480413,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007070"
+        },
+        {
+          "date": "2026-04-12",
+          "description": "TEST BOOKS 100011",
+          "amount_paise": 297277,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007077"
+        },
+        {
+          "date": "2026-04-12",
+          "description": "PAYMENT TO ZETA TRAVELS FOR ORDER NUMBER 100012 INCLUDING DELIVERY AND HANDLING CHARGES",
+          "amount_paise": 232911,
+          "direction": "credit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007084"
+        },
+        {
+          "date": "2026-04-14",
+          "description": "FAKE FUELS ONLINE PURCHASE REF 100013 MEMBERSHIP RENEWAL ANNUAL PLAN",
+          "amount_paise": 979001,
+          "direction": "debit",
+          "balance_paise": null,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": null,
+          "addon_card": null,
+          "source_id": "13680007091"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "outcome": "locked",
+  "format": "pdf",
+  "encrypted": true,
+  "unlocked_with": null,
+  "kind": null,
+  "statements": [],
+  "payment_records": [],
+  "diagnostics": {"stage": "open", "code": "no_password_worked", "pages": null, "rows": null}
+}

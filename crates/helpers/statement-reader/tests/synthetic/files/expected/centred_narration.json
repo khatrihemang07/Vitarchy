@@ -1,0 +1,111 @@
+{
+  "outcome": "read",
+  "kind": "statement",
+  "statements": [
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "savings",
+        "mask": "XXXXXX8765"
+      },
+      "period": {
+        "start": "2026-08-01",
+        "end": "2026-08-31"
+      },
+      "summary": {
+        "opening_paise": 10000000,
+        "closing_paise": null,
+        "total_debit_paise": null,
+        "total_credit_paise": null,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
+        {
+          "date": "2026-08-03",
+          "description": "FAKE PERSON 1 UPI/600000000000/NA/fake0",
+          "amount_paise": 770276,
+          "direction": "debit",
+          "balance_paise": 9229724,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "600000000000",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-03",
+          "description": "FAKE PERSON 2 UPI/600000000013/NA/fake1@exb/Example Bank/EXB1c3c",
+          "amount_paise": 738605,
+          "direction": "credit",
+          "balance_paise": 9968329,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "600000000013",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-04",
+          "description": "FAKE PERSON 3 UPI/600000000026/NA/fake2 NET BANKING @exb/Example Bank/EXB2c3c5d0a1b2e3f4a5",
+          "amount_paise": 635977,
+          "direction": "debit",
+          "balance_paise": 9332352,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "600000000026",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-04",
+          "description": "FAKE PERSON 4 UPI/600000000039/NA/fake3",
+          "amount_paise": 631359,
+          "direction": "credit",
+          "balance_paise": 9963711,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "600000000039",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-04",
+          "description": "FAKE PERSON 5 NET BANKING UPI/600000000052/NA/fake4@exb/Example Bank/EXB4c3c",
+          "amount_paise": 137995,
+          "direction": "debit",
+          "balance_paise": 9825716,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "600000000052",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-05",
+          "description": "FAKE PERSON 6 UPI/600000000065/NA/fake5@exb/Example Bank/EXB5c3c5d0a1b2e3f4a5",
+          "amount_paise": 452134,
+          "direction": "debit",
+          "balance_paise": 9373582,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "600000000065",
+          "addon_card": null,
+          "source_id": null
+        },
+        {
+          "date": "2026-08-07",
+          "description": "FAKE PERSON 7 UPI/600000000078/NA/fake6",
+          "amount_paise": 201669,
+          "direction": "debit",
+          "balance_paise": 9171913,
+          "foreign_amount": null,
+          "foreign_currency": null,
+          "reference": "600000000078",
+          "addon_card": null,
+          "source_id": null
+        }
+      ]
+    }
+  ]
+}
