@@ -1,0 +1,10 @@
+mod common;
+mod config;
+mod health;
+mod migrations;
+mod modules;
+mod openapi_cli;
+mod request_id;
+mod settings_wiring;
+mod spa;
+mod startup_log;

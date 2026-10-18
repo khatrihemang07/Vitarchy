@@ -39,3 +39,12 @@ unsafe_code = "forbid"
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
+
+# Keep target/ small: 50+ integration-test binaries each link tokio/axum/sqlx/utoipa, and full
+# debuginfo made every one of them hundreds of MB. Line tables keep usable backtraces for our
+# code; dependencies carry no debuginfo.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false

@@ -1,6 +1,4 @@
-mod common;
-
-use common::dummy_module;
+use crate::common::dummy_module;
 use vitarchy_core::test_db::TestDb;
 use vitarchy_server::{app, migrate, registry};
 

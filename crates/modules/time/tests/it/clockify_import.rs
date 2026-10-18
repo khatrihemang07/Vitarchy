@@ -1,8 +1,6 @@
 //! The Clockify Activity Import route against a fixture Clockify Snapshot.
 
-mod common;
-
-use common::{
+use crate::common::{
     activity::{CLOCKIFY_IMPORT, clockify_app, stored_for},
     call,
     clockify_snapshot::{ClockifyFixture, Item},

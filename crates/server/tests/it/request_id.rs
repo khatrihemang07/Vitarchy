@@ -1,7 +1,5 @@
-mod common;
-
+use crate::common::unreachable_pool;
 use axum::{body::Body, http::Request};
-use common::unreachable_pool;
 use tower::ServiceExt;
 use vitarchy_core::{AppState, log_capture::capture_logs};
 use vitarchy_server::app;

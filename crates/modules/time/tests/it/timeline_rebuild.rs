@@ -1,8 +1,6 @@
 //! The Timeline kept current as Activity changes, and rebuilt on request.
 
-mod common;
-
-use common::{
+use crate::common::{
     activity::{CLOCKIFY_IMPORT, clockify_app},
     call,
     clockify_snapshot::{ClockifyFixture, Item},

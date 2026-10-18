@@ -1,8 +1,6 @@
 //! The Timeline rebuilt once when the Away rules change, and not again after.
 
-mod common;
-
-use common::{
+use crate::common::{
     activity::{CLOCKIFY_IMPORT, clockify_app},
     call,
     clockify_snapshot::{ClockifyFixture, Item},

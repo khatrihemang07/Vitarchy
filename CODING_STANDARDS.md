@@ -42,7 +42,7 @@ Dependencies point inward: Modules → shared layers → `core`/`lib`. ESLint an
   - React components are `PascalCase.tsx`.
   - Other TS files are `camelCase.ts`.
   - Rust files are `snake_case.rs`.
-  - Tests sit beside their subject as `*.test.ts(x)` or under `crates/*/tests/`.
+  - Tests sit beside their subject as `*.test.ts(x)` or under `crates/*/tests/it/` (one integration-test binary per crate: add a `mod` line to its `main.rs`).
 
 ## Comments
 

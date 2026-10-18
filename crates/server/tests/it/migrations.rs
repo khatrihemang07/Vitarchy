@@ -1,6 +1,4 @@
-mod common;
-
-use common::dummy_module;
+use crate::common::dummy_module;
 use sqlx::PgPool;
 use utoipa_axum::router::OpenApiRouter;
 use vitarchy_core::{Module, test_db::TestDb};
@@ -10,7 +8,7 @@ fn second_module() -> Module {
     Module::new(
         "dummy2",
         OpenApiRouter::new,
-        sqlx::migrate!("./tests/dummy2_migrations"),
+        sqlx::migrate!("./tests/it/dummy2_migrations"),
     )
 }
 

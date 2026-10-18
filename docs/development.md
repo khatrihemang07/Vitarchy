@@ -116,7 +116,7 @@ function Budget() {
 
 A new Core setting touches exactly these places:
 
-1. `crates/settings/src/core_settings.rs`: add the field to `CoreSettings` (and an enum for it if it is a choice), and one line for it in `CoreSettings::from_stored`. Add a test in `crates/settings/tests/core_settings.rs`.
+1. `crates/settings/src/core_settings.rs`: add the field to `CoreSettings` (and an enum for it if it is a choice), and one line for it in `CoreSettings::from_stored`. Add a test in `crates/settings/tests/it/core_settings.rs`.
 2. `make gen-api`: regenerates `web/src/api/schema.d.ts`, so TypeScript now knows the field.
 3. `web/src/app/settings/core-sections.ts`: add the field to a section, with its options and `default: DEFAULT_CORE.<key>`. The Settings page and the valid theme and motion lists derive from this file.
 3a. `web/src/api/coreDefaults.ts`: add the field to `DEFAULT_CORE`, copying the Rust default. It is the one web copy of the defaults, used by Settings and by Modules while settings load or fail (`coreWithDefaults`).

@@ -1,8 +1,6 @@
 //! Activity from several Sources: they stay apart, and the routes know only real Sources.
 
-mod common;
-
-use common::{
+use crate::common::{
     FakeToggl,
     activity::{CLOCKIFY_IMPORT, TOGGL_IMPORT, stored_for, toggl_app},
     call,

@@ -1,8 +1,6 @@
 //! What Time writes to the log: counts and codes, never the token or entry text.
 
-mod common;
-
-use common::{
+use crate::common::{
     FakeToggl, TOKEN, call,
     clockify_snapshot::{ClockifyFixture, Item},
     connect,

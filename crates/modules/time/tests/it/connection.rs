@@ -1,8 +1,6 @@
 //! Connecting and disconnecting Toggl.
 
-mod common;
-
-use common::{FakeToggl, TOKEN, call, connect, stopped_entry, time_app, time_db};
+use crate::common::{FakeToggl, TOKEN, call, connect, stopped_entry, time_app, time_db};
 use serde_json::json;
 
 #[tokio::test]

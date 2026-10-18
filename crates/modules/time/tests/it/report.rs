@@ -1,8 +1,6 @@
 //! The Report and facets routes.
 
-mod common;
-
-use common::{FakeToggl, call, time_app, time_db};
+use crate::common::{FakeToggl, call, time_app, time_db};
 use vitarchy_core::test_db::TestDb;
 
 /// Two clients, three projects (one archived), and entries on 2026-10-12..14 (UTC).

@@ -1,7 +1,5 @@
-mod common;
-
+use crate::common::{dummy_module, unreachable_pool};
 use axum::{body::Body, http::Request};
-use common::{dummy_module, unreachable_pool};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 use vitarchy_core::AppState;

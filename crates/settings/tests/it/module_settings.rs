@@ -1,6 +1,4 @@
-mod common;
-
-use common::{call, settings_app, settings_db};
+use crate::common::{call, settings_app, settings_db};
 use serde_json::json;
 
 #[tokio::test]

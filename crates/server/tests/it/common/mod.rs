@@ -25,7 +25,11 @@ fn router() -> OpenApiRouter<AppState> {
 
 /// A Module that lives only in tests; owns the `dummy` schema.
 pub fn dummy_module() -> Module {
-    Module::new("dummy", router, sqlx::migrate!("./tests/dummy_migrations"))
+    Module::new(
+        "dummy",
+        router,
+        sqlx::migrate!("./tests/it/dummy_migrations"),
+    )
 }
 
 /// A pool that never connects until used, pointing at a closed port.

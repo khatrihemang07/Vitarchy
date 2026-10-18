@@ -1,8 +1,6 @@
 //! The Sync route against a fake Toggl.
 
-mod common;
-
-use common::{
+use crate::common::{
     FakeToggl, Gate, call, connect, deleted_entry, recent_entry, running_entry, stopped_entry,
     time_app, time_db,
 };

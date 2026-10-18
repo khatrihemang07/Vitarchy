@@ -1,8 +1,6 @@
 //! What saving settings writes to the log: scopes and key names, never values.
 
-mod common;
-
-use common::{call, settings_app, settings_db};
+use crate::common::{call, settings_app, settings_db};
 use serde_json::Value;
 use vitarchy_core::log_capture::capture_logs;
 

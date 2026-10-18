@@ -1,9 +1,7 @@
-mod common;
-
 use std::path::PathBuf;
 
+use crate::common::unreachable_pool;
 use axum::{Router, body::Body, http::Request};
-use common::unreachable_pool;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 use vitarchy_core::AppState;

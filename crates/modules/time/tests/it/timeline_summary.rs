@@ -1,8 +1,6 @@
 //! `GET /api/time/timeline`: the Timeline analysed for a Period.
 
-mod common;
-
-use common::{
+use crate::common::{
     call, time_db,
     timeline::import_rows,
     timeline_day::{clockify, two_source_day},

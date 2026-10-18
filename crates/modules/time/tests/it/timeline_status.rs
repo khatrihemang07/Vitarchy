@@ -1,8 +1,6 @@
 //! The Timeline's figures in the status response.
 
-mod common;
-
-use common::{
+use crate::common::{
     activity::{CLOCKIFY_IMPORT, clockify_app},
     call,
     clockify_snapshot::{ClockifyFixture, Item},

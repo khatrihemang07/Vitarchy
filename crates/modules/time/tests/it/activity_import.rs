@@ -1,8 +1,6 @@
 //! The Toggl Activity Import route against a fixture Snapshot.
 
-mod common;
-
-use common::{
+use crate::common::{
     activity::{TOGGL_IMPORT, stored_for, toggl_app},
     call,
     snapshot::{Fixture, Row, uuid},

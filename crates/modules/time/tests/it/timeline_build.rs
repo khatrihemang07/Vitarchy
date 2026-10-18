@@ -1,8 +1,6 @@
 //! The Timeline as an Import builds it: both Sources merged, repeatable, one Source followed.
 
-mod common;
-
-use common::{
+use crate::common::{
     activity::{CLOCKIFY_IMPORT, clockify_app, stored_for},
     call,
     clockify_snapshot::{ClockifyFixture, Item},

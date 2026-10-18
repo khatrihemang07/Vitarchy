@@ -1,7 +1,5 @@
-mod common;
-
+use crate::common::unreachable_pool;
 use axum::{body::Body, http::Request};
-use common::unreachable_pool;
 use http_body_util::BodyExt;
 use sqlx::PgPool;
 use tower::ServiceExt;
