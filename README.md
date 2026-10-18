@@ -35,6 +35,7 @@ The first run creates your `.env` files, installs packages, starts the database,
 | `make dev` | Work on the code with hot reload, on your real data: http://127.0.0.1:7420 |
 | `make stage` | Hot-reload on throwaway data instead: http://127.0.0.1:7520 |
 | `make finance-reader-install` | Re-install the Finance Statement reader (`make setup`, run by `make start`, installs it the first time; the app finds it by itself) |
+| `make finance-merge-duplicates` | Merge duplicate Finance Accounts (same bank, kind and account digits) into the oldest one, moving their Transactions across. Takes a backup first; stop `make start` before running it |
 | `make check` | Run every lint and test (on throwaway data) |
 | `make gen-api` | Refresh the app's API types after changing the server |
 | `make help` | List all commands |

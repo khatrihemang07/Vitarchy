@@ -2,9 +2,9 @@ use std::{env, process::ExitCode};
 
 use sqlx::postgres::PgPoolOptions;
 use vitarchy_core::{AppState, telemetry};
-use vitarchy_server::{app, config::Config, migrate, openapi, registry, spa, startup_log};
+use vitarchy_server::{app, config::Config, migrate, openapi, registry, repair, spa, startup_log};
 
-const USAGE: &str = "usage: vitarchy-server [openapi]\n  (no argument)  run the HTTP server\n  openapi        print the OpenAPI document to stdout";
+const USAGE: &str = "usage: vitarchy-server [openapi | finance-merge-duplicates]\n  (no argument)             run the HTTP server\n  openapi                   print the OpenAPI document to stdout\n  finance-merge-duplicates  merge Finance Accounts with the same issuer, kind and digits";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -16,6 +16,13 @@ async fn main() -> ExitCode {
         .as_slice()
     {
         ["openapi"] => print_openapi(),
+        ["finance-merge-duplicates"] => match merge_duplicates().await {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("error: {e}");
+                ExitCode::FAILURE
+            }
+        },
         [] => match serve().await {
             Ok(()) => ExitCode::SUCCESS,
             Err(e) => {
@@ -43,13 +50,33 @@ fn print_openapi() -> ExitCode {
     }
 }
 
-async fn serve() -> Result<(), Box<dyn std::error::Error>> {
+/// Loads `.env` (live runs only) and starts logging.
+fn init_environment() {
     // Stage runs (scripts/with-env.sh sets VITARCHY_STAGE) must never pick up the
     // live `.env`, even for variables the stage file leaves out.
     if env::var_os("VITARCHY_STAGE").is_none() {
         dotenvy::dotenv().ok();
     }
     telemetry::init();
+}
+
+async fn merge_duplicates() -> Result<(), Box<dyn std::error::Error>> {
+    init_environment();
+    let report = repair::finance_merge_duplicates(&Config::from_env()?).await?;
+    println!(
+        "merged {} Accounts in {} groups: {} Transactions moved, {} folded into others ({} Printings moved), {} Payment records linked again",
+        report.accounts_merged,
+        report.groups,
+        report.moved,
+        report.folded,
+        report.printings,
+        report.relinked
+    );
+    Ok(())
+}
+
+async fn serve() -> Result<(), Box<dyn std::error::Error>> {
+    init_environment();
     let config = Config::from_env()?;
     let (core, modules) = (registry::core(), registry::modules());
     startup_log::log(&config, &core, &modules);

@@ -5,6 +5,7 @@ pub mod account_stats;
 pub mod accounts;
 pub mod confirm_lock;
 pub mod counts;
+pub mod merge_moves;
 pub mod passwords;
 pub mod payment_records;
 pub mod printings;

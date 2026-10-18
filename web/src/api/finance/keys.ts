@@ -21,3 +21,9 @@ export const transactionsKeyPrefix = ["finance", "transactions"] as const;
 
 /** Query key of one Transaction's Printings; under the Transactions prefix so a confirm or Read again refreshes it. */
 export const printingsKey = (transactionId: number) => ["finance", "transactions", "printings", transactionId] as const;
+
+/**
+ * Query key of one Statement's preview. It sits under [`statementsKeyPrefix`], so every confirm
+ * (which invalidates that prefix) refreshes each open preview and its Account matches.
+ */
+export const statementPreviewKey = (id: number) => [...statementsKeyPrefix, "preview", id] as const;

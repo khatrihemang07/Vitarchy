@@ -106,3 +106,50 @@ async fn several_matching_accounts_need_a_choice() {
     );
     env.finish().await;
 }
+
+#[tokio::test]
+async fn a_new_account_that_is_already_known_reuses_it() {
+    let env = Env::new(
+        "cf_new_known",
+        vec![card(vec![tx(2, "A", 100)]), card(vec![tx(3, "B", 200)])],
+    )
+    .await;
+    let uploaded = env.upload(&[("a.pdf", b"a"), ("b.pdf", b"b")]).await;
+    let new = json!({"sections": [{"new_account": {"issuer": "ICICI Bank", "kind": "credit_card", "name": "Card"}}]});
+
+    for upload in uploaded.json.as_array().unwrap() {
+        let id = upload["id"].as_i64().unwrap();
+        let reply = env
+            .post(&format!("/statements/{id}/confirm"), &new.to_string())
+            .await;
+        assert_eq!(reply.status, 200, "{}", reply.text);
+    }
+
+    assert_eq!(env.get("/accounts").await.json.as_array().unwrap().len(), 1);
+    env.finish().await;
+}
+
+#[tokio::test]
+async fn a_new_account_without_a_number_is_created_even_when_one_is_known() {
+    let env = Env::new(
+        "cf_new_unnumbered",
+        vec![read(vec![section(
+            Some("ICICI Bank"),
+            Some(AccountKind::CreditCard),
+            "",
+            vec![tx(2, "A", 100)],
+        )])],
+    )
+    .await;
+    account(&env.db, "XXXX2003").await;
+    let id = env.upload_one("a.pdf", b"a").await;
+    let new = json!({"sections": [{"new_account": {"issuer": "ICICI Bank", "kind": "credit_card", "name": "Other"}}]});
+
+    let reply = env
+        .post(&format!("/statements/{id}/confirm"), &new.to_string())
+        .await;
+
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    assert_eq!(env.get("/accounts").await.json.as_array().unwrap().len(), 2);
+    env.finish().await;
+}

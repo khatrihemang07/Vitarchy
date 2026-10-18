@@ -117,7 +117,7 @@ A file from a bank or card issuer (PDF, CSV, XLS or XLSX) that lists the Transac
 _Avoid_: Source, feed, export, report
 
 **Account**:
-A savings account, credit card or loan at one issuer, known by its masked number. Each card on a bill is its own Account; a bill that lists several cards is one Statement with several Accounts.
+A savings account, credit card or loan at one issuer, known by that issuer, its kind and its masked number, and never created twice: a Statement of an Account Vitarchy already has joins it. Each card on a bill is its own Account; a bill that lists several cards is one Statement with several Accounts.
 _Avoid_: Wallet, card (as a general word)
 
 **Transaction**:

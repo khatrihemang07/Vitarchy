@@ -8,6 +8,7 @@ mod error;
 pub mod files;
 mod import;
 mod linking;
+mod merge;
 mod printings;
 mod problem;
 pub mod reader;
@@ -26,6 +27,7 @@ pub use dedupe::{
 };
 pub use error::FinanceError;
 pub use linking::{RecordFacts, TransactionFacts, link};
+pub use merge::{MergeReport, merge_duplicate_accounts};
 pub use routes::router_with;
 
 /// The Finance Module, mounted at `/api/finance`.

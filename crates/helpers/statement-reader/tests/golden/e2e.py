@@ -7,6 +7,12 @@ Run through `make finance-e2e`, which supplies the stage environment and the bui
 It creates a fresh `vitarchy_e2e` database on the stage Postgres, starts the built server on a
 free port with this helper as the reader, drives the whole import flow and stops the server by
 PID. It refuses to run if the stage database is the live one.
+
+Three scenarios, each on a fresh database: the normal import (confirm with "use the match"),
+a page-style import (confirm with the choices the web page builds from the upload-time
+previews, one section at a time), and a repair (duplicate Accounts made by bypassing the
+server's rule, then merged by `vitarchy-server finance-merge-duplicates`). The last two must
+end with the same counts as the first.
 """
 
 from __future__ import annotations
@@ -241,7 +247,8 @@ def assert_printings(stage_url: str, expected: dict, gains: dict[str, int]) -> N
     print(f"  INFO  {show_xlsx} of {printed_both} show the XLSX's fuller text")
 
 
-def run(api: Api, stage_url: str, expected: dict) -> None:
+def run(api: Api, stage_url: str, expected: dict) -> dict[str, int]:
+    """The normal scenario; returns its final counts for the others to match."""
     passwords = json.loads((PRIVATE / "passwords.json").read_text())
     for label, secrets in passwords.items():
         for index, secret in enumerate(secrets):
@@ -262,6 +269,8 @@ def run(api: Api, stage_url: str, expected: dict) -> None:
     assert_accounts(api.call("GET", "/api/finance/accounts")[1], expected)
     assert_links(stage_url)
     assert_printings(stage_url, expected, gains)
+    final = counts(stage_url)
+    print(f"  final counts: {final}")
     _, again = api.upload(files)
     dups = sum(1 for p in again if p.get("duplicate_file"))
     check(dups == FILE_COUNT, f"re-upload: {dups}/{len(again)} duplicate_file")
@@ -277,6 +286,112 @@ def run(api: Api, stage_url: str, expected: dict) -> None:
     check(errors == 0, f"every Read again returned 200 ({len(previews) - errors}/{len(previews)})")
     check(adds == 0 and vanished == 0 and new_printings == 0 and enriched == 0,
           f"Read again: {adds} to add, {new_printings} Printings to add ({enriched} gaining detail), {vanished} no longer found")
+    return final
+
+
+def counts(stage_url: str) -> dict[str, int]:
+    """Row counts of what a finished import leaves: the figures every scenario must agree on."""
+    sql = ("SELECT (SELECT count(*) FROM finance.accounts), (SELECT count(*) FROM finance.transactions), "
+           "(SELECT count(*) FROM finance.printings), "
+           "(SELECT count(*) FROM finance.payment_records WHERE transaction_id IS NOT NULL)")
+    keys = ("accounts", "transactions", "printings", "linked")
+    return dict(zip(keys, (int(n) for n in psql(stage_url, E2E_DB, sql).strip().split("|")), strict=True))
+
+
+def duplicate_account_pairs(stage_url: str) -> int:
+    """How many pairs of Accounts share issuer, kind and visible digits (must be 0)."""
+    rows = [r.split("|") for r in psql(stage_url, E2E_DB,
+            "SELECT issuer, kind, coalesce(mask, '') FROM finance.accounts ORDER BY id").splitlines()]
+    norm = lambda text: " ".join(text.lower().split())  # noqa: E731
+    return sum(1 for i, a in enumerate(rows) for b in rows[i + 1:]
+               if norm(a[0]) == norm(b[0]) and a[1] == b[1] and visible_digits(a[2]) and same_number(a[2], b[2]))
+
+
+def page_choice(section: dict) -> dict:
+    """The choice the web page sends for a section, from `sectionChoice.initialDraft`."""
+    if section.get("matched_account"):
+        return {"account_id": section["matched_account"]["id"]}
+    if section.get("candidate_accounts"):
+        return {"account_id": None}  # the page makes the person choose; sent as "use the match"
+    proposed = section["proposed"]
+    return {"new_account": {"issuer": proposed.get("issuer") or "Unknown",
+                            "kind": proposed.get("kind") or "savings", "name": "Unnamed"}}
+
+
+def confirm_in_order(api: Api, previews: list[dict], choose) -> int:
+    """Confirms Statements then Payment histories in upload order, each section's choice built by
+    `choose(section)` from the preview as it was at upload; returns how many confirms were refused."""
+    refused = 0
+    for preview in sorted(previews, key=lambda p: p["kind"] == "payment_history"):
+        sections = [choose(preview, section) for section in preview.get("sections") or []]
+        status, reply = api.call("POST", f"/api/finance/statements/{preview['id']}/confirm", {"sections": sections})
+        if status != 200:
+            print(f"    confirm statement {preview['id']} returned {status}, code {(reply or {}).get('code')}")
+            refused += 1
+    return refused
+
+
+def upload_all(api: Api) -> list[dict]:
+    """Saves the Statement passwords, uploads every private file and returns the upload-time previews."""
+    passwords = json.loads((PRIVATE / "passwords.json").read_text())
+    for label, secrets in passwords.items():
+        for index, secret in enumerate(secrets):
+            api.call("POST", "/api/finance/statement-passwords", {"label": f"{label.split('_format')[0]}-{index}", "secret": secret})
+    _, previews = api.upload(sorted(p for p in (PRIVATE / "statements").iterdir() if p.is_file()))
+    return previews
+
+
+def run_page_style(api: Api, stage_url: str, normal: dict[str, int]) -> None:
+    """Confirms as the page does: choices from the upload-time previews, in upload order."""
+    print("page-style import:")
+    refused = confirm_in_order(api, upload_all(api), lambda _, section: page_choice(section))
+    check(refused == 0, "every page-style confirm returned 200")
+    check(duplicate_account_pairs(stage_url) == 0, "no two Accounts share issuer, kind and digits")
+    final = counts(stage_url)
+    check(final == normal, f"same counts as the normal import ({final} vs {normal})")
+
+
+def force_account(stage_url: str, proposed: dict) -> int | None:
+    """Creates an Account by direct SQL, bypassing the server's rule, so duplicates can exist."""
+    if not (proposed.get("issuer") and proposed.get("kind")):
+        return None
+    quote = lambda text: "'" + str(text).replace("'", "''") + "'"  # noqa: E731
+    mask = proposed.get("mask") or ""
+    digits = visible_digits(mask)
+    last4 = quote(digits[-4:]) if len(digits) >= 4 else "NULL"
+    sql = ("INSERT INTO finance.accounts (issuer, kind, mask, last4, name) VALUES "
+           f"({quote(proposed['issuer'])}, {quote(proposed['kind'])}, {quote(mask) if mask else 'NULL'}, {last4}, 'Forced') RETURNING id")
+    return int(psql(stage_url, E2E_DB, sql).splitlines()[0])
+
+
+def merge_duplicates(stage_url: str) -> str:
+    """Runs the repair subcommand against the e2e database; returns its counts-only line."""
+    env = {**os.environ, "DATABASE_URL": urlparse(stage_url)._replace(path=f"/{E2E_DB}").geturl(),
+           "VITARCHY_STAGE": "1", "RUST_LOG": "warn"}
+    done = subprocess.run([str(ROOT / "target" / "debug" / "vitarchy-server"), "finance-merge-duplicates"],
+                          env=env, capture_output=True, text=True)
+    check(done.returncode == 0, "finance-merge-duplicates succeeded")
+    return done.stdout.strip()
+
+
+def run_repair(api: Api, stage_url: str, normal: dict[str, int]) -> None:
+    """Makes duplicate Accounts the way the old page did, then repairs them."""
+    print("repair:")
+
+    def choose(_, section: dict) -> dict:
+        made = force_account(stage_url, section["proposed"])
+        return {"account_id": made} if made else page_choice(section)
+
+    refused = confirm_in_order(api, upload_all(api), choose)
+    check(refused == 0, "every confirm onto a forced Account returned 200")
+    check(duplicate_account_pairs(stage_url) > 0, "the duplicates exist before the repair")
+    before = counts(stage_url)
+    print(f"  {merge_duplicates(stage_url)}")
+    check(duplicate_account_pairs(stage_url) == 0, "no two Accounts share issuer, kind and digits after the repair")
+    final = counts(stage_url)
+    check(final == normal, f"same counts as the normal import ({final} vs {normal}; before {before})")
+    merge_duplicates(stage_url)
+    check(counts(stage_url) == final, "a second repair changes nothing")
 
 
 def main() -> int:
@@ -288,23 +403,30 @@ def main() -> int:
     if not (PRIVATE / "statements").is_dir() or not (PRIVATE / "passwords.json").exists():
         sys.exit("the private fixtures are missing")
     admin_db = urlparse(stage_url).path.lstrip("/")
-    psql(stage_url, admin_db, f"DROP DATABASE IF EXISTS {E2E_DB} WITH (FORCE)")
-    psql(stage_url, admin_db, f"CREATE DATABASE {E2E_DB}")
     scratch = tempfile.mkdtemp(prefix="vitarchy-e2e-")
-    log = Path(scratch) / "server.log"
-    port = free_port()
-    server = start_server(stage_url, port, str(Path(scratch) / "statements"), log)
-    try:
-        run(Api(port), stage_url, expected)
-    finally:
-        server.terminate()
+    normal: dict[str, int] = {}
+    scenarios = [("normal", lambda api: run(api, stage_url, expected)),
+                 ("page-style", lambda api: run_page_style(api, stage_url, normal)),
+                 ("repair", lambda api: run_repair(api, stage_url, normal))]
+    for name, scenario in scenarios:
+        psql(stage_url, admin_db, f"DROP DATABASE IF EXISTS {E2E_DB} WITH (FORCE)")
+        psql(stage_url, admin_db, f"CREATE DATABASE {E2E_DB}")
+        log = Path(scratch) / f"server-{name}.log"
+        port = free_port()
+        server = start_server(stage_url, port, str(Path(scratch) / "statements"), log)
         try:
-            server.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            server.kill()
-        if not failures:
-            shutil.rmtree(scratch, ignore_errors=True)
-    print(f"{'FAILED' if failures else 'OK'}: {len(failures)} failed assertion(s)" + (f"; server log in {log}" if failures else ""))
+            result = scenario(Api(port))
+            if name == "normal":
+                normal.update(result)
+        finally:
+            server.terminate()
+            try:
+                server.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                server.kill()
+    if not failures:
+        shutil.rmtree(scratch, ignore_errors=True)
+    print(f"{'FAILED' if failures else 'OK'}: {len(failures)} failed assertion(s)" + (f"; server logs in {scratch}" if failures else ""))
     return 1 if failures else 0
 
 

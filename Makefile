@@ -17,15 +17,16 @@ endif
 .PHONY: help setup start dev stage web-build db db-stop stage-db stage-db-stop \
 	stage-seed test smoke check gen-api backup restore backup-stage restore-stage \
 	signing-setup helper-install helper-uninstall helper-run \
-	finance-reader-install finance-golden finance-e2e
+	finance-reader-install finance-golden finance-e2e \
+	finance-merge-duplicates finance-merge-duplicates-stage
 
 help: ## List targets (addresses and ports are in .env and .env.stage)
 	@echo "LIVE (your real data, .env)"
-	@grep -hE '^[a-z-]+:.*## \[live\]' Makefile | sed -E 's/:.*## \[live\] */|/' | awk -F'|' '{printf "  make %-17s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## \[live\]' Makefile | sed -E 's/:.*## \[live\] */|/' | awk -F'|' '{printf "  make %-31s %s\n", $$1, $$2}'
 	@echo "STAGE (throwaway data, .env.stage: tests and checks)"
-	@grep -hE '^[a-z-]+:.*## \[stage\]' Makefile | sed -E 's/:.*## \[stage\] */|/' | awk -F'|' '{printf "  make %-17s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## \[stage\]' Makefile | sed -E 's/:.*## \[stage\] */|/' | awk -F'|' '{printf "  make %-31s %s\n", $$1, $$2}'
 	@echo "OTHER"
-	@grep -hE '^[a-z-]+:.*## \[other\]' Makefile | sed -E 's/:.*## \[other\] */|/' | awk -F'|' '{printf "  make %-17s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## \[other\]' Makefile | sed -E 's/:.*## \[other\] */|/' | awk -F'|' '{printf "  make %-31s %s\n", $$1, $$2}'
 
 setup: ## [other] One-time: create .env files and install web deps and the Statement reader
 	@[ -f .env ] || cp .env.example .env
@@ -61,6 +62,9 @@ backup: db ## [live] Dump live to backups/vitarchy-<time>.sql.gz (keeps the last
 restore: db ## [live] Replace live data with a backup, after a y/N prompt: make restore FILE=backups/...
 	@[ -n "$(FILE)" ] || { echo "usage: make restore FILE=backups/vitarchy-<time>.sql.gz"; exit 2; }
 	scripts/restore.sh live "$(FILE)"
+
+finance-merge-duplicates: backup ## [live] Merge duplicate Finance Accounts (same bank, kind and digits) into the oldest, after a backup
+	$(LIVE) cargo run --release -p vitarchy-server -- finance-merge-duplicates
 
 # ---- STAGE -----------------------------------------------------------------
 
@@ -101,6 +105,9 @@ check: stage-db ## [stage] Lint, typecheck and test everything (the Definition o
 	$(STAGE) cargo test --workspace
 	cd $(READER_DIR) && uv run ruff check . && uv run pytest
 	cd web && pnpm typecheck && pnpm lint && pnpm test
+
+finance-merge-duplicates-stage: stage-db ## [stage] Merge duplicate Finance Accounts on stage (to test the repair)
+	$(STAGE) cargo run -p vitarchy-server -- finance-merge-duplicates
 
 # ---- OTHER -----------------------------------------------------------------
 

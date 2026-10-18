@@ -3,6 +3,7 @@ export { useConfirmStatement } from "./confirm";
 export { failureFromCode, toFinanceFailure, type FinanceFailure } from "./failure";
 export { useAddPassword, useDeletePassword, usePasswords } from "./passwords";
 export { useConfirmReadAgain, useConfirmReadAllAgain, useReadAgain, useReadAllAgain } from "./readAgain";
+export { statementPreviewKey } from "./keys";
 export { useFinanceStatus } from "./status";
 export { useConfirmedStatements, useDiscardStatement, useStatementPreview, useUnconfirmedStatements } from "./statements";
 export { usePrintings } from "./printings";

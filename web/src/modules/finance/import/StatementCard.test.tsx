@@ -1,6 +1,6 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { jsonResponse, preview, renderWithClient, requestsOf, section, stubApi, transaction } from "../test-utils";
+import { account, jsonResponse, preview, renderWithClient, requestsOf, section, stubApi, transaction } from "../test-utils";
 import { StatementCard } from "./StatementCard";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -166,5 +166,38 @@ describe("StatementCard", () => {
     stubApi({ "GET /api/finance/accounts": accounts });
     renderWithClient(<StatementCard preview={preview({ outcome, sections: [] })} />);
     expect(screen.getByText(title)).toBeInTheDocument();
+  });
+});
+
+describe("StatementCard after another Statement was confirmed", () => {
+  const unmatched = () => preview({ sections: [section({ matched_account: null })] });
+  const matched = () => preview({ sections: [section({ matched_account: { id: 7, name: "Existing card" } })] });
+
+  it("switches an untouched New Account to the Account that now matches", async () => {
+    stubApi({
+      "GET /api/finance/accounts": () => jsonResponse(200, [account({ id: 7, name: "Existing card" })]),
+      "GET /api/finance/statements/1": () => jsonResponse(200, matched()),
+    });
+    renderWithClient(<StatementCard preview={unmatched()} />);
+
+    await waitFor(() => { expect(screen.getByRole("combobox", { name: "Account" })).toHaveTextContent("Existing card"); });
+    expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
+  });
+
+  it("confirms the refreshed match, not the stale New Account", async () => {
+    const fetchMock = stubApi({
+      "GET /api/finance/accounts": () => jsonResponse(200, [account({ id: 7, name: "Existing card" })]),
+      "GET /api/finance/statements/1": () => jsonResponse(200, matched()),
+      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 0, already_stored: 0, enriched: 0, linked: 0 }),
+      ...invalidations,
+    });
+    renderWithClient(<StatementCard preview={unmatched()} />);
+    await screen.findByText("Existing card");
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await screen.findByText("Confirmed.");
+    const confirm = fetchMock.mock.calls.map(([r]) => r).find((r) => r.url.endsWith("/confirm"));
+    expect(await confirm?.json()).toEqual({ sections: [{ account_id: 7 }] });
   });
 });

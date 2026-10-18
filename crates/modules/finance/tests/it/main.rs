@@ -8,6 +8,7 @@ mod import_account_match;
 mod import_encrypted;
 mod import_upload;
 mod logging;
+mod merge_duplicates;
 mod module;
 mod passwords_routes;
 mod payment_linking;

@@ -3,7 +3,7 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::PgExecutor;
 
-use crate::reader::contract::Transaction;
+use crate::reader::contract::{Direction, Transaction};
 
 pub use super::transactions_read_again::stored_keys;
 
@@ -123,4 +123,39 @@ pub async fn without_payment_record(
     )
     .fetch_all(db)
     .await
+}
+
+/// An Account's Transactions as the reader's row shape (their resolved view), in id order.
+///
+/// # Errors
+/// The database failed.
+pub async fn rows_of_account(
+    db: impl PgExecutor<'_>,
+    account_id: i64,
+) -> Result<Vec<(i64, Transaction)>, sqlx::Error> {
+    let rows: Vec<TransactionRow> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT {COLUMNS} FROM finance.transactions WHERE account_id = $1 ORDER BY id"
+    )))
+    .bind(account_id)
+    .fetch_all(db)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|r| {
+            Some((
+                r.id,
+                Transaction {
+                    date: r.date,
+                    description: r.description,
+                    amount_paise: r.amount_paise,
+                    direction: Direction::from_id(&r.direction)?,
+                    balance_paise: r.balance_paise,
+                    foreign_amount: r.foreign_amount,
+                    foreign_currency: r.foreign_currency,
+                    reference: r.reference,
+                    source_id: r.source_id,
+                },
+            ))
+        })
+        .collect())
 }

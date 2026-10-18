@@ -125,3 +125,26 @@ pub async fn identities(db: impl PgExecutor<'_>) -> Result<Vec<AccountIdentity>,
         })
         .collect())
 }
+
+/// Every Account by its own issuer, kind and mask (no remembered identifiers), oldest first.
+///
+/// # Errors
+/// The database failed.
+pub async fn own_identities(db: impl PgExecutor<'_>) -> Result<Vec<AccountIdentity>, sqlx::Error> {
+    let rows: Vec<KnownRow> = sqlx::query_as(
+        "SELECT id AS account_id, issuer, kind, mask FROM finance.accounts ORDER BY id",
+    )
+    .fetch_all(db)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| {
+            Some(AccountIdentity {
+                account_id: row.account_id,
+                issuer: row.issuer,
+                kind: AccountKind::from_id(&row.kind)?,
+                mask: row.mask,
+            })
+        })
+        .collect())
+}

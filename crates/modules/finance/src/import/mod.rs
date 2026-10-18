@@ -4,7 +4,7 @@
 pub mod choice;
 pub mod confirm;
 pub mod intake;
-mod link_waiting;
+pub(crate) mod link_waiting;
 mod printing_writes;
 mod proposal;
 pub mod read_again;
@@ -15,7 +15,7 @@ mod read_again_preview;
 mod read_again_write;
 mod read_counts;
 pub mod reading;
-mod refresh;
+pub(crate) mod refresh;
 mod resolve;
 pub mod retry;
 mod store_rows;

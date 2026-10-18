@@ -36,12 +36,32 @@ pub async fn account_for(
             remember_if_new(db, proposal, &found, *id).await?;
             Ok(*id)
         }
-        Choice::New(new) => create(db, proposal, new).await,
+        Choice::New(new) => create_unless_known(db, proposal, new, known).await,
         Choice::Proposal => match found {
             Match::One(id) | Match::OneWithoutNumber(id) => Ok(id),
             Match::Several(_) => Err(Refusal::AMBIGUOUS_ACCOUNT.into()),
             Match::None => create_from_proposal(db, proposal).await,
         },
+    }
+}
+
+/// An Account is known by issuer, kind and number, so a new one whose three match exactly
+/// one Account is that Account, whatever the page sent.
+async fn create_unless_known(
+    db: &mut PgConnection,
+    proposal: &ProposedAccount,
+    new: &NewAccount,
+    known: &[AccountIdentity],
+) -> Result<i64, FinanceError> {
+    let same = match_account(
+        Some(&new.issuer),
+        Some(new.kind),
+        proposal.mask.as_deref(),
+        known,
+    );
+    match same {
+        Match::One(id) => Ok(id),
+        _ => create(db, proposal, new).await,
     }
 }
 

@@ -3,7 +3,8 @@ import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
 import { toFinanceFailure } from "./failure";
-import { financeStatusKey, statementsKey, statementsKeyPrefix } from "./keys";
+import { financeStatusKey, statementPreviewKey, statementsKey, statementsKeyPrefix } from "./keys";
+import type { StatementPreview } from "./types";
 
 const log = createLogger("finance");
 
@@ -25,10 +26,14 @@ export function useConfirmedStatements() {
   });
 }
 
-/** One Statement as a preview; loads only when `enabled`. */
-export function useStatementPreview(id: number, enabled: boolean) {
+/**
+ * One Statement as a preview; loads only when `enabled`. `initial` seeds it (an upload's
+ * preview), and it is then refetched after every confirm so Account matches stay current.
+ */
+export function useStatementPreview(id: number, enabled: boolean, initial?: StatementPreview) {
   return useQuery({
-    queryKey: [...statementsKeyPrefix, "preview", id] as const,
+    queryKey: statementPreviewKey(id),
+    initialData: initial,
     queryFn: () => callApi(() => api.GET("/api/finance/statements/{id}", { params: { path: { id } } })),
     enabled,
     retry: false,
