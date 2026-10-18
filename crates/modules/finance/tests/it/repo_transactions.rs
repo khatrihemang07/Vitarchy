@@ -1,5 +1,8 @@
 use crate::common::{account, date, finance_db, statement, tx};
-use vitarchy_finance::{new_rows, read_again_diff, repo::transactions};
+use vitarchy_finance::{
+    new_rows, read_again_diff,
+    repo::{printings, transactions},
+};
 
 #[tokio::test]
 async fn stored_rows_come_back_as_evidence_that_drives_dedupe() {
@@ -12,7 +15,12 @@ async fn stored_rows_come_back_as_evidence_that_drives_dedupe() {
             .await
             .unwrap();
     }
-    let stored = transactions::evidence(&db.pool, account.id).await.unwrap();
+    let stored: Vec<_> = transactions::stored_keys(&db.pool, account.id)
+        .await
+        .unwrap()
+        .into_iter()
+        .map(|key| key.evidence)
+        .collect();
     let second = [
         tx(1, "coffee", 100),
         tx(2, "Tea", 200),
@@ -25,54 +33,48 @@ async fn stored_rows_come_back_as_evidence_that_drives_dedupe() {
 }
 
 #[tokio::test]
-async fn read_again_marks_lost_rows_and_clearing_restores_them_without_deleting() {
+async fn read_again_marks_gone_printings_and_clearing_restores_them_without_deleting() {
     let db = finance_db("tx_lost").await;
     let account = account(&db, "XX2003").await;
     let statement = statement(&db, 'a').await;
     let kept = tx(1, "Kept", 100);
-    transactions::insert(&db.pool, account.id, statement, &kept)
-        .await
-        .unwrap();
-    transactions::insert(&db.pool, account.id, statement, &tx(2, "Gone", 200))
-        .await
-        .unwrap();
-
-    let keys = transactions::stored_keys(&db.pool, account.id)
-        .await
-        .unwrap();
-    let diff = read_again_diff(std::slice::from_ref(&kept), &keys);
-    assert_eq!(diff.no_longer_found.len(), 1);
-    assert_eq!(
-        transactions::mark_no_longer_found(&db.pool, &diff.no_longer_found)
+    let vanished = tx(2, "Gone", 200);
+    for row in [&kept, &vanished] {
+        let id = transactions::insert(&db.pool, account.id, statement, row)
             .await
-            .unwrap(),
-        1
-    );
+            .unwrap();
+        printings::insert(&db.pool, id, statement, row)
+            .await
+            .unwrap();
+    }
+    let diff_of = |rows: Vec<_>| {
+        let pool = db.pool.clone();
+        async move {
+            let keys = transactions::stored_keys(&pool, account.id).await.unwrap();
+            let here = printings::marks_of_statement(&pool, account.id, statement)
+                .await
+                .unwrap();
+            read_again_diff(&rows, &keys, &here)
+        }
+    };
+
+    let diff = diff_of(vec![kept.clone()]).await;
+    assert_eq!(diff.gone_transaction_ids.len(), 1);
+    let marked = printings::set_gone(&db.pool, statement, &diff.gone_transaction_ids, true)
+        .await
+        .unwrap();
+    assert_eq!(marked, diff.gone_transaction_ids);
 
     let rows = transactions::list(&db.pool, account.id, None, None)
         .await
         .unwrap();
     assert_eq!(rows.len(), 2, "nothing is deleted");
-    assert_eq!(
-        rows.iter()
-            .filter(|r| r.no_longer_found_at.is_some())
-            .count(),
-        1
-    );
-    let again = read_again_diff(
-        &[kept, tx(2, "Gone", 200)],
-        &transactions::stored_keys(&db.pool, account.id)
-            .await
-            .unwrap(),
-    );
-    assert!(again.add.is_empty() && again.no_longer_found.is_empty());
-    transactions::clear_no_longer_found(&db.pool, &again.unchanged)
+    let again = diff_of(vec![kept, vanished]).await;
+    assert!(again.add.is_empty() && again.gone_transaction_ids.is_empty());
+    let cleared = printings::set_gone(&db.pool, statement, &again.unchanged, false)
         .await
         .unwrap();
-    let rows = transactions::list(&db.pool, account.id, None, None)
-        .await
-        .unwrap();
-    assert!(rows.iter().all(|r| r.no_longer_found_at.is_none()));
+    assert_eq!(cleared.len(), 1, "only the marked Printing changes");
     db.drop().await;
 }
 

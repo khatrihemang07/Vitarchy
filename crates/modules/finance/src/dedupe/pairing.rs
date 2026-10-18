@@ -9,7 +9,7 @@ use super::{evidence::Evidence, verdict::verdict};
 /// row pairs at most once, and the result is the same (up to which twin is chosen) when the
 /// two sets swap roles.
 #[must_use]
-pub fn pair(left: &[Evidence], right: &[Evidence]) -> Vec<Option<usize>> {
+pub fn pair_evidence(left: &[Evidence], right: &[Evidence]) -> Vec<Option<usize>> {
     let mut candidates = Vec::new();
     for (i, a) in left.iter().enumerate() {
         for (j, b) in right.iter().enumerate() {

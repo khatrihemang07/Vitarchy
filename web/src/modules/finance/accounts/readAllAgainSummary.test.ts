@@ -1,6 +1,6 @@
 import type { ReadAgainItem } from "@/api/finance";
 import { preview } from "../test-utils";
-import { summariseReadAllAgain } from "./readAllAgainSummary";
+import { type ItemChanges, itemChangesLine, summariseReadAllAgain } from "./readAllAgainSummary";
 
 function item(id: number, add: number, unchanged: number, lost: number): ReadAgainItem {
   return {
@@ -9,7 +9,17 @@ function item(id: number, add: number, unchanged: number, lost: number): ReadAga
     error_code: null,
     preview: {
       statement: preview({ id }),
-      sections: [{ position: 0, add_count: add, unchanged_count: unchanged, no_longer_found_count: lost, added: [] }],
+      sections: [
+        {
+          position: 0,
+          add_count: add,
+          unchanged_count: unchanged,
+          new_printing_count: 0,
+          enriched_count: 0,
+          no_longer_found_count: lost,
+          added: [], new_printings: [],
+        },
+      ],
       payment_records: null,
     },
   };
@@ -20,6 +30,16 @@ describe("summariseReadAllAgain", () => {
     const summary = summariseReadAllAgain([item(1, 2, 10, 1), item(2, 0, 5, 0)]);
     expect(summary).toMatchObject({ add: 2, unchanged: 15, noLongerFound: 1 });
     expect(summary.changed.map((c) => c.statementId)).toEqual([1]);
+  });
+
+  it("sums Printings to add and rows that gain detail, and counts a Printings-only Statement as changed", () => {
+    const only = item(4, 0, 3, 0);
+    const section = only.preview?.sections[0];
+    if (section) Object.assign(section, { new_printing_count: 5, enriched_count: 2 });
+    const summary = summariseReadAllAgain([only]);
+    expect(summary).toMatchObject({ newPrintings: 5, enriched: 2 });
+    expect(summary.changed.map((c) => c.statementId)).toEqual([4]);
+    expect(itemChangesLine(summary.changed[0] as ItemChanges)).toBe("0 to add, 5 Printings to add, 2 would gain detail, 0 no longer found");
   });
 
   it("counts a Payment history's new records as additions", () => {
@@ -38,6 +58,6 @@ describe("summariseReadAllAgain", () => {
   });
 
   it("is empty for no items", () => {
-    expect(summariseReadAllAgain([])).toEqual({ changed: [], failed: [], add: 0, unchanged: 0, noLongerFound: 0 });
+    expect(summariseReadAllAgain([])).toEqual({ changed: [], failed: [], add: 0, newPrintings: 0, enriched: 0, unchanged: 0, noLongerFound: 0 });
   });
 });

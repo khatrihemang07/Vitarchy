@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { jsonResponse, preview, renderWithClient, requestsOf, section, stubApi } from "../test-utils";
+import { jsonResponse, preview, renderWithClient, requestsOf, section, stubApi, transaction } from "../test-utils";
 import { StatementCard } from "./StatementCard";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -42,22 +42,31 @@ describe("StatementCard", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /Show 3 Transactions/ }));
 
-    expect(screen.getByText("Stored row").closest("tr")).toHaveAttribute("data-duplicate", "true");
-    expect(screen.getByText("First row").closest("tr")).toHaveAttribute("data-duplicate", "false");
+    expect(screen.getByText("Stored row").closest("tr")).toHaveAttribute("data-already-stored", "true");
+    expect(screen.getByText("First row").closest("tr")).toHaveAttribute("data-already-stored", "false");
     expect(screen.getByText("+₹1,234.56")).toHaveAttribute("data-direction", "credit");
+  });
+
+  it("adds 'would gain detail' to the count line and tags those rows", async () => {
+    stubApi({ "GET /api/finance/accounts": accounts });
+    const gaining = section({ enriched_count: 1, transactions: [transaction({ description: "Stored row", is_already_stored: true, gains_detail: true })] });
+    renderWithClient(<StatementCard preview={preview({ sections: [gaining] })} />);
+    expect(screen.getByText(/1 already stored, 1 would gain detail/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Show 3 Transactions/ }));
+    expect(screen.getByText("Gains detail")).toBeInTheDocument();
   });
 
   it("confirms with the matched Account and reports what was added", async () => {
     const fetchMock = stubApi({
       "GET /api/finance/accounts": accounts,
-      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 2, duplicates: 1, linked: 0 }),
+      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 2, already_stored: 1, enriched: 1, linked: 0 }),
       ...invalidations,
     });
     renderWithClient(<StatementCard preview={preview()} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
-    expect(await screen.findByText(/2 added, 1 already stored/)).toBeInTheDocument();
+    expect(await screen.findByText(/2 added, 1 already stored, 1 gained detail/)).toBeInTheDocument();
     const confirm = fetchMock.mock.calls.map(([r]) => r).find((r) => r.url.endsWith("/confirm"));
     expect(await confirm?.json()).toEqual({ sections: [{ account_id: 1 }] });
   });
@@ -78,7 +87,7 @@ describe("StatementCard", () => {
   it("asks for a New Account's details and sends them", async () => {
     const fetchMock = stubApi({
       "GET /api/finance/accounts": accounts,
-      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 3, duplicates: 0, linked: 0 }),
+      "POST /api/finance/statements/1/confirm": () => jsonResponse(200, { added: 3, already_stored: 0, linked: 0 }),
       ...invalidations,
     });
     const unmatched = section({ matched_account: null, proposed: { issuer: "SBI", kind: "loan", mask: "XX9876" } });

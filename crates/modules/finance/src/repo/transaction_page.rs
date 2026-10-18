@@ -42,6 +42,8 @@ pub struct PageRow {
     pub reference: Option<String>,
     /// Whether a Read again no longer finds it.
     pub no_longer_found: bool,
+    /// How many Statements printed it (Printings, gone ones included).
+    pub printing_count: i64,
     /// The linked Payment record's id.
     pub record_id: Option<i64>,
     /// When the linked payment happened.
@@ -71,6 +73,7 @@ pub async fn page(
         "SELECT t.id, t.account_id, t.date, t.description, t.amount_paise, t.direction,
                 t.balance_paise, t.foreign_amount, t.foreign_currency, t.reference,
                 t.no_longer_found_at IS NOT NULL AS no_longer_found,
+                (SELECT count(*) FROM finance.printings g WHERE g.transaction_id = t.id) AS printing_count,
                 p.id AS record_id, p.occurred_at AS record_occurred_at,
                 p.description AS record_description, p.utr AS record_utr,
                 p.instrument AS record_instrument

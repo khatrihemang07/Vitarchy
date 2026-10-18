@@ -5,13 +5,14 @@ use std::collections::HashSet;
 
 use sqlx::PgConnection;
 
+use super::printing_writes::{Target, gains_by_target};
 use crate::{
-    dedupe::read_again_diff,
+    dedupe::{PrintingToAdd, read_again_diff},
     error::FinanceError,
     problem::Refusal,
     reader::{ReaderResult, contract::Kind},
     record_key,
-    repo::{payment_records, statement_accounts, transactions, transactions_read_again},
+    repo::{payment_records, printings, statement_accounts, transactions},
 };
 
 /// The changes to one Account section.
@@ -21,12 +22,18 @@ pub struct SectionDiff {
     pub position: i32,
     /// The Account it was confirmed to.
     pub account_id: i64,
-    /// Indexes of incoming rows that are new.
+    /// Indexes of incoming rows that are new Transactions.
     pub add: Vec<usize>,
-    /// Stored rows still found.
+    /// Stored rows this Statement printed and the engine still finds.
     pub unchanged: Vec<i64>,
-    /// This Statement's stored rows the engine no longer finds.
-    pub no_longer_found: Vec<i64>,
+    /// Incoming rows that are stored Transactions this Statement never printed: each would
+    /// gain a Printing.
+    pub new_printings: Vec<PrintingToAdd>,
+    /// Indexes of the incoming rows among those whose Printing would change what the
+    /// Transaction shows.
+    pub gaining: Vec<usize>,
+    /// Transactions whose live Printing from this Statement the engine no longer finds.
+    pub gone_transaction_ids: Vec<i64>,
 }
 
 /// The changes to a whole file.
@@ -44,13 +51,15 @@ pub enum Diff {
 }
 
 impl Diff {
-    /// Whether applying it would add rows or mark any as no longer found.
+    /// Whether applying it would add rows or Printings, or mark any as no longer found.
     #[must_use]
     pub fn has_changes(&self) -> bool {
         match self {
-            Self::Sections(sections) => sections
-                .iter()
-                .any(|s| !s.add.is_empty() || !s.no_longer_found.is_empty()),
+            Self::Sections(sections) => sections.iter().any(|s| {
+                !s.add.is_empty()
+                    || !s.new_printings.is_empty()
+                    || !s.gone_transaction_ids.is_empty()
+            }),
             Self::Records { add, .. } => !add.is_empty(),
         }
     }
@@ -76,22 +85,31 @@ pub async fn compute(
     for (slot, statement) in slots.iter().zip(&result.statements) {
         let account_id = slot.account_id.ok_or(Refusal::SECTIONS_CHANGED)?;
         let stored = transactions::stored_keys(&mut *db, account_id).await?;
-        let diff = read_again_diff(&statement.transactions, &stored);
-        let mine: HashSet<i64> =
-            transactions_read_again::ids_of_statement(&mut *db, account_id, statement_id)
-                .await?
-                .into_iter()
-                .collect();
+        let here = printings::marks_of_statement(&mut *db, account_id, statement_id).await?;
+        let diff = read_again_diff(&statement.transactions, &stored, &here);
+        let targets: Vec<Target> = diff
+            .new_printings
+            .iter()
+            .map(|p| Target {
+                transaction_id: p.transaction_id,
+                row: &statement.transactions[p.index],
+            })
+            .collect();
+        let gains = gains_by_target(db, statement_id, &targets).await?;
+        let gaining = diff
+            .new_printings
+            .iter()
+            .zip(gains)
+            .filter_map(|(p, gains)| gains.then_some(p.index))
+            .collect();
         sections.push(SectionDiff {
             position: slot.position,
             account_id,
             add: diff.add,
             unchanged: diff.unchanged,
-            no_longer_found: diff
-                .no_longer_found
-                .into_iter()
-                .filter(|id| mine.contains(id))
-                .collect(),
+            new_printings: diff.new_printings,
+            gaining,
+            gone_transaction_ids: diff.gone_transaction_ids,
         });
     }
     Ok(Diff::Sections(sections))

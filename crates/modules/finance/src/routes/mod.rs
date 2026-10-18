@@ -5,6 +5,7 @@
 mod accounts;
 mod confirm;
 mod passwords;
+mod printings;
 mod read_again;
 mod read_again_all;
 mod statements;
@@ -53,6 +54,7 @@ pub fn router_with(reader: Arc<dyn StatementReader>, files: FileStore) -> OpenAp
         .routes(routes!(accounts::list_accounts))
         .routes(routes!(accounts::patch_account))
         .routes(routes!(transactions::list_transactions))
+        .routes(routes!(printings::list_printings))
         .routes(routes!(passwords::list_passwords, passwords::post_password))
         .routes(routes!(passwords::delete_password))
         .routes(routes!(status::get_finance_status))

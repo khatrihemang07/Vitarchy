@@ -48,6 +48,12 @@ impl Refusal {
     /// No such Statement.
     pub const STATEMENT_NOT_FOUND: Self =
         refusal(404, "statement_not_found", "There is no such Statement.");
+    /// No such Transaction.
+    pub const TRANSACTION_NOT_FOUND: Self = refusal(
+        404,
+        "transaction_not_found",
+        "There is no such Transaction.",
+    );
     /// The file was not read, so there is nothing to confirm or compare.
     pub const NOT_READABLE: Self = refusal(
         409,

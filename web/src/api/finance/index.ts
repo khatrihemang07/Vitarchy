@@ -5,6 +5,7 @@ export { useAddPassword, useDeletePassword, usePasswords } from "./passwords";
 export { useConfirmReadAgain, useConfirmReadAllAgain, useReadAgain, useReadAllAgain } from "./readAgain";
 export { useFinanceStatus } from "./status";
 export { useConfirmedStatements, useDiscardStatement, useStatementPreview, useUnconfirmedStatements } from "./statements";
+export { usePrintings } from "./printings";
 export { useTransactions } from "./transactions";
 export { useUploadStatements } from "./upload";
 export type {
@@ -17,6 +18,7 @@ export type {
   FinanceStatus,
   LinkedPaymentRecord,
   PasswordItem,
+  PrintingItem,
   ReadAgainCounts,
   ReadAgainItem,
   ReadAgainPreview,

@@ -5,6 +5,7 @@ import { cn, Expand } from "@/design";
 import { formatPeriod } from "../dates";
 import { formatMask } from "../mask";
 import { formatCount, formatInr } from "../money";
+import { previewCountLine } from "./importCopy";
 import type { ChoiceDraft } from "../sectionChoice";
 import { accountKindLabel } from "../statementCopy";
 import { AccountPicker } from "./AccountPicker";
@@ -24,6 +25,7 @@ interface SectionViewProps {
 export function SectionView({ section, accounts, draft, onDraft, locked }: SectionViewProps) {
   const tableId = useId();
   const [open, setOpen] = useState(false);
+  const countLine = previewCountLine(section);
   const { issuer, kind, mask } = section.proposed;
   const heading = [issuer ?? "Unknown issuer", accountKindLabel(kind), formatMask(mask)].filter(Boolean).join(" · ");
   return (
@@ -37,8 +39,8 @@ export function SectionView({ section, accounts, draft, onDraft, locked }: Secti
       {locked ? null : <AccountPicker section={section} accounts={accounts} draft={draft} onChange={onDraft} />}
       <ChecksList checks={section.checks} />
       <p className="text-sm">
-        <span className="font-medium">{formatCount(section.new_count)} new</span>
-        <span className="text-muted-foreground">, {formatCount(section.duplicate_count)} already stored</span>
+        <span className="font-medium">{countLine.lead}</span>
+        <span className="text-muted-foreground">{countLine.rest}</span>
       </p>
       <div className="flex flex-col gap-3">
         <button

@@ -53,7 +53,8 @@ export function transaction(over: Partial<TransactionView> = {}): TransactionVie
     amount_paise: 123_456,
     direction: "debit",
     balance_paise: 9_876_500,
-    is_duplicate: false,
+    is_already_stored: false,
+    gains_detail: false,
     ...over,
   };
 }
@@ -76,11 +77,12 @@ export function section(over: Partial<SectionPreview> = {}): SectionPreview {
       { name: "row_counts", outcome: "skipped", detail: {} },
     ],
     new_count: 2,
-    duplicate_count: 1,
+    already_stored_count: 1,
+    enriched_count: 0,
     transactions: [
       transaction({ description: "First row" }),
       transaction({ description: "Second row", direction: "credit" }),
-      transaction({ description: "Stored row", is_duplicate: true }),
+      transaction({ description: "Stored row", is_already_stored: true }),
     ],
     ...over,
   };

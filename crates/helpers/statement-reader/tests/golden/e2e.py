@@ -148,8 +148,11 @@ def same_number(a: str | None, b: str | None) -> bool:
     return bool(a) and "".join((a or "").upper().split()) == "".join((b or "").upper().split())
 
 
-def confirm_all(api: Api, previews: list[dict]) -> None:
+def confirm_all(api: Api, previews: list[dict]) -> dict[str, int]:
+    """Confirms every file (Statements first); returns what the previews promised and what the
+    confirms did, so the two can be compared."""
     refused = 0
+    totals = {"previewed_gain": 0, "confirmed_gain": 0}
     for preview in sorted(previews, key=lambda p: p["kind"] == "payment_history"):
         sections = []
         for section in preview.get("sections") or []:
@@ -159,11 +162,17 @@ def confirm_all(api: Api, previews: list[dict]) -> None:
             else:
                 sections.append({"new_account": {"issuer": proposed.get("issuer") or "Unknown",
                                                  "kind": proposed.get("kind") or "savings", "name": "Unnamed"}})
+        # The preview as it is just before this confirm, against what earlier confirms stored.
+        _, current = api.call("GET", f"/api/finance/statements/{preview['id']}")
+        totals["previewed_gain"] += sum(s["enriched_count"] for s in (current or {}).get("sections", []))
         status, reply = api.call("POST", f"/api/finance/statements/{preview['id']}/confirm", {"sections": sections})
         if status != 200:
             check(False, f"confirm statement {preview['id']} returned 200 (got {status}, code {(reply or {}).get('code')})")
             refused += 1
+        else:
+            totals["confirmed_gain"] += reply["enriched"]
     check(refused == 0, f"every confirm returned 200 ({len(previews) - refused}/{len(previews)})")
+    return totals
 
 
 def assert_accounts(accounts: list[dict], expected: dict) -> None:
@@ -202,6 +211,36 @@ def assert_links(stage_url: str) -> None:
         print(f"    {issuer} ...{tail}: {linked}/{total}")
 
 
+def assert_printings(stage_url: str, expected: dict, gains: dict[str, int]) -> None:
+    """Counts only: every Transaction keeps its Printings, overlapping SBI files show the fuller text."""
+    count = lambda sql: int(psql(stage_url, E2E_DB, sql).strip())  # noqa: E731
+    transactions = count("SELECT count(*) FROM finance.transactions")
+    printings = count("SELECT count(*) FROM finance.printings")
+    orphans = count("SELECT count(*) FROM finance.transactions t WHERE NOT EXISTS "
+                    "(SELECT 1 FROM finance.printings p WHERE p.transaction_id = t.id)")
+    print(f"  {transactions} Transactions, {printings} Printings, {gains['confirmed_gain']} enriched by confirms")
+    check(orphans == 0 and printings >= transactions, f"every Transaction has a Printing ({orphans} without)")
+    check(gains["previewed_gain"] > 0, f"previews said some rows would gain detail ({gains['previewed_gain']})")
+    check(gains["previewed_gain"] == gains["confirmed_gain"],
+          f"confirms enriched exactly what the previews promised ({gains['confirmed_gain']} of {gains['previewed_gain']})")
+    both = expected["printed_by_pdf_and_xlsx"]
+    sql = ("SELECT count(*), count(*) FILTER (WHERE t.description = (SELECT p.description FROM finance.printings p "
+           "JOIN finance.statements s ON s.id = p.statement_id WHERE p.transaction_id = t.id AND s.format = 'xlsx' ORDER BY length(p.description) DESC LIMIT 1)) "
+           "FROM finance.transactions t JOIN finance.accounts a ON a.id = t.account_id "
+           f"WHERE a.issuer ILIKE '%{both['issuer']}%' AND a.kind = '{both['kind']}' "
+           "AND (SELECT count(*) FROM finance.printings p WHERE p.transaction_id = t.id) >= 2 "
+           "AND EXISTS (SELECT 1 FROM finance.printings p JOIN finance.statements s ON s.id = p.statement_id "
+           "WHERE p.transaction_id = t.id AND s.format = 'pdf') "
+           "AND EXISTS (SELECT 1 FROM finance.printings p JOIN finance.statements s ON s.id = p.statement_id "
+           "WHERE p.transaction_id = t.id AND s.format = 'xlsx')")
+    printed_both, show_xlsx = (int(n) for n in psql(stage_url, E2E_DB, sql).strip().split("|"))
+    print(f"  {printed_both} printed by a PDF and an XLSX, {show_xlsx} show the XLSX's text")
+    check(printed_both == both["count"], f"{both['count']} {both['issuer']} {both['kind']} Transactions have a PDF Printing and an XLSX Printing (got {printed_both})")
+    # Informational, not asserted: the PDF's narration is often not a strict prefix of the
+    # XLSX's (its last letter differs), so the strict-extension rule keeps the PDF text there.
+    print(f"  INFO  {show_xlsx} of {printed_both} show the XLSX's fuller text")
+
+
 def run(api: Api, stage_url: str, expected: dict) -> None:
     passwords = json.loads((PRIVATE / "passwords.json").read_text())
     for label, secrets in passwords.items():
@@ -219,21 +258,25 @@ def run(api: Api, stage_url: str, expected: dict) -> None:
               for c in s["checks"] if c["outcome"] == "failed"]
     issuer = expected["failed_check"]["issuer"]
     check(len(failed) == 1 and issuer in failed[0].lower(), f"exactly 1 failed Check, in the expected file (got {len(failed)})")
-    confirm_all(api, previews)
+    gains = confirm_all(api, previews)
     assert_accounts(api.call("GET", "/api/finance/accounts")[1], expected)
     assert_links(stage_url)
+    assert_printings(stage_url, expected, gains)
     _, again = api.upload(files)
     dups = sum(1 for p in again if p.get("duplicate_file"))
     check(dups == FILE_COUNT, f"re-upload: {dups}/{len(again)} duplicate_file")
-    adds = vanished = errors = 0
+    adds = vanished = new_printings = enriched = errors = 0
     for preview in previews:
         status, reply = api.call("POST", f"/api/finance/statements/{preview['id']}/read-again")
         errors += status != 200
         for section in (reply or {}).get("sections", []):
             adds += section["add_count"]
             vanished += section["no_longer_found_count"]
+            new_printings += section["new_printing_count"]
+            enriched += section["enriched_count"]
     check(errors == 0, f"every Read again returned 200 ({len(previews) - errors}/{len(previews)})")
-    check(adds == 0 and vanished == 0, f"Read again: {adds} to add, {vanished} no longer found")
+    check(adds == 0 and vanished == 0 and new_printings == 0 and enriched == 0,
+          f"Read again: {adds} to add, {new_printings} Printings to add ({enriched} gaining detail), {vanished} no longer found")
 
 
 def main() -> int:

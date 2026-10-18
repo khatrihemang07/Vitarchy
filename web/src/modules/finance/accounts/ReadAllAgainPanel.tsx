@@ -3,7 +3,8 @@ import { MotionButton } from "@/design";
 import { errorMessage } from "../failureMessage";
 import { FinanceNotice } from "../FinanceNotice";
 import { formatCount } from "../money";
-import { summariseReadAllAgain } from "./readAllAgainSummary";
+import { appliedLine, sectionChangesLine } from "./readAgainCopy";
+import { itemChangesLine, summariseReadAllAgain } from "./readAllAgainSummary";
 
 interface ReadAllAgainPanelProps {
   items: ReadAgainItem[];
@@ -22,8 +23,7 @@ export function ReadAllAgainPanel({ items, applied, onApplied, onClose }: ReadAl
         <p role="status" className="text-sm">
           <span className="font-medium">Read all again applied.</span>{" "}
           <span className="text-muted-foreground">
-            {formatCount(applied.statements)} Statements changed: {formatCount(applied.added)} added, {formatCount(applied.no_longer_found)} no longer found
-            {applied.linked > 0 ? `, ${formatCount(applied.linked)} Payment records linked` : ""}
+            {formatCount(applied.statements)} Statements changed: {appliedLine(applied)}
             {applied.failed > 0 ? `. ${formatCount(applied.failed)} could not be read again` : ""}.
           </span>
         </p>
@@ -34,7 +34,7 @@ export function ReadAllAgainPanel({ items, applied, onApplied, onClose }: ReadAl
           <p className="text-sm">
             <span className="font-medium">{formatCount(summary.changed.length)} of {formatCount(items.length)} Statements would change.</span>{" "}
             <span className="text-muted-foreground">
-              {formatCount(summary.add)} to add, {formatCount(summary.unchanged)} unchanged, {formatCount(summary.noLongerFound)} no longer found (marked, never deleted).
+              {sectionChangesLine({ add_count: summary.add, new_printing_count: summary.newPrintings, enriched_count: summary.enriched, unchanged_count: summary.unchanged, no_longer_found_count: summary.noLongerFound })}
             </span>
           </p>
           {summary.changed.length > 0 ? (
@@ -42,7 +42,7 @@ export function ReadAllAgainPanel({ items, applied, onApplied, onClose }: ReadAl
               {summary.changed.map((c) => (
                 <li key={c.statementId} className="flex flex-wrap justify-between gap-x-3">
                   <span className="break-all font-medium">{c.fileName}</span>
-                  <span className="text-muted-foreground">{formatCount(c.add)} to add, {formatCount(c.noLongerFound)} no longer found</span>
+                  <span className="text-muted-foreground">{itemChangesLine(c)}</span>
                 </li>
               ))}
             </ul>

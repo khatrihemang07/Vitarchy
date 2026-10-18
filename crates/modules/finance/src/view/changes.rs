@@ -16,12 +16,19 @@ pub struct SectionChanges {
     pub position: i32,
     /// Rows that would be added.
     pub add_count: usize,
-    /// Stored rows the engine still finds.
+    /// Rows this Statement printed that the engine still finds.
     pub unchanged_count: usize,
-    /// Stored rows the engine no longer finds: marked, never deleted.
+    /// Rows that match a Transaction another Statement stored and would gain a Printing.
+    pub new_printing_count: usize,
+    /// Of those, Printings that would add detail to the Transaction.
+    pub enriched_count: usize,
+    /// Printings the engine no longer finds: marked, never deleted.
     pub no_longer_found_count: usize,
     /// The rows that would be added.
     pub added: Vec<TransactionView>,
+    /// The rows that are stored Transactions and would gain a Printing, tagged when it
+    /// would add detail.
+    pub new_printings: Vec<TransactionView>,
 }
 
 /// The changes to a Payment history.
@@ -66,12 +73,20 @@ fn section(diff: &SectionDiff, result: &ReaderResult) -> SectionChanges {
         position: diff.position,
         add_count: diff.add.len(),
         unchanged_count: diff.unchanged.len(),
-        no_longer_found_count: diff.no_longer_found.len(),
+        new_printing_count: diff.new_printings.len(),
+        enriched_count: diff.gaining.len(),
+        no_longer_found_count: diff.gone_transaction_ids.len(),
         added: diff
             .add
             .iter()
             .filter_map(|index| incoming.get(*index))
-            .map(|tx| TransactionView::of(tx, false))
+            .map(|tx| TransactionView::of(tx, false, false))
+            .collect(),
+        new_printings: diff
+            .new_printings
+            .iter()
+            .filter_map(|p| incoming.get(p.index).map(|tx| (p.index, tx)))
+            .map(|(index, tx)| TransactionView::of(tx, true, diff.gaining.contains(&index)))
             .collect(),
     }
 }

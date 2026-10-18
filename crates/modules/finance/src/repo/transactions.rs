@@ -3,11 +3,9 @@
 use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::PgExecutor;
 
-use crate::{dedupe::Evidence, reader::contract::Transaction};
+use crate::reader::contract::Transaction;
 
-pub use super::transactions_read_again::{
-    clear_no_longer_found, mark_no_longer_found, stored_keys,
-};
+pub use super::transactions_read_again::stored_keys;
 
 /// A stored Transaction.
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -73,21 +71,6 @@ pub async fn insert(
     .bind(&tx.source_id)
     .fetch_one(db)
     .await
-}
-
-/// What identifies each of an Account's stored rows, repeats included (the dedupe input).
-///
-/// # Errors
-/// The database failed.
-pub async fn evidence(
-    db: impl PgExecutor<'_>,
-    account_id: i64,
-) -> Result<Vec<Evidence>, sqlx::Error> {
-    Ok(stored_keys(db, account_id)
-        .await?
-        .into_iter()
-        .map(|key| key.evidence)
-        .collect())
 }
 
 /// An Account's Transactions in a date range (either end open), newest first.

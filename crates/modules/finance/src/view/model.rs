@@ -120,8 +120,10 @@ pub struct SectionPreview {
     pub checks: Vec<CheckView>,
     /// Rows not stored yet.
     pub new_count: usize,
-    /// Rows already stored.
-    pub duplicate_count: usize,
+    /// Rows already stored: each would add a Printing to the Transaction it matches.
+    pub already_stored_count: usize,
+    /// Of those, rows whose Printing would add detail to the stored Transaction.
+    pub enriched_count: usize,
     /// The rows, in printed order.
     pub transactions: Vec<TransactionView>,
 }

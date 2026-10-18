@@ -53,7 +53,7 @@ async fn a_payment_history_links_by_utr_and_its_refund_pair_links_by_direction()
     assert!(preview["sections"].as_array().unwrap().is_empty());
     assert_eq!(
         confirmed.json,
-        serde_json::json!({"added": 2, "duplicates": 0, "linked": 2})
+        serde_json::json!({"added": 2, "already_stored": 0, "enriched": 0, "linked": 2})
     );
     let rows = env.get("/transactions").await;
     let linked: Vec<_> = rows.json["items"]
@@ -88,12 +88,12 @@ async fn waiting_records_link_when_a_later_statement_is_confirmed() {
 
     assert_eq!(
         first.json,
-        serde_json::json!({"added": 2, "duplicates": 0, "linked": 0})
+        serde_json::json!({"added": 2, "already_stored": 0, "enriched": 0, "linked": 0})
     );
     assert_eq!(waiting.json["unlinked_payment_record_count"], 2);
     assert_eq!(
         second.json,
-        serde_json::json!({"added": 3, "duplicates": 0, "linked": 2})
+        serde_json::json!({"added": 3, "already_stored": 0, "enriched": 0, "linked": 2})
     );
     assert_eq!(after.json["unlinked_payment_record_count"], 0);
     env.finish().await;
@@ -111,7 +111,7 @@ async fn records_already_stored_are_not_added_twice() {
     assert_eq!(
         (
             reply.json["added"].as_i64(),
-            reply.json["duplicates"].as_i64()
+            reply.json["already_stored"].as_i64()
         ),
         (Some(0), Some(2))
     );

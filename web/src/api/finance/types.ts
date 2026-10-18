@@ -42,6 +42,8 @@ export type PasswordItem = Schemas["PasswordItem"];
 export type TransactionPage = Schemas["TransactionPage"];
 /** A Transaction row with its linked Payment record. */
 export type TransactionItem = Schemas["TransactionItem"];
+/** One Statement's Printing of a Transaction, as that Statement printed it. */
+export type PrintingItem = Schemas["PrintingItem"];
 /** The Payment record linked to a Transaction. */
 export type LinkedPaymentRecord = Schemas["LinkedPaymentRecord"];
 /** Query of `GET /api/finance/transactions`. */

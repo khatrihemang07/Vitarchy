@@ -50,7 +50,7 @@ async fn a_file_with_no_number_matches_the_only_account_of_that_issuer_and_kind(
     assert!(!section["matched_account"].is_null());
     assert_eq!(
         reply.json,
-        json!({"added": 1, "duplicates": 0, "linked": 0})
+        json!({"added": 1, "already_stored": 0, "enriched": 0, "linked": 0})
     );
     assert_eq!(env.get("/accounts").await.json.as_array().unwrap().len(), 1);
     env.finish().await;
@@ -112,10 +112,10 @@ async fn a_second_statement_dedupes_rows_whose_narration_was_truncated() {
     let preview = env.get(&format!("/statements/{second}")).await;
     let reply = env.confirm_proposed(second, 1).await;
 
-    assert_eq!(preview.json["sections"][0]["duplicate_count"], 1);
+    assert_eq!(preview.json["sections"][0]["already_stored_count"], 1);
     assert_eq!(
         reply.json,
-        json!({"added": 0, "duplicates": 1, "linked": 0})
+        json!({"added": 0, "already_stored": 1, "enriched": 0, "linked": 0})
     );
     env.finish().await;
 }

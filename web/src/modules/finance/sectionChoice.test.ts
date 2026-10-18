@@ -14,7 +14,8 @@ function section(over: Partial<SectionPreview> = {}): SectionPreview {
     total_credit_paise: 0,
     checks: [],
     new_count: 0,
-    duplicate_count: 0,
+    already_stored_count: 0,
+    enriched_count: 0,
     transactions: [],
     ...over,
   };

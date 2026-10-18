@@ -2,7 +2,7 @@ import { type ReadAgainCounts, type ReadAgainPreview, useConfirmReadAgain } from
 import { MotionButton } from "@/design";
 import { errorMessage } from "../failureMessage";
 import { FinanceNotice } from "../FinanceNotice";
-import { formatCount } from "../money";
+import { appliedLine } from "./readAgainCopy";
 import { ReadAgainChanges } from "./ReadAgainChanges";
 
 interface ReadAgainPanelProps {
@@ -21,8 +21,7 @@ export function ReadAgainPanel({ preview, applied, onApplied, onClose }: ReadAga
         <p role="status" className="text-sm">
           <span className="font-medium">Read again applied.</span>{" "}
           <span className="text-muted-foreground">
-            {formatCount(applied.added)} added, {formatCount(applied.unchanged)} unchanged, {formatCount(applied.no_longer_found)} no longer found
-            {applied.linked > 0 ? `, ${formatCount(applied.linked)} Payment records linked` : ""}.
+            {appliedLine(applied)}.
           </span>
         </p>
       ) : (

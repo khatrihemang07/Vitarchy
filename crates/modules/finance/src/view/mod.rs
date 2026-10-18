@@ -3,6 +3,7 @@
 pub mod changes;
 pub mod model;
 pub mod preview;
+pub mod rows;
 pub mod section;
 pub mod summary;
 pub mod transaction;

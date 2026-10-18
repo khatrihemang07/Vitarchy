@@ -21,6 +21,7 @@ async fn creates_the_finance_schema_tables() {
             "account_identifiers",
             "accounts",
             "payment_records",
+            "printings",
             "runs",
             "statement_accounts",
             "statement_passwords",

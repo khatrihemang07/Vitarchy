@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { type ConfirmCounts, type StatementPreview, useAccounts, useReadAgain } from "@/api/finance";
 import { Card, CardContent } from "@/design";
-import { formatCount } from "../money";
+import { confirmedLine } from "./importCopy";
 import { unreadCopy } from "../statementCopy";
 import { NotReadNotice } from "./NotReadNotice";
 import { ReviewBody } from "./ReviewBody";
@@ -26,8 +26,7 @@ export function StatementCard({ preview: first }: { preview: StatementPreview })
         <CardContent className="text-sm" role="status">
           <span className="font-medium">Confirmed.</span>{" "}
           <span className="text-muted-foreground">
-            {formatCount(confirmed.added)} added, {formatCount(confirmed.duplicates)} already stored
-            {confirmed.linked > 0 ? `, ${formatCount(confirmed.linked)} Payment records linked` : ""}.
+            {confirmedLine(confirmed)}
           </span>
         </CardContent>
       ) : unread ? (

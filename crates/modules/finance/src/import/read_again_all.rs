@@ -15,9 +15,13 @@ use crate::{
 pub struct ReadAllAgainCounts {
     /// Statements that changed and were applied.
     pub statements: usize,
-    /// Rows added.
+    /// Rows added as new Transactions.
     pub added: usize,
-    /// Rows marked no longer found.
+    /// Printings added to Transactions other Statements stored.
+    pub printings_added: usize,
+    /// Of those, Printings that made the Transaction show more detail.
+    pub enriched: usize,
+    /// Printings marked no longer found.
     pub no_longer_found: usize,
     /// Payment records linked as a result.
     pub linked: usize,
@@ -78,6 +82,8 @@ pub async fn apply_all(
     tracing::info!(
         statements = total.statements,
         added = total.added,
+        printings_added = total.printings_added,
+        enriched = total.enriched,
         no_longer_found = total.no_longer_found,
         failed = total.failed,
         "read all again applied"
@@ -88,6 +94,8 @@ pub async fn apply_all(
 fn add(total: &mut ReadAllAgainCounts, counts: &ReadAgainCounts) {
     total.statements += 1;
     total.added += counts.added;
+    total.printings_added += counts.printings_added;
+    total.enriched += counts.enriched;
     total.no_longer_found += counts.no_longer_found;
     total.linked += counts.linked;
 }

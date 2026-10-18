@@ -26,13 +26,15 @@ pub struct TransactionView {
     /// Foreign currency code.
     pub foreign_currency: Option<String>,
     /// Whether an equal row is already stored.
-    pub is_duplicate: bool,
+    pub is_already_stored: bool,
+    /// Whether this Statement's Printing would add detail to the stored Transaction.
+    pub gains_detail: bool,
 }
 
 impl TransactionView {
-    /// The view of `tx`, marked a duplicate or not.
+    /// The view of `tx`, marked already stored or not, and as gaining detail or not.
     #[must_use]
-    pub fn of(tx: &Transaction, is_duplicate: bool) -> Self {
+    pub fn of(tx: &Transaction, is_already_stored: bool, gains_detail: bool) -> Self {
         Self {
             date: tx.date,
             description: tx.description.clone(),
@@ -42,7 +44,8 @@ impl TransactionView {
             reference: tx.reference.clone(),
             foreign_amount: tx.foreign_amount.clone(),
             foreign_currency: tx.foreign_currency.clone(),
-            is_duplicate,
+            is_already_stored,
+            gains_detail,
         }
     }
 }

@@ -91,7 +91,7 @@ describe("ImportPage reviewing a waiting Statement", () => {
       ...base,
       "GET /api/finance/statements": [() => jsonResponse(200, [summary]), () => jsonResponse(200, [])],
       "GET /api/finance/statements/9": () => jsonResponse(200, preview({ id: 9, file_name: "earlier.csv", sections: [] , payment_history: { record_count: 2, would_link_now: 0 }, kind: "payment_history" })),
-      "POST /api/finance/statements/9/confirm": () => jsonResponse(200, { added: 2, duplicates: 0, linked: 0 }),
+      "POST /api/finance/statements/9/confirm": () => jsonResponse(200, { added: 2, already_stored: 0, linked: 0 }),
     });
     renderWithClient(<ImportPage />);
 

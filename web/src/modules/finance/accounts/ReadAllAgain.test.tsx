@@ -12,7 +12,7 @@ function item(id: number, name: string, add: number, lost: number) {
     error_code: null,
     preview: {
       statement: preview({ id, status: "confirmed" }),
-      sections: [{ position: 0, add_count: add, unchanged_count: 10, no_longer_found_count: lost, added: [] }],
+      sections: [{ position: 0, add_count: add, unchanged_count: 10, no_longer_found_count: lost, added: [], new_printings: [] }],
       payment_records: null,
     },
   };

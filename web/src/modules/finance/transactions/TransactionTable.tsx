@@ -6,9 +6,9 @@ export function TransactionTable({ items, accounts }: { items: readonly Transact
   const names = new Map(accounts.map((a) => [a.id, a.name]));
   return (
     <div className="overflow-x-auto rounded-xl border bg-card">
-      <table className="w-full min-w-[30rem] sm:min-w-[44rem] text-sm">
+      <table className="block w-full text-sm sm:table sm:min-w-[44rem]">
         <caption className="sr-only">Transactions</caption>
-        <thead className="text-left text-xs text-muted-foreground">
+        <thead className="text-left max-sm:sr-only text-xs text-muted-foreground">
           <tr>
             <th scope="col" className="px-3 py-2 font-medium">Date</th>
             <th scope="col" className="hidden px-3 py-2 font-medium sm:table-cell">Account</th>
@@ -17,7 +17,7 @@ export function TransactionTable({ items, accounts }: { items: readonly Transact
             <th scope="col" className="px-3 py-2 text-right font-medium">Balance</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="block sm:table-row-group">
           {items.map((item) => (
             <TransactionRow key={item.id} item={item} accountName={names.get(item.account_id) ?? "Account"} />
           ))}

@@ -2,15 +2,15 @@
 //! stored, and apply the changes once the person approves (ADR 0013).
 
 use chrono::Utc;
-use serde::Serialize;
 use sqlx::PgPool;
-use utoipa::ToSchema;
 
+pub use super::read_again_counts::{Apply, ReadAgainCounts};
 pub use super::read_again_preview::preview;
 use super::{
     link_waiting::link_waiting,
-    read_again_diff::{Diff, SectionDiff, compute},
+    read_again_diff::{Diff, compute},
     read_again_preview::fresh,
+    read_again_write::write_section,
     stored_result::StoredResult,
 };
 use crate::{
@@ -21,34 +21,11 @@ use crate::{
     repo::{
         confirm_lock, payment_records, runs,
         statements::{self, StatementRow},
-        transactions,
     },
 };
 
-/// What applying a Read again did.
-#[derive(Debug, Clone, Copy, Default, Serialize, ToSchema)]
-pub struct ReadAgainCounts {
-    /// Rows added.
-    pub added: usize,
-    /// Stored rows still found.
-    pub unchanged: usize,
-    /// Rows marked no longer found.
-    pub no_longer_found: usize,
-    /// Payment records linked as a result.
-    pub linked: usize,
-}
-
-/// Which confirmed Statements an apply touches.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Apply {
-    /// Always write, even when nothing changed (the per-Statement approval).
-    Always,
-    /// Write only when rows would be added or marked (Read all again).
-    OnlyChanges,
-}
-
-/// Applies a Read again to a confirmed Statement: adds new rows, clears revived marks,
-/// marks vanished rows, and keeps the new result.
+/// Applies a Read again to a confirmed Statement: adds new rows and Printings, clears
+/// revived marks, marks vanished Printings, and keeps the new result.
 ///
 /// # Errors
 /// Another confirm is running, the Statement is missing or unconfirmed, the engine can no
@@ -84,6 +61,8 @@ pub(super) async fn apply_row(
             statement_id = row.id,
             added = counts.added,
             unchanged = counts.unchanged,
+            printings_added = counts.printings_added,
+            enriched = counts.enriched,
             no_longer_found = counts.no_longer_found,
             linked = counts.linked,
             "read again applied"
@@ -143,28 +122,4 @@ async fn apply_inner(
     counts.linked = link_waiting(&mut tx).await?;
     tx.commit().await?;
     Ok(Some(counts))
-}
-
-async fn write_section(
-    db: &mut sqlx::PgConnection,
-    statement_id: i64,
-    section: &SectionDiff,
-    incoming: &[crate::reader::contract::Transaction],
-    counts: &mut ReadAgainCounts,
-) -> Result<(), sqlx::Error> {
-    for index in &section.add {
-        transactions::insert(
-            &mut *db,
-            section.account_id,
-            statement_id,
-            &incoming[*index],
-        )
-        .await?;
-    }
-    transactions::clear_no_longer_found(&mut *db, &section.unchanged).await?;
-    transactions::mark_no_longer_found(&mut *db, &section.no_longer_found).await?;
-    counts.added += section.add.len();
-    counts.unchanged += section.unchanged.len();
-    counts.no_longer_found += section.no_longer_found.len();
-    Ok(())
 }

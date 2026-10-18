@@ -251,6 +251,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/finance/transactions/{id}/printings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A Transaction's Printings, oldest first. The Transaction itself shows the fullest of them. */
+        get: operations["list_printings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -623,8 +640,10 @@ export interface components {
         ConfirmCounts: {
             /** @description Transactions (or Payment records) stored. */
             added: number;
-            /** @description Rows left out because an equal one was already stored. */
-            duplicates: number;
+            /** @description Rows that were already stored: each gained a Printing, not a Transaction. */
+            already_stored: number;
+            /** @description Of those, rows whose Printing made the Transaction show more detail. */
+            enriched: number;
             /** @description Payment records linked to a Transaction by this confirm. */
             linked: number;
         };
@@ -1078,6 +1097,37 @@ export interface components {
              */
             start?: string | null;
         };
+        /** @description One Statement's Printing of a Transaction, as that Statement printed it. */
+        PrintingItem: {
+            /**
+             * Format: int64
+             * @description Balance after, when that Statement printed it.
+             */
+            balance_paise?: number | null;
+            /**
+             * Format: date
+             * @description The date as that Statement printed it.
+             */
+            date: string;
+            /** @description The description as that Statement printed it. */
+            description: string;
+            /** @description That Statement's uploaded file name. */
+            file_name: string;
+            /** @description True when a Read again of that Statement no longer finds this Printing. */
+            gone: boolean;
+            /**
+             * Format: int64
+             * @description Printing id.
+             */
+            id: number;
+            /** @description A UPI or NEFT reference, when printed. */
+            reference?: string | null;
+            /**
+             * Format: int64
+             * @description The Statement that printed it.
+             */
+            statement_id: number;
+        };
         /** @description JSON body of every error response (`application/problem+json`). */
         Problem: {
             /**
@@ -1155,13 +1205,17 @@ export interface components {
         };
         /** @description What applying a Read again did. */
         ReadAgainCounts: {
-            /** @description Rows added. */
+            /** @description Rows added as new Transactions. */
             added: number;
+            /** @description Of those, Printings that made the Transaction show more detail. */
+            enriched: number;
             /** @description Payment records linked as a result. */
             linked: number;
-            /** @description Rows marked no longer found. */
+            /** @description Printings marked no longer found. */
             no_longer_found: number;
-            /** @description Stored rows still found. */
+            /** @description Printings added to Transactions other Statements stored. */
+            printings_added: number;
+            /** @description Rows this Statement already printed and still finds. */
             unchanged: number;
         };
         /** @description One Statement's part of Read all again: its preview, or why it could not be read again. */
@@ -1187,14 +1241,18 @@ export interface components {
         };
         /** @description What applying Read all again did, summed over the Statements it changed. */
         ReadAllAgainCounts: {
-            /** @description Rows added. */
+            /** @description Rows added as new Transactions. */
             added: number;
+            /** @description Of those, Printings that made the Transaction show more detail. */
+            enriched: number;
             /** @description Statements that could not be read again and were left as they were. */
             failed: number;
             /** @description Payment records linked as a result. */
             linked: number;
-            /** @description Rows marked no longer found. */
+            /** @description Printings marked no longer found. */
             no_longer_found: number;
+            /** @description Printings added to Transactions other Statements stored. */
+            printings_added: number;
             /** @description Statements that changed and were applied. */
             statements: number;
         };
@@ -1301,14 +1359,23 @@ export interface components {
             add_count: number;
             /** @description The rows that would be added. */
             added: components["schemas"]["TransactionView"][];
-            /** @description Stored rows the engine no longer finds: marked, never deleted. */
+            /** @description Of those, Printings that would add detail to the Transaction. */
+            enriched_count: number;
+            /** @description Rows that match a Transaction another Statement stored and would gain a Printing. */
+            new_printing_count: number;
+            /**
+             * @description The rows that are stored Transactions and would gain a Printing, tagged when it
+             *     would add detail.
+             */
+            new_printings: components["schemas"]["TransactionView"][];
+            /** @description Printings the engine no longer finds: marked, never deleted. */
             no_longer_found_count: number;
             /**
              * Format: int32
              * @description The section's printed order.
              */
             position: number;
-            /** @description Stored rows the engine still finds. */
+            /** @description Rows this Statement printed that the engine still finds. */
             unchanged_count: number;
         };
         /**
@@ -1325,12 +1392,14 @@ export interface components {
         };
         /** @description One Account's part of a Statement. */
         SectionPreview: {
+            /** @description Rows already stored: each would add a Printing to the Transaction it matches. */
+            already_stored_count: number;
             /** @description When several Accounts fit, which. */
             candidate_accounts: components["schemas"]["AccountRef"][];
             /** @description How the figures agree. */
             checks: components["schemas"]["CheckView"][];
-            /** @description Rows already stored. */
-            duplicate_count: number;
+            /** @description Of those, rows whose Printing would add detail to the stored Transaction. */
+            enriched_count: number;
             matched_account?: components["schemas"]["AccountRef"] | null;
             /**
              * @description True when the file printed no account number and this Account was proposed because it
@@ -1810,7 +1879,7 @@ export interface components {
              * @description The printed date.
              */
             date: string;
-            /** @description The printed description. */
+            /** @description The fullest description any Statement printed. */
             description: string;
             /** @description Which way the money moved. */
             direction: components["schemas"]["Direction"];
@@ -1823,9 +1892,14 @@ export interface components {
              * @description Transaction id.
              */
             id: number;
-            /** @description True when a Read again no longer finds this row. */
+            /** @description True when a Read again no longer finds this row in any Statement that printed it. */
             no_longer_found: boolean;
             payment_record?: components["schemas"]["LinkedPaymentRecord"] | null;
+            /**
+             * Format: int64
+             * @description How many Statements printed it; above 1, `GET /transactions/{id}/printings` lists them.
+             */
+            printing_count: number;
             /** @description A UPI or NEFT reference. */
             reference?: string | null;
         };
@@ -1864,8 +1938,10 @@ export interface components {
             foreign_amount?: string | null;
             /** @description Foreign currency code. */
             foreign_currency?: string | null;
+            /** @description Whether this Statement's Printing would add detail to the stored Transaction. */
+            gains_detail: boolean;
             /** @description Whether an equal row is already stored. */
-            is_duplicate: boolean;
+            is_already_stored: boolean;
             /** @description A UPI or NEFT reference. */
             reference?: string | null;
         };
@@ -2482,6 +2558,38 @@ export interface operations {
             };
             /** @description Invalid filter (`invalid_query`) */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    list_printings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Transaction id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its Printings, in the order they were stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintingItem"][];
+                };
+            };
+            /** @description No such Transaction (`transaction_not_found`) */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

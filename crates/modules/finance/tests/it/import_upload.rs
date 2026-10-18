@@ -62,12 +62,12 @@ async fn an_upload_becomes_an_unconfirmed_preview_with_totals_and_checks() {
         (Some(551_000), Some(100_000))
     );
     assert_eq!(
-        (s["new_count"].as_i64(), s["duplicate_count"].as_i64()),
+        (s["new_count"].as_i64(), s["already_stored_count"].as_i64()),
         (Some(3), Some(0))
     );
     assert_eq!(s["checks"][0]["name"], "balance_chain");
     assert_eq!(s["transactions"][0]["description"], "SHOP ONE");
-    assert_eq!(s["transactions"][0]["is_duplicate"], false);
+    assert_eq!(s["transactions"][0]["is_already_stored"], false);
     assert_eq!(s["transactions"][2]["direction"], "credit");
     env.finish().await;
 }
@@ -162,7 +162,7 @@ async fn a_crashed_reader_leaves_a_crashed_statement_and_a_failed_run() {
 }
 
 #[tokio::test]
-async fn the_preview_matches_a_known_account_and_counts_stored_rows_as_duplicates() {
+async fn the_preview_matches_a_known_account_and_counts_stored_rows_as_already_stored() {
     let env = Env::new(
         "up_match",
         vec![one_card(vec![tx(2, "SHOP", 100), tx(3, "NEW", 200)])],
@@ -184,11 +184,11 @@ async fn the_preview_matches_a_known_account_and_counts_stored_rows_as_duplicate
     assert_eq!(s["matched_account"]["id"], known.id);
     assert_eq!(s["matched_account"]["name"], "Card");
     assert_eq!(
-        (s["new_count"].as_i64(), s["duplicate_count"].as_i64()),
+        (s["new_count"].as_i64(), s["already_stored_count"].as_i64()),
         (Some(1), Some(1))
     );
-    assert_eq!(s["transactions"][0]["is_duplicate"], true);
-    assert_eq!(s["transactions"][1]["is_duplicate"], false);
+    assert_eq!(s["transactions"][0]["is_already_stored"], true);
+    assert_eq!(s["transactions"][1]["is_already_stored"], false);
     env.finish().await;
 }
 

@@ -30,7 +30,7 @@ pub struct TransactionItem {
     pub account_id: i64,
     /// The printed date.
     pub date: NaiveDate,
-    /// The printed description.
+    /// The fullest description any Statement printed.
     pub description: String,
     /// Amount in paise, above 0.
     pub amount_paise: i64,
@@ -44,8 +44,10 @@ pub struct TransactionItem {
     pub foreign_amount: Option<String>,
     /// Foreign currency code.
     pub foreign_currency: Option<String>,
-    /// True when a Read again no longer finds this row.
+    /// True when a Read again no longer finds this row in any Statement that printed it.
     pub no_longer_found: bool,
+    /// How many Statements printed it; above 1, `GET /transactions/{id}/printings` lists them.
+    pub printing_count: i64,
     /// The linked Payment record, if any.
     pub payment_record: Option<LinkedPaymentRecord>,
 }
@@ -83,6 +85,7 @@ impl From<PageRow> for TransactionItem {
             foreign_amount: r.foreign_amount,
             foreign_currency: r.foreign_currency,
             no_longer_found: r.no_longer_found,
+            printing_count: r.printing_count,
             payment_record,
         }
     }

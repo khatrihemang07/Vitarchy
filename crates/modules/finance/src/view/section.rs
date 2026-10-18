@@ -1,28 +1,33 @@
-//! One section of a preview: the proposal, its Account match and the new-versus-duplicate count.
+//! One section of a preview: the proposal, its Account match and the new-versus-already-stored count.
 
 use std::collections::HashMap;
 
 use super::{
     model::{AccountRef, CheckView, PeriodView, ProposedAccountView, SectionPreview},
-    transaction::TransactionView,
+    rows,
 };
 use crate::{
     accounts::{AccountIdentity, Match},
-    dedupe::{Evidence, new_rows},
+    dedupe::StoredEvidence,
     match_account,
+    printings::Printing,
     reader::contract::{Direction, Statement},
     repo::statement_accounts::StatementAccountRow,
 };
 
 /// What the database knows that a section needs: Account names, the ways Accounts are known
-/// and the evidence of the rows stored per Account.
+/// the rows stored per Account and their Printings.
 pub struct Lookup<'a> {
     /// Account names by id.
     pub names: &'a HashMap<i64, String>,
     /// Every way an Account is known.
     pub known: &'a [AccountIdentity],
-    /// The evidence of each Account's stored rows, by Account id.
-    pub stored: &'a HashMap<i64, Vec<Evidence>>,
+    /// Each Account's stored rows as matching sees them, by Account id.
+    pub stored: &'a HashMap<i64, Vec<StoredEvidence>>,
+    /// The Printings of every stored row, by Transaction id.
+    pub printings: &'a HashMap<i64, Vec<Printing>>,
+    /// The Statement being previewed.
+    pub statement_id: i64,
 }
 
 /// The Account a section resolves to: the one stored on its slot, else a live match.
@@ -75,14 +80,13 @@ pub fn build(
     let stored = matched
         .and_then(|id| lookup.stored.get(&id))
         .map_or(&[][..], Vec::as_slice);
-    let fresh = new_rows(&statement.transactions, stored);
-    let transactions: Vec<TransactionView> = statement
-        .transactions
-        .iter()
-        .enumerate()
-        .map(|(index, tx)| TransactionView::of(tx, !fresh.contains(&index)))
-        .collect();
-    let new_count = fresh.len();
+    let rows = rows::build(
+        lookup.statement_id,
+        &statement.transactions,
+        stored,
+        lookup.printings,
+    );
+    let transaction_count = rows.views.len();
     SectionPreview {
         position: slot.position,
         proposed: ProposedAccountView {
@@ -100,7 +104,7 @@ pub fn build(
             start: statement.period.start,
             end: statement.period.end,
         },
-        transaction_count: transactions.len(),
+        transaction_count,
         total_debit_paise: total(statement, Direction::Debit),
         total_credit_paise: total(statement, Direction::Credit),
         checks: statement
@@ -112,8 +116,9 @@ pub fn build(
                 detail: c.detail.clone(),
             })
             .collect(),
-        new_count,
-        duplicate_count: transactions.len() - new_count,
-        transactions,
+        new_count: rows.new_count,
+        already_stored_count: transaction_count - rows.new_count,
+        enriched_count: rows.enriched_count,
+        transactions: rows.views,
     }
 }

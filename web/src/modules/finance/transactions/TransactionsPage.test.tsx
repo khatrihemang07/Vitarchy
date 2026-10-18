@@ -26,7 +26,7 @@ function renderAt(path: string) {
 
 const item = (over: Record<string, unknown> = {}) => ({
   id: 1, account_id: 1, date: "2026-04-02", description: "Groceries", amount_paise: 12_345_678, direction: "debit",
-  balance_paise: 50_000_000, no_longer_found: false, ...over,
+  balance_paise: 50_000_000, no_longer_found: false, printing_count: 1, ...over,
 });
 const page = (items: unknown[], total = items.length) => () => jsonResponse(200, { total, items });
 
@@ -42,7 +42,7 @@ describe("TransactionsPage", () => {
     stubApi({ "GET /api/finance/accounts": () => jsonResponse(200, [account()]), "GET /api/finance/transactions": page([item()]) });
     renderAt("/finance/transactions");
     expect(await screen.findByText("−₹1,23,456.78")).toHaveAttribute("data-direction", "debit");
-    expect(screen.getByText("₹5,00,000.00")).toBeInTheDocument();
+    expect(screen.getAllByText("₹5,00,000.00").length).toBeGreaterThan(0);
     expect(await screen.findByText("HDFC Savings", { selector: "td" })).toBeInTheDocument();
   });
 

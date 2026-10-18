@@ -43,11 +43,7 @@ impl Evidence {
             source_id: present(source_id),
             balance_paise,
             reference: present(reference),
-            description: description
-                .chars()
-                .filter(|c| c.is_alphanumeric())
-                .flat_map(char::to_lowercase)
-                .collect(),
+            description: normalise(description),
         }
     }
 }
@@ -70,4 +66,13 @@ fn present(text: Option<&str>) -> Option<String> {
     text.map(str::trim)
         .filter(|text| !text.is_empty())
         .map(str::to_owned)
+}
+
+/// Text with only alphanumerics kept, case folded: how descriptions are compared.
+#[must_use]
+pub fn normalise(text: &str) -> String {
+    text.chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
 }

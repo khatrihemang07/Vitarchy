@@ -1,6 +1,7 @@
 import type { ReadAgainPreview } from "@/api/finance";
 import { formatCount } from "../money";
 import { formatMask } from "../mask";
+import { sectionChangesLine } from "./readAgainCopy";
 import { accountKindLabel } from "../statementCopy";
 import { StatementRowsTable } from "../StatementRowsTable";
 
@@ -23,10 +24,12 @@ export function ReadAgainChanges({ preview }: { preview: ReadAgainPreview }) {
           <section key={changes.position} aria-label={heading} className="flex flex-col gap-2">
             <h4 className="text-sm font-semibold break-words">{heading}</h4>
             <p className="text-sm text-muted-foreground">
-              {formatCount(changes.add_count)} to add, {formatCount(changes.unchanged_count)} unchanged,{" "}
-              {formatCount(changes.no_longer_found_count)} no longer found (marked, never deleted).
+              {sectionChangesLine(changes)}
             </p>
             {changes.added.length > 0 ? <StatementRowsTable rows={changes.added} caption={`Transactions to add to ${heading}`} /> : null}
+            {changes.new_printings.length > 0 ? (
+              <StatementRowsTable rows={changes.new_printings} caption={`Stored Transactions that gain a Printing in ${heading}`} />
+            ) : null}
           </section>
         );
       })}

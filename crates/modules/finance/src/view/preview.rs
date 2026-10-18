@@ -13,7 +13,10 @@ use crate::{
     link,
     linking::from_rows,
     reader::{ReaderResult, contract::Kind},
-    repo::{accounts, statement_accounts, statement_files, statements::StatementRow, transactions},
+    repo::{
+        accounts, printings, statement_accounts, statement_files, statements::StatementRow,
+        transactions,
+    },
 };
 
 /// The preview of `row`. `duplicate_file` is true when an upload repeated this stored file.
@@ -73,17 +76,21 @@ async fn sections(
         .map(|a| (a.id, a.name))
         .collect();
     let mut stored = HashMap::new();
+    let mut printed = HashMap::new();
     for (slot, statement) in slots.iter().zip(&result.statements) {
         if let Some(id) = section::resolve(slot, statement, &known).single()
             && let std::collections::hash_map::Entry::Vacant(entry) = stored.entry(id)
         {
-            entry.insert(transactions::evidence(&mut *db, id).await?);
+            entry.insert(transactions::stored_keys(&mut *db, id).await?);
+            printed.extend(printings::for_account(&mut *db, id).await?);
         }
     }
     let lookup = Lookup {
         names: &names,
         known: &known,
         stored: &stored,
+        printings: &printed,
+        statement_id,
     };
     Ok(slots
         .iter()

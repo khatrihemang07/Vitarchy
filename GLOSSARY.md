@@ -121,8 +121,12 @@ A savings account, credit card or loan at one issuer, known by its masked number
 _Avoid_: Wallet, card (as a general word)
 
 **Transaction**:
-One movement of money on one Account, exactly as its Statement printed it: the date, the description, the amount, whether it was a debit or a credit, and the balance after it when printed. The same Transaction appearing in two overlapping Statements is stored once.
+One movement of money on one Account, exactly as its Statement printed it: the date, the description, the amount, whether it was a debit or a credit, and the balance after it when printed. The same Transaction appearing in two overlapping Statements is stored once, with a Printing from each Statement.
 _Avoid_: Entry, record, txn
+
+**Printing**:
+What one Statement printed for a Transaction, exactly as it printed it. A Transaction has one or more Printings; Vitarchy keeps them all and shows the fullest.
+_Avoid_: Copy, version, duplicate
 
 **Payment record**:
 What a payment app such as PhonePe noted about one payment: when, with whom, its ids, and the Account it used. It is never money on its own; it links to at most one Transaction, and it waits unlinked until that Account's Statement arrives.
@@ -141,5 +145,5 @@ A test that a Statement's Transactions agree with each other and with the totals
 _Avoid_: Validation, reconciliation
 
 **Read again**:
-Running the current reading engine over a stored Statement, to find Transactions an earlier engine missed. It adds what is new and marks what it no longer finds, but never deletes.
+Running the current reading engine over a stored Statement, to find Transactions an earlier engine missed. It adds what is new and marks the Printings it no longer finds, but never deletes. A Transaction is no longer found only when all its Printings are.
 _Avoid_: Re-import, reparse, refresh

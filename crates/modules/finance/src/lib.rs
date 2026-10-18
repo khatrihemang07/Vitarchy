@@ -8,6 +8,7 @@ mod error;
 pub mod files;
 mod import;
 mod linking;
+mod printings;
 mod problem;
 pub mod reader;
 mod record_key;
@@ -20,7 +21,9 @@ mod view;
 use vitarchy_core::Module;
 
 pub use accounts::{AccountIdentity, Match, find as match_account, last4, same_number};
-pub use dedupe::{Evidence, ReadAgainDiff, StoredEvidence, new_rows, read_again_diff};
+pub use dedupe::{
+    Evidence, PrintingToAdd, ReadAgainDiff, StoredEvidence, new_rows, pair, read_again_diff,
+};
 pub use error::FinanceError;
 pub use linking::{RecordFacts, TransactionFacts, link};
 pub use routes::router_with;

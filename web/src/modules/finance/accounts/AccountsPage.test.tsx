@@ -89,8 +89,8 @@ describe("AccountsPage", () => {
         jsonResponse(200, {
           statement: preview({ id: 3, status: "confirmed" }),
           sections: [{ position: 0, add_count: 1, unchanged_count: 28, no_longer_found_count: 1, added: [
-            { date: "2026-03-05", description: "Newly found row", amount_paise: 1000, direction: "debit", is_duplicate: false },
-          ] }],
+            { date: "2026-03-05", description: "Newly found row", amount_paise: 1000, direction: "debit", is_already_stored: false },
+          ], new_printings: [] }],
         }),
       "POST /api/finance/statements/3/read-again/confirm": () => jsonResponse(200, { added: 1, linked: 0, no_longer_found: 1, unchanged: 28 }),
     });

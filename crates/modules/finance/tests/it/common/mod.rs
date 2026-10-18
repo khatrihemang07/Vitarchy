@@ -3,6 +3,7 @@
 
 pub mod app;
 pub mod cards;
+pub mod pairs;
 pub mod results;
 
 use chrono::NaiveDate;

@@ -72,7 +72,7 @@ async fn approving_adds_new_rows_marks_vanished_ones_and_deletes_nothing() {
     assert_eq!(applied.status, 200, "{}", applied.text);
     assert_eq!(
         applied.json,
-        json!({"added": 1, "unchanged": 2, "no_longer_found": 1, "linked": 0})
+        json!({"added": 1, "unchanged": 2, "printings_added": 0, "enriched": 0, "no_longer_found": 1, "linked": 0})
     );
     assert_eq!(row_count(&env).await, 4);
     let rows = env.get("/transactions").await;
@@ -105,7 +105,7 @@ async fn a_row_found_again_is_revived() {
 
     assert_eq!(
         again.json,
-        json!({"added": 0, "unchanged": 3, "no_longer_found": 0, "linked": 0})
+        json!({"added": 0, "unchanged": 3, "printings_added": 0, "enriched": 0, "no_longer_found": 0, "linked": 0})
     );
     let rows = env.get("/transactions").await;
     assert!(
@@ -136,7 +136,7 @@ async fn rereading_an_unchanged_statement_changes_nothing() {
     );
     assert_eq!(
         applied.json,
-        json!({"added": 0, "unchanged": 3, "no_longer_found": 0, "linked": 0})
+        json!({"added": 0, "unchanged": 3, "printings_added": 0, "enriched": 0, "no_longer_found": 0, "linked": 0})
     );
     env.finish().await;
 }
