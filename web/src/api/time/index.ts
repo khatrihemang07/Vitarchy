@@ -1,3 +1,4 @@
+export { useAwayPreview } from "./awayPreview";
 export { useImportActivity } from "./activityImport";
 export { useDisconnect, useSetConnection } from "./connection";
 export { failureFromCode, toTimeFailure, type TimeFailure } from "./failure";
@@ -9,6 +10,8 @@ export { useSyncTime } from "./sync";
 export { useRebuildTimeline } from "./timeline";
 export type {
   ActivityStatus,
+  AwayPreview,
+  PreviewChoice,
   AppUsage,
   Away,
   DayTotals,

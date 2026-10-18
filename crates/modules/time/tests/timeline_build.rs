@@ -29,8 +29,8 @@ async fn importing_both_sources_builds_a_timeline_that_never_overlaps_and_knows_
         [
             (0, 50, "unknown", 1),
             (50, 100, "no", 2),
-            (100, 160, "no", 1),
-            (160, 200, "yes", 1)
+            (100, 3650, "no", 1),
+            (3650, 7250, "yes", 1)
         ]
     );
     assert!(!has_overlap(&db).await);
@@ -60,8 +60,8 @@ async fn importing_again_leaves_the_same_segments() {
 async fn with_one_source_the_timeline_follows_it() {
     let db = time_db("tlone").await;
     let clockify = ClockifyFixture::new();
-    let mut item = Item::new("c1", 0, 100);
-    item.idle = 30.0;
+    let mut item = Item::new("c1", 0, 7200);
+    item.idle = 3600.0;
     clockify.write(&[item]);
     let app = clockify_app(&db, clockify.file());
 
@@ -75,11 +75,46 @@ async fn with_one_source_the_timeline_follows_it() {
     assert_eq!(
         shape,
         [
-            (0, 70, "no".to_owned(), vec!["clockify".to_owned()]),
-            (70, 100, "yes".to_owned(), vec!["clockify".to_owned()]),
+            (0, 3600, "no".to_owned(), vec!["clockify".to_owned()]),
+            (3600, 7200, "yes".to_owned(), vec!["clockify".to_owned()]),
         ]
     );
     db.drop().await;
+}
+
+/// Imports one Clockify row of `length` seconds with `idle` of no input; returns its Segments.
+async fn import_idle_row(name: &str, length: i64, idle: f64) -> Vec<(i64, i64, String)> {
+    let db = time_db(name).await;
+    let clockify = ClockifyFixture::new();
+    let mut item = Item::new("c1", 0, length);
+    item.idle = idle;
+    clockify.write(&[item]);
+    call(
+        &clockify_app(&db, clockify.file()),
+        "POST",
+        CLOCKIFY_IMPORT,
+        None,
+    )
+    .await;
+    let shape = segments(&db)
+        .await
+        .into_iter()
+        .map(|s| (s.start, s.end, s.away))
+        .collect();
+    db.drop().await;
+    shape
+}
+
+#[tokio::test]
+async fn thirty_minutes_without_input_is_not_away() {
+    let shape = import_idle_row("tl30", 1800, 1800.0).await;
+    assert_eq!(shape, [(0, 1800, "no".to_owned())]);
+}
+
+#[tokio::test]
+async fn ninety_minutes_without_input_is_all_away() {
+    let shape = import_idle_row("tl90", 5400, 5400.0).await;
+    assert_eq!(shape, [(0, 5400, "yes".to_owned())]);
 }
 
 #[tokio::test]

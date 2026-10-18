@@ -2,10 +2,12 @@
 //! and how its Activity becomes observations.
 
 use super::model::Activity;
-use crate::timeline::model::Observation;
+use crate::timeline::{away_rules::AwayRules, model::Observation};
 
-/// Normalises one Activity into what the Timeline compares across Sources.
-pub type Observe = fn(&Activity) -> Vec<Observation>;
+/// Normalises a Source's Activity into what the Timeline compares across Sources, applying
+/// the Away rules to any no-input time it records. It takes the Source's whole batch because
+/// no-input time carries on across rows, so one row cannot be judged alone.
+pub type Observe = fn(&[&Activity], &AwayRules) -> Vec<Observation>;
 
 /// How well a Source records each trait, as a rank where higher wins; `None` means it does
 /// not record that trait at all. The Timeline's merge reads only these numbers.

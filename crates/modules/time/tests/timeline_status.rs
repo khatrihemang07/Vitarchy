@@ -31,9 +31,9 @@ async fn the_status_reports_the_timeline() {
             timeline["away_secs"].as_i64(),
             timeline["unknown_secs"].as_i64()
         ),
-        (Some(40), Some(50))
+        (Some(3600), Some(50))
     );
-    assert_eq!(timeline["covered_secs"], 200);
+    assert_eq!(timeline["covered_secs"], 7250);
     assert!(timeline["oldest"].is_string() && timeline["newest"].is_string());
     db.drop().await;
 }

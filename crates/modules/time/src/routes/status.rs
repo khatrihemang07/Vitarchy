@@ -4,7 +4,7 @@ use axum::{Extension, Json, extract::State};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use utoipa::ToSchema;
-use vitarchy_core::{ApiError, AppState, Problem};
+use vitarchy_core::{AppState, Problem};
 
 use super::{
     activity_status::{self, SourceActivityStatus},
@@ -13,7 +13,9 @@ use super::{
 };
 use crate::{
     activity::Snapshots,
+    error::TimeError,
     repo::{connection, entries, runs},
+    timeline::ensure_rules_current_or_warn,
 };
 
 /// Body of `GET /api/time/status`.
@@ -51,8 +53,9 @@ pub struct TimeStatus {
 pub async fn get_status(
     State(state): State<AppState>,
     Extension(snapshots): Extension<Snapshots>,
-) -> Result<Json<TimeStatus>, ApiError> {
+) -> Result<Json<TimeStatus>, TimeError> {
     let pool = &state.pool;
+    ensure_rules_current_or_warn(pool).await;
     let connection = connection::get(pool).await?;
     let mirrored = entries::stats(pool).await?;
     Ok(Json(TimeStatus {

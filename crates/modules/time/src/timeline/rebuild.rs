@@ -4,8 +4,9 @@ use std::time::Instant;
 
 use sqlx::{PgConnection, PgPool};
 
-use super::{TimeRange, build, stitch};
+use super::{TimeRange, build, no_input, no_input::STRETCH_TOLERANCE, stitch};
 use crate::{
+    activity::Activity,
     error::TimeError,
     repo::{activities_read, timeline},
 };
@@ -78,14 +79,24 @@ async fn replace_stretch(
     // Activity or a stored Segment pulled in by widening may itself reach further, so widen
     // until it settles.
     let (found, stored) = loop {
-        let found = activities_read::overlapping(&mut *tx, range).await?;
+        // Rows just outside the range may carry on a no-input stretch into it, so read those
+        // too; they are only rebuilt when they do.
+        let near = activities_read::overlapping(&mut *tx, range.padded(STRETCH_TOLERANCE)).await?;
+        let found: Vec<Activity> = near
+            .iter()
+            .filter(|a| a.start_at < range.to && a.end_at > range.from)
+            .cloned()
+            .collect();
         let stored = timeline::touching(tx, range).await?;
-        let widened = found.iter().fold(stitch::reach(range, &stored), |all, a| {
-            all.union(TimeRange {
-                from: a.start_at,
-                to: a.end_at,
+        let widened = found
+            .iter()
+            .fold(no_input::reach(range, &near), |all, a| {
+                all.union(TimeRange {
+                    from: a.start_at,
+                    to: a.end_at,
+                })
             })
-        });
+            .union(stitch::reach(range, &stored));
         if widened == range {
             break (found, stored);
         }

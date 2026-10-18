@@ -48,8 +48,12 @@ _Avoid_: Merged activity, combined activity
 One stretch of the Timeline in a single app and window, which notes the Sources that back it. Each Segment is Away, not Away, or of unknown Away when no Source that covers it can tell.
 _Avoid_: Block, slice, span
 
+**No input**:
+A stretch with no keyboard or mouse use, as a Source reports it. On its own it is not Away: a pause to read or think is no input too.
+_Avoid_: Idle, inactive
+
 **Away**:
-Time when the person was not using the computer, even though a Source kept recording the frontmost app. Only Sources that notice inactivity can say a stretch was Away; where none does, Away is unknown, not assumed.
+Time when the person was not using the computer, even though a Source kept recording the frontmost app. Only a No input stretch of an hour or more counts as Away, starting at the last input; shorter pauses stay Active. While watching or in a call, up to 2 hours of No input stays Active. Only Sources that notice inactivity can say a stretch was Away; where none does, Away is unknown, not assumed.
 _Avoid_: Idle, inactive, AFK
 
 **Active**:

@@ -11,12 +11,13 @@ use utoipa::IntoParams;
 use vitarchy_core::{ApiError, AppState, Problem};
 
 use crate::{
+    error::TimeError,
     repo::{entries, timeline_read},
     report::{
         period::PeriodKind,
         period_query::{Pairs, parse_period},
     },
-    timeline::TimeRange,
+    timeline::{TimeRange, ensure_rules_current_or_warn},
     timeline_summary::{model::TimelineSummary, summarise},
 };
 
@@ -54,8 +55,9 @@ pub struct TimelineParams {
 pub async fn get_timeline(
     State(state): State<AppState>,
     RawQuery(raw): RawQuery,
-) -> Result<Json<TimelineSummary>, ApiError> {
+) -> Result<Json<TimelineSummary>, TimeError> {
     let started = Instant::now();
+    ensure_rules_current_or_warn(&state.pool).await;
     let pairs: Vec<(String, String)> =
         url::form_urlencoded::parse(raw.unwrap_or_default().as_bytes())
             .into_owned()

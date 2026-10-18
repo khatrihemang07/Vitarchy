@@ -69,15 +69,15 @@ pub async fn has_overlap(db: &TestDb) -> bool {
     .unwrap()
 }
 
-/// Toggl: 0-100 "Code" titled "T". Clockify: 50-200 "Code" with 40 s idle and a page url.
+/// Toggl: 0-100 "Code" titled "T". Clockify: 50-7250 "Code" with an hour of no input and a page url.
 pub fn write_both(toggl: &Fixture, clockify: &ClockifyFixture) {
     let mut row = Row::new(1, 0.0, 100.0);
     row.app = "Code";
     row.title = "T";
     toggl.write(&[row]);
-    let mut item = Item::new("c1", 50, 200);
+    let mut item = Item::new("c1", 50, 7250);
     item.url = "https://example.com";
-    item.idle = 40.0;
+    item.idle = 3600.0;
     clockify.write(&[item]);
 }
 

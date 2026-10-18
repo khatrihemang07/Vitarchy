@@ -7,7 +7,8 @@ interface StatCardProps {
   label: string;
   /** Usually a number or a NumberTicker. */
   value: ReactNode;
-  hint?: string;
+  /** A short note under the value; may hold a link. */
+  hint?: ReactNode;
   /** Sits beside the value (e.g. a change from the last Period). */
   badge?: ReactNode;
   icon?: ComponentType<{ className?: string }>;
@@ -27,7 +28,7 @@ export function StatCard({ label, value, hint, badge, icon: Icon, className }: S
           <span className="font-display text-3xl font-bold tracking-tight">{value}</span>
           {badge}
         </div>
-        {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+        {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
       </Card>
     </Pressable>
   );

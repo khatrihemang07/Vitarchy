@@ -9,7 +9,6 @@ mod clip;
 #[cfg(test)]
 mod clip_tests;
 mod day_shape;
-mod domain;
 mod figures;
 mod focus;
 #[cfg(test)]

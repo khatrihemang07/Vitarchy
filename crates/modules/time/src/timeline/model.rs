@@ -27,6 +27,15 @@ impl TimeRange {
         }
     }
 
+    /// This range widened by `by` at both ends (unchanged at the ends of time).
+    #[must_use]
+    pub fn padded(self, by: chrono::Duration) -> Self {
+        Self {
+            from: self.from.checked_sub_signed(by).unwrap_or(self.from),
+            to: self.to.checked_add_signed(by).unwrap_or(self.to),
+        }
+    }
+
     /// This range stretched to also cover `other`.
     #[must_use]
     pub fn union(self, other: Self) -> Self {

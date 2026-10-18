@@ -18,6 +18,6 @@ export const sourceCopy: Record<Source, SourceCopy> = {
   clockify: {
     title: "Import Clockify activity",
     description:
-      "What the Clockify Desktop app noticed on this computer, with page addresses and idle time. Importing never removes anything, so Vitarchy keeps what Clockify later discards.",
+      "What the Clockify Desktop app noticed on this computer, with page addresses and no-input time. Importing never removes anything, so Vitarchy keeps what Clockify later discards.",
   },
 };

@@ -5,7 +5,8 @@
 -- common names and every title and address is invented (example.com).
 --
 -- What it covers on purpose:
---   * Clockify rows carry idle seconds, so their tails become Away;
+--   * Clockify rows carry idle seconds; only no-input tails of an hour or more become Away
+--     (the evening rows: 2 h left open is Away, 3 h of YouTube keeps 2 h Active and 1 h Away);
 --   * a Toggl-only stretch (days 12-17 ago, Away unknown) and a Clockify-only one (24-26 ago);
 --   * no Activity at all on days 10, 21 and 32 ago, and a missing Zoom row every third day;
 --   * rows crossing midnight (Toggl one row, Clockify split at midnight as it records them).
@@ -21,7 +22,7 @@ END $$;
 DELETE FROM time.activities WHERE source_id LIKE '5eed%';
 
 -- One working day: slot, start (minutes after midnight), length, app, title, address, idle share
--- (Clockify only). A '#' in a title becomes a number that varies by day. Lunch is the gap 12:30-13:30.
+-- (Clockify only; 100 = no input all through the row). A '#' in a title becomes a number that varies by day. Lunch is the gap 12:30-13:30.
 CREATE TEMP TABLE tpl (slot int, start_min int, dur_min int, app text, title text, url text, idle_pct int) ON COMMIT DROP;
 INSERT INTO tpl VALUES
   (1,  510, 50, 'Visual Studio Code', 'report_#.rs — vitarchy',                 NULL,                                        0),
@@ -35,7 +36,9 @@ INSERT INTO tpl VALUES
   (9,  900, 45, 'Zoom',               'Weekly sync',                            NULL,                                        0),
   (10, 945, 40, 'Figma',              'Dashboard mockup #',                     'https://design.example.com/file/#',         0),
   (11, 985, 20, 'Notes',              'Meeting notes',                          NULL,                                       30),
-  (12, 1005, 60, 'Visual Studio Code', 'timeline_#.rs — vitarchy',              NULL,                                        0);
+  (12, 1005, 60, 'Visual Studio Code', 'timeline_#.rs — vitarchy',              NULL,                                        0),
+  (13, 1080, 120, 'Safari',           'Left open — Docs #',                     'https://docs.example.com/guide/#',        100),
+  (14, 1200, 180, 'Safari',           'Video — Talk #',                         'https://www.youtube.com/watch?v=demo#',   100);
 
 -- The days with Activity: none 10, 21 and 32 days ago, and weekends only on every other day.
 CREATE TEMP TABLE seed_days ON COMMIT DROP AS

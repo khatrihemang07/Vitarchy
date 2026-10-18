@@ -28,7 +28,7 @@ fn toggl(id: u8, from: &str, to: &str) -> Row {
     row
 }
 
-/// 09:00-09:30 Code (both Sources), 09:30-09:40 Mail, 09:40-10:00 Away, 10:00-10:05 Toggl only.
+/// 09:00-09:30 Code (both Sources), 09:30-09:40 Mail, 09:40-10:40 Away (an hour without input), 10:40-10:45 Toggl only.
 pub async fn two_source_day(db: &TestDb) -> Router {
     let items = [
         clockify(
@@ -48,14 +48,14 @@ pub async fn two_source_day(db: &TestDb) -> Router {
         clockify(
             "c3",
             "2026-10-17T09:40:00Z",
-            "2026-10-17T10:00:00Z",
+            "2026-10-17T10:40:00Z",
             "Lock",
-            1200.0,
+            3600.0,
         ),
     ];
     let rows = [
         toggl(1, "2026-10-17T09:00:00Z", "2026-10-17T09:30:00Z"),
-        toggl(2, "2026-10-17T10:00:00Z", "2026-10-17T10:05:00Z"),
+        toggl(2, "2026-10-17T10:40:00Z", "2026-10-17T10:45:00Z"),
     ];
     import_rows(db, &rows, &items).await.0
 }

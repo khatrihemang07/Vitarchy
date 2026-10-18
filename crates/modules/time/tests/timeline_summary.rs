@@ -20,7 +20,7 @@ async fn a_day_with_both_sources_gives_active_away_unknown_switches_and_focus() 
     assert_eq!(reply.status, 200, "{}", reply.text);
     let o = &reply.json["overview"];
     assert_eq!(o["active_secs"], 2400);
-    assert_eq!(o["away_secs"], 1200);
+    assert_eq!(o["away_secs"], 3600);
     assert_eq!(o["unknown_secs"], 300);
     assert_eq!(o["switches"], 1);
     assert_eq!(o["longest_focus_secs"], 1800);

@@ -197,3 +197,65 @@ async fn a_moved_activity_clears_where_it_was_and_fills_where_it_is() {
     assert_eq!(segments(&db).await, imported);
     db.drop().await;
 }
+
+fn item(id: &str, started: i64, ended: i64, idle: f64) -> Item {
+    let mut item = Item::new(id, started, ended);
+    item.idle = idle;
+    item
+}
+
+/// Imports `first`, then `second` (only the later row differs), and checks the partial rebuild
+/// the second Import did equals rebuilding everything.
+async fn partial_rebuild_equals_rebuild_all(name: &str, first: &[Item], second: &[Item]) {
+    let db = time_db(name).await;
+    let clockify = ClockifyFixture::new();
+    clockify.write(first);
+    let app = clockify_app(&db, clockify.file());
+    call(&app, "POST", CLOCKIFY_IMPORT, None).await;
+
+    clockify.write(second);
+    call(&app, "POST", CLOCKIFY_IMPORT, None).await;
+    let partial = segments(&db).await;
+    rebuild_everything(&app).await;
+
+    assert_eq!(partial, segments(&db).await);
+    let shape: Vec<_> = partial
+        .iter()
+        .map(|s| (s.start, s.end, s.away.as_str()))
+        .collect();
+    assert_eq!(shape, [(0, 3900, "yes")]);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn a_grown_row_makes_the_rows_before_it_in_its_no_input_stretch_away_like_a_full_rebuild() {
+    partial_rebuild_equals_rebuild_all(
+        "tlstretch_grow",
+        &[
+            item("a", 0, 1200, 1200.0),
+            item("b", 1200, 2400, 2400.0),
+            item("c", 2400, 3000, 3000.0),
+        ],
+        &[
+            item("a", 0, 1200, 1200.0),
+            item("b", 1200, 2400, 2400.0),
+            item("c", 2400, 3900, 3900.0),
+        ],
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn a_new_later_row_makes_the_rows_before_it_in_its_no_input_stretch_away_like_a_full_rebuild()
+{
+    partial_rebuild_equals_rebuild_all(
+        "tlstretch_new",
+        &[item("a", 0, 1200, 1200.0), item("b", 1200, 2400, 2400.0)],
+        &[
+            item("a", 0, 1200, 1200.0),
+            item("b", 1200, 2400, 2400.0),
+            item("c", 2400, 3900, 3900.0),
+        ],
+    )
+    .await;
+}

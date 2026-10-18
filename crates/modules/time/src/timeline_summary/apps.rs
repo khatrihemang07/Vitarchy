@@ -4,9 +4,9 @@ use std::collections::BTreeMap;
 
 use super::{
     clip::Piece,
-    domain::domain,
     model::{AppUsage, SiteUsage, TitleUsage},
 };
+use crate::timeline::domain::domain;
 
 /// Most window titles, and most sites, kept per app.
 pub const TOP_PER_APP: usize = 10;
