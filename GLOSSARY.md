@@ -75,7 +75,7 @@ A summary of the Time Entries in one Period, filtered and grouped the way the pe
 _Avoid_: Analysis, dashboard, insights
 
 **Previous Period**:
-The Period of the same kind just before the one being looked at: yesterday, last week, last month, or the same-length stretch just before a custom one.
+The closest earlier Period of the same kind that has Time Entries matching the filters. Usually yesterday, last week, last month, or the same-length stretch before a custom one; after a gap, the last one that had entries.
 _Avoid_: Last period, baseline
 
 **Usual**:

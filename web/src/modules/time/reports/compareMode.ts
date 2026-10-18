@@ -37,6 +37,21 @@ interface CompareDescriptor {
   note: (report: Report) => string;
 }
 
+/** What the skipped-to Previous Period is called, by the kind of Period. */
+const SKIPPED_NOUN: Record<PeriodKind, string> = {
+  day: "Day",
+  week: "week",
+  month: "month",
+  custom: "same-length stretch",
+};
+
+/** The Previous Period's note: plain, or naming the last Period with entries when it was skipped back to. */
+function previousNote({ period }: Report): string {
+  const dates = periodLabel(period.kind, { from: period.previous_from, to: period.previous_to });
+  if (!period.previous_skipped) return `Compared with the Previous Period, ${dates}`;
+  return `Compared with the last ${SKIPPED_NOUN[period.kind]} with entries, ${dates}`;
+}
+
 function daysWithEntries(n: number): string {
   if (n === 0) return "no Days with entries";
   return `${String(n)} ${n === 1 ? "Day" : "Days"} with entries`;
@@ -57,7 +72,7 @@ export const COMPARE: Record<CompareMode, CompareDescriptor> = {
     group: ({ vs_previous: { change, is_new } }) => ({ change: change ?? null, isNew: is_new, usual: null }),
     overview: (overview) => overview.vs_previous,
     dayTotalChange: (change) => change.total_s,
-    note: ({ period }) => `Compared with the Previous Period, ${periodLabel(period.kind, { from: period.previous_from, to: period.previous_to })}`,
+    note: previousNote,
   },
   usual: {
     label: USUAL_LABEL,

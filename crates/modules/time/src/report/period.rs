@@ -126,6 +126,21 @@ impl Period {
         Self { from, to, ..*self }
     }
 
+    /// The closest earlier Period of the same kind that contains `day`: [`Self::previous`]
+    /// applied until it does. Bounded by [`MAX_DAYS`] steps (each goes back at least a Day),
+    /// so a `day` far in the past just stops at the last Period reached.
+    #[must_use]
+    pub fn previous_containing(&self, day: NaiveDate) -> Self {
+        let mut reached = self.previous();
+        for _ in 0..MAX_DAYS {
+            if reached.from <= day {
+                break;
+            }
+            reached = reached.previous();
+        }
+        reached
+    }
+
     /// The Usual's range: the [`USUAL_DAYS`] local Days ending the Day before this
     /// Period starts. Built from local dates, so a DST change just makes one Day 23 or
     /// 25 hours long.

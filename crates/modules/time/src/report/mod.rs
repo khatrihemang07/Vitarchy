@@ -11,6 +11,7 @@ mod items;
 pub mod model;
 mod overview;
 pub mod period;
+pub mod previous;
 pub mod query;
 mod scaling;
 mod series;
@@ -26,6 +27,8 @@ mod build_usual_tests;
 mod compare_tests;
 #[cfg(test)]
 mod period_tests;
+#[cfg(test)]
+mod previous_tests;
 #[cfg(test)]
 mod query_tests;
 #[cfg(test)]
@@ -46,10 +49,20 @@ use scaling::Scaling;
 pub struct Entries<'a> {
     /// Entries overlapping the Period.
     pub current: &'a [WindowEntry],
-    /// Entries overlapping the Previous Period.
-    pub previous: &'a [WindowEntry],
+    /// The Previous Period the Report compares with, and its entries.
+    pub previous: Reference<'a>,
     /// Entries overlapping the Usual's range.
     pub usual: &'a [WindowEntry],
+}
+
+/// A Period a Report compares with, and the entries read for it. The route resolves it,
+/// because finding the last Period with entries needs reads the pure code cannot make.
+#[derive(Debug, Clone, Copy)]
+pub struct Reference<'a> {
+    /// The Period compared with.
+    pub period: Period,
+    /// Entries overlapping it.
+    pub entries: &'a [WindowEntry],
 }
 
 /// What a Report needs to know besides the entries, injected so tests are deterministic.
@@ -78,7 +91,7 @@ fn summarize(
 /// Builds the Report for `query`. Filtering and clipping to each range happen here.
 #[must_use]
 pub fn build_report(query: &ReportQuery, entries: &Entries<'_>, context: &Context) -> Report {
-    let earlier = query.period.previous();
+    let earlier = entries.previous.period;
     let usual_period = query.period.usual_range();
     let scaling = Scaling::new(&query.period, context.now, context.first_entry);
     let groupings = query.groupings();
@@ -86,7 +99,8 @@ pub fn build_report(query: &ReportQuery, entries: &Entries<'_>, context: &Contex
     let days = query.period.days();
 
     let mut groups = tree::build(&refs(&now), &groupings, &days);
-    let (before_groups, before_overview) = summarize(entries.previous, query, &earlier, &groupings);
+    let (before_groups, before_overview) =
+        summarize(entries.previous.entries, query, &earlier, &groupings);
     let (usual_groups, usual_overview) = summarize(entries.usual, query, &usual_period, &groupings);
     compare::attach_previous(&mut groups, &before_groups);
     usual::attach_usual(&mut groups, &usual_groups, &scaling);
@@ -103,6 +117,7 @@ pub fn build_report(query: &ReportQuery, entries: &Entries<'_>, context: &Contex
             to: query.period.to,
             previous_from: earlier.from,
             previous_to: earlier.to,
+            previous_skipped: earlier != query.period.previous(),
             usual_from: usual_period.from,
             usual_to: usual_period.to,
             elapsed_days: scaling.elapsed_days,

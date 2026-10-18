@@ -98,6 +98,18 @@ describe("compareNote", () => {
     expect(compareNote(data, "previous")).toBe("Compared with the Previous Period, 5–11 Oct 2026");
   });
 
+  it("names the last Day with entries when the Previous Period was skipped", () => {
+    const skipped = { ...data, period: { ...data.period, kind: "day" as const, previous_from: "2026-10-09", previous_to: "2026-10-09", previous_skipped: true } };
+    expect(compareNote(skipped, "previous")).toBe("Compared with the last Day with entries, Fri 9 Oct 2026");
+  });
+
+  it("names the kind of Period that was skipped back to", () => {
+    const skipped = (kind: "week" | "month" | "custom") => ({ ...data, period: { ...data.period, kind, previous_skipped: true } });
+    expect(compareNote(skipped("week"), "previous")).toBe("Compared with the last week with entries, 5–11 Oct 2026");
+    expect(compareNote(skipped("month"), "previous")).toMatch(/^Compared with the last month with entries, /);
+    expect(compareNote(skipped("custom"), "previous")).toMatch(/^Compared with the last same-length stretch with entries, /);
+  });
+
   it("says how short the history is when it does not cover the whole range", () => {
     expect(compareNote(withHistory(10), "usual")).toBe("Compared with the last 4 weeks, 14 Sep – 11 Oct 2026 (18 Days with entries). Only 10 Days of history so far");
     expect(compareNote(withHistory(1), "usual")).toContain("Only 1 Day of history so far");

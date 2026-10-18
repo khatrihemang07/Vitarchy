@@ -9,6 +9,7 @@
 mod activity_status;
 mod connection;
 mod import;
+mod previous_period;
 mod reports;
 mod run_info;
 mod status;

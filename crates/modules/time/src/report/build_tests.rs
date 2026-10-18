@@ -1,7 +1,7 @@
 //! `build_report` end to end on in-memory entries.
 
 use super::{
-    Context, Entries,
+    Context, Entries, Reference,
     entry::{WindowEntry, fixtures::entry},
     model::Report,
     query::ReportQuery,
@@ -11,7 +11,10 @@ use super::{
 fn build_report(q: &ReportQuery, current: &[WindowEntry], previous: &[WindowEntry]) -> Report {
     let entries = Entries {
         current,
-        previous,
+        previous: Reference {
+            period: q.period.previous(),
+            entries: previous,
+        },
         usual: &[],
     };
     let context = Context {
@@ -267,4 +270,35 @@ fn a_renamed_project_still_matches_by_its_id() {
     assert_eq!(group.label, "New name");
     assert!(!group.vs_previous.is_new);
     assert_eq!(group.vs_previous.change.unwrap().total_s, 2 * 3600);
+}
+
+#[test]
+fn a_given_reference_is_what_the_report_compares_with() {
+    let q = query(&[]);
+    let now = [entry(1, "2026-10-13T08:00:00Z", 2, "same")];
+    let earlier_week = [entry(2, "2026-09-29T08:00:00Z", 1, "same")];
+    let reference = Reference {
+        period: q.period.previous().previous(),
+        entries: &earlier_week,
+    };
+    let entries = Entries {
+        current: &now,
+        previous: reference,
+        usual: &[],
+    };
+    let context = Context {
+        now: "2026-10-25T10:00:00Z".parse().unwrap(),
+        first_entry: None,
+    };
+    let report = super::build_report(&q, &entries, &context);
+    assert_eq!(report.period.previous_from.to_string(), "2026-09-28");
+    assert_eq!(report.period.previous_to.to_string(), "2026-10-04");
+    assert!(report.period.previous_skipped);
+    assert_eq!(report.overview.vs_previous.total_s, 3600);
+}
+
+#[test]
+fn the_calendar_neighbour_is_not_skipped() {
+    let report = build_report(&query(&[]), &[], &[]);
+    assert!(!report.period.previous_skipped);
 }

@@ -197,3 +197,50 @@ fn the_usual_range_has_27_local_days_of_24_hours_and_one_of_23_across_spring_dst
     assert_eq!(from.to_rfc3339(), "2026-03-07T23:00:00+00:00");
     assert_eq!(to.to_rfc3339(), "2026-04-04T22:00:00+00:00");
 }
+
+#[test]
+fn previous_containing_a_day_keeps_the_day_alignment() {
+    let day = period(PeriodKind::Day, date(2026, 10, 12), date(2026, 10, 12));
+    let reached = day.previous_containing(date(2026, 10, 9));
+    assert_eq!(
+        (reached.from, reached.to),
+        (date(2026, 10, 9), date(2026, 10, 9))
+    );
+}
+
+#[test]
+fn previous_containing_a_day_steps_whole_weeks() {
+    let week = period(PeriodKind::Week, date(2026, 10, 26), date(2026, 11, 1));
+    let reached = week.previous_containing(date(2026, 10, 9));
+    assert_eq!(
+        (reached.from, reached.to),
+        (date(2026, 10, 5), date(2026, 10, 11))
+    );
+}
+
+#[test]
+fn previous_containing_a_day_steps_whole_months_across_a_year_boundary() {
+    let month = period(PeriodKind::Month, date(2026, 2, 1), date(2026, 2, 28));
+    let reached = month.previous_containing(date(2025, 11, 20));
+    assert_eq!(
+        (reached.from, reached.to),
+        (date(2025, 11, 1), date(2025, 11, 30))
+    );
+}
+
+#[test]
+fn previous_containing_a_day_steps_custom_stretches_by_their_length() {
+    let custom = period(PeriodKind::Custom, date(2026, 10, 10), date(2026, 10, 14));
+    let reached = custom.previous_containing(date(2026, 9, 28));
+    assert_eq!(
+        (reached.from, reached.to),
+        (date(2026, 9, 25), date(2026, 9, 29))
+    );
+    assert_eq!(reached.kind, PeriodKind::Custom);
+}
+
+#[test]
+fn previous_containing_the_immediate_previous_day_is_previous() {
+    let week = period(PeriodKind::Week, date(2026, 10, 12), date(2026, 10, 18));
+    assert_eq!(week.previous_containing(date(2026, 10, 7)), week.previous());
+}

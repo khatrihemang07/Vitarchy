@@ -107,6 +107,9 @@ pub struct PeriodInfo {
     pub previous_from: NaiveDate,
     /// Last Day of the Previous Period (inclusive).
     pub previous_to: NaiveDate,
+    /// Whether the Previous Period is an earlier one than the calendar neighbour, because
+    /// that one had no entries matching the filters.
+    pub previous_skipped: bool,
     /// First Day of the Usual's range (the Days ending the Day before `from`).
     pub usual_from: NaiveDate,
     /// Last Day of the Usual's range (inclusive).

@@ -297,3 +297,122 @@ async fn a_blank_search_and_empty_filter_values_are_ignored() {
     assert_eq!(negative.status, 400);
     db.drop().await;
 }
+
+#[tokio::test]
+async fn a_monday_after_a_weekend_compares_with_the_last_day_with_entries() {
+    let db = time_db("report_previous_skipped").await;
+    // Friday 2026-10-09 is the last tracked Day before Monday 2026-10-12.
+    sqlx::query(
+        "INSERT INTO time.time_entries
+           (toggl_id, workspace_id, description, tags, start, stop, duration_s, raw) VALUES
+           (1, 7, 'Office', '{}', '2026-10-09T08:00Z', '2026-10-09T10:00Z', 7200, '{}'),
+           (2, 7, 'Office', '{}', '2026-10-12T08:00Z', '2026-10-12T11:00Z', 10800, '{}')",
+    )
+    .execute(&db.pool)
+    .await
+    .unwrap();
+    let app = time_app(&db, &FakeToggl::new());
+
+    let url = "/api/time/report?kind=day&from=2026-10-12&to=2026-10-12&tz=UTC";
+    let reply = call(&app, "GET", url, None).await;
+
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    let json = &reply.json;
+    assert_eq!(json["period"]["previous_from"], "2026-10-09");
+    assert_eq!(json["period"]["previous_to"], "2026-10-09");
+    assert_eq!(json["period"]["previous_skipped"], true);
+    assert_eq!(json["overview"]["vs_previous"]["total_s"], 10800 - 7200);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn a_report_whose_previous_period_has_entries_does_not_skip() {
+    let db = time_db("report_previous_not_skipped").await;
+    seed(&db).await;
+    let app = time_app(&db, &FakeToggl::new());
+
+    let reply = call(&app, "GET", &format!("/api/time/report?{WEEK}"), None).await;
+
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    assert_eq!(reply.json["period"]["previous_skipped"], false);
+    db.drop().await;
+}
+
+const DAY_URL: &str = "/api/time/report?kind=day&from=2026-10-12&to=2026-10-12&tz=UTC";
+
+/// Runs an `INSERT INTO time.time_entries (toggl_id, workspace_id, description, tags, start,
+/// stop, duration_s, raw)` with these value rows.
+async fn insert_entries(db: &TestDb, statement: &'static str) {
+    sqlx::query(statement).execute(&db.pool).await.unwrap();
+}
+
+#[tokio::test]
+async fn with_nothing_earlier_in_the_lookback_the_calendar_neighbour_stays() {
+    let db = time_db("report_previous_nothing_earlier").await;
+    insert_entries(
+        &db,
+        "INSERT INTO time.time_entries
+           (toggl_id, workspace_id, description, tags, start, stop, duration_s, raw) VALUES
+           (1, 7, 'Office', '{}', '2026-10-12T08:00Z', '2026-10-12T11:00Z', 10800, '{}')",
+    )
+    .await;
+    let app = time_app(&db, &FakeToggl::new());
+
+    let reply = call(&app, "GET", DAY_URL, None).await;
+
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    let json = &reply.json;
+    assert_eq!(json["period"]["previous_from"], "2026-10-11");
+    assert_eq!(json["period"]["previous_to"], "2026-10-11");
+    assert_eq!(json["period"]["previous_skipped"], false);
+    assert_eq!(json["groups"][0]["vs_previous"]["is_new"], true);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn the_filter_decides_which_earlier_period_has_entries() {
+    let db = time_db("report_previous_filter_skip").await;
+    // Yesterday only has "Gym"; "Office" was last tracked on Friday 2026-10-09.
+    insert_entries(
+        &db,
+        "INSERT INTO time.time_entries
+           (toggl_id, workspace_id, description, tags, start, stop, duration_s, raw) VALUES
+           (1, 7, 'Office', '{}', '2026-10-09T08:00Z', '2026-10-09T10:00Z', 7200, '{}'),
+         (2, 7, 'Gym', '{}', '2026-10-11T08:00Z', '2026-10-11T09:00Z', 3600, '{}'),
+         (3, 7, 'Office', '{}', '2026-10-12T08:00Z', '2026-10-12T11:00Z', 10800, '{}')",
+    )
+    .await;
+    let app = time_app(&db, &FakeToggl::new());
+
+    let reply = call(&app, "GET", &format!("{DAY_URL}&q=office"), None).await;
+
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    let json = &reply.json;
+    assert_eq!(json["period"]["previous_from"], "2026-10-09");
+    assert_eq!(json["period"]["previous_skipped"], true);
+    assert_eq!(json["overview"]["vs_previous"]["total_s"], 10800 - 7200);
+    db.drop().await;
+}
+
+#[tokio::test]
+async fn an_entry_with_no_time_does_not_count_as_having_entries() {
+    let db = time_db("report_previous_empty_entry").await;
+    // Yesterday's only entry overlaps the Day but spans no time, so it adds no Day part.
+    insert_entries(
+        &db,
+        "INSERT INTO time.time_entries
+           (toggl_id, workspace_id, description, tags, start, stop, duration_s, raw) VALUES
+           (1, 7, 'Office', '{}', '2026-10-09T08:00Z', '2026-10-09T10:00Z', 7200, '{}'),
+         (2, 7, 'Office', '{}', '2026-10-11T12:00Z', '2026-10-11T12:00Z', 0, '{}'),
+         (3, 7, 'Office', '{}', '2026-10-12T08:00Z', '2026-10-12T11:00Z', 10800, '{}')",
+    )
+    .await;
+    let app = time_app(&db, &FakeToggl::new());
+
+    let reply = call(&app, "GET", DAY_URL, None).await;
+
+    assert_eq!(reply.status, 200, "{}", reply.text);
+    assert_eq!(reply.json["period"]["previous_from"], "2026-10-09");
+    assert_eq!(reply.json["period"]["previous_skipped"], true);
+    db.drop().await;
+}

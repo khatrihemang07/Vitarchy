@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 
 use super::{
-    Context, Entries,
+    Context, Entries, Reference,
     entry::{WindowEntry, fixtures::entry},
     model::Report,
     query::ReportQuery,
@@ -36,7 +36,10 @@ fn build_report_in(
 ) -> Report {
     let entries = Entries {
         current,
-        previous,
+        previous: Reference {
+            period: q.period.previous(),
+            entries: previous,
+        },
         usual,
     };
     super::build_report(q, &entries, context)

@@ -8,11 +8,12 @@ use chrono::Utc;
 use utoipa::IntoParams;
 use vitarchy_core::{ApiError, AppState, Problem};
 
+use super::previous_period;
 use crate::{
     repo::{catalog, entries},
     report::{
-        Context, Entries, build_report, facets::Facets, grouping::Grouping, model::Report,
-        period::PeriodKind, query::ReportQuery,
+        Context, Entries, Reference, build_report, facets::Facets, grouping::Grouping,
+        model::Report, period::PeriodKind, query::ReportQuery,
     },
 };
 
@@ -69,16 +70,18 @@ pub async fn get_report(
             .collect();
     let query = ReportQuery::parse(&pairs).map_err(|e| ApiError::BadRequest(e.to_string()))?;
     let (from, to) = query.period.utc_range();
-    let (before_from, before_to) = query.period.previous().utc_range();
     let current = entries::in_range(&state.pool, from, to).await?;
-    let previous = entries::in_range(&state.pool, before_from, before_to).await?;
+    let (previous_period, previous_entries) = previous_period::resolve(&state.pool, &query).await?;
     let (usual_from, usual_to) = query.period.usual_range().utc_range();
     let usual = entries::in_range(&state.pool, usual_from, usual_to).await?;
     // Ignores the filters: it is about how long the person has tracked, not what they look at.
     let first_entry = entries::first_start(&state.pool).await?;
     let entries = Entries {
         current: &current,
-        previous: &previous,
+        previous: Reference {
+            period: previous_period,
+            entries: &previous_entries,
+        },
         usual: &usual,
     };
     let context = Context {
@@ -93,7 +96,8 @@ pub async fn get_report(
         filters = ?query.filter.counts(),
         groupings = query.groupings().len(),
         entries_read = current.len(),
-        previous_entries_read = previous.len(),
+        previous_entries_read = previous_entries.len(),
+        previous_skipped = report.period.previous_skipped,
         usual_entries_read = usual.len(),
         elapsed_days = report.period.elapsed_days,
         usual_available_days = report.period.usual_available_days,

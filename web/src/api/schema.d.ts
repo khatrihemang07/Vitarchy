@@ -472,6 +472,11 @@ export interface components {
              */
             previous_from: string;
             /**
+             * @description Whether the Previous Period is an earlier one than the calendar neighbour, because
+             *     that one had no entries matching the filters.
+             */
+            previous_skipped: boolean;
+            /**
              * Format: date
              * @description Last Day of the Previous Period (inclusive).
              */
