@@ -1,4 +1,4 @@
-"""Raw rows -> contract Transactions: dates, money, direction, references, add-on cards."""
+"""Raw rows -> contract Transactions: dates, money, direction, references."""
 
 from __future__ import annotations
 
@@ -37,14 +37,14 @@ def _clean(text: str | None) -> str | None:
 
 
 def _transaction(raw: RawRow, iso: str, direction: str, paise: int, balance: int | None,
-                 vocab: Vocabulary, addon: str | None) -> Transaction:
+                 vocab: Vocabulary) -> Transaction:
     foreign = parse_foreign(raw.cells.get("foreign_amount", ""))
     return Transaction(
         date=iso, description=raw.description, amount_paise=paise, direction=direction,
         balance_paise=balance, foreign_amount=foreign[0] if foreign else None,
         foreign_currency=foreign[1] if foreign else None,
         reference=_clean(raw.cells.get("utr")) or find_reference(raw.description, vocab),
-        addon_card=addon, source_id=_clean(raw.cells.get("source_id")))
+        source_id=_clean(raw.cells.get("source_id")))
 
 
 def _figures(raw: RawRow, vocab: Vocabulary, previous: int | None) -> tuple[Figures, int | None]:
@@ -56,7 +56,7 @@ def _figures(raw: RawRow, vocab: Vocabulary, previous: int | None) -> tuple[Figu
 
 
 def _pass(rows: list[RawRow], formats: str, vocab: Vocabulary, kind: str | None, opening: int | None,
-          inverted: bool, primary: str | None) -> Built:
+          inverted: bool) -> Built:
     built = Built(opening_paise=opening)
     negative_means = "credit" if kind in INVERTED_KINDS else "debit"
     previous = opening
@@ -71,14 +71,13 @@ def _pass(rows: list[RawRow], formats: str, vocab: Vocabulary, kind: str | None,
         parsed = parse_date(raw.cells.get("date") or raw.cells.get("value_date", ""), formats, vocab)
         if parsed is None:
             raise NormaliseError("unreadable_dates")
-        addon = raw.card if raw.card and raw.card != primary else None
-        built.transactions.append(_transaction(raw, parsed.isoformat(), *decision, balance, vocab, addon))
+        built.transactions.append(_transaction(raw, parsed.isoformat(), *decision, balance, vocab))
     return built
 
 
 def build_transactions(rows: list[RawRow], vocab: Vocabulary, kind: str | None,
                        period: tuple[date | None, date | None] | None = None,
-                       opening_paise: int | None = None, mask: str | None = None) -> Built:
+                       opening_paise: int | None = None) -> Built:
     """Transactions in printed order. An opening row sets the opening balance and is not a Transaction."""
     opening_rows = [r for r in rows if r.pseudo == "opening"]
     real = [r for r in rows if r.pseudo is None]
@@ -89,8 +88,7 @@ def build_transactions(rows: list[RawRow], vocab: Vocabulary, kind: str | None,
     fmt = detect_format(values, vocab, period) if real else None
     if real and fmt is None:
         raise NormaliseError("unreadable_dates")
-    primary = mask or next((r.card for r in real if r.card), None)
-    options = [_pass(real, fmt or "", vocab, kind, opening_paise, flag, primary) for flag in (False, True)]
+    options = [_pass(real, fmt or "", vocab, kind, opening_paise, flag) for flag in (False, True)]
     if all(o.transactions == options[0].transactions for o in options):
         return options[0]
     prefer_inverted = kind in INVERTED_KINDS

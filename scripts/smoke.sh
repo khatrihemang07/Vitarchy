@@ -37,5 +37,11 @@ curl -fsS -X PUT "$BASE/api/settings/core" -H 'content-type: application/json' -
 curl -fsS "$BASE/api/settings" | grep -q "\"display_name\":\"$name\"" || { echo "settings round-trip failed" >&2; exit 1; }
 echo "settings: saved and read back display_name=$name"
 
+status=$(curl -fsS "$BASE/api/finance/status")
+case $status in
+  *'"reader_available":true'*) echo "finance:  statement reader available" ;;
+  *) echo "the statement reader was not found (GET /api/finance/status: $status); run 'make finance-reader-install'" >&2; exit 1 ;;
+esac
+
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/nope")" = 404 ] || { echo "unknown /api path did not 404" >&2; exit 1; }
 echo "smoke ok (stage, port $PORT)"

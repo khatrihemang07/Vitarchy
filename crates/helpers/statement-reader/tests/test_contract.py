@@ -42,7 +42,6 @@ def read_statement() -> Result:
             direction="debit",
             foreign_amount="25.00",
             foreign_currency="USD",
-            addon_card="4000XXXXXXXX2222",
             source_id="51234567907",
         ),
         Transaction(
@@ -66,7 +65,7 @@ def read_statement() -> Result:
         transactions=transactions,
         checks=[
             Check("balance_chain", "passed", {"rows": 3, "breaks": 0, "polarity": "normal"}),
-            Check("summary_totals", "failed", {"debit_diff_paise": 100, "credit_diff_paise": 0}),
+            Check("summary_totals", "failed", {"debit_diff_paise": 100, "credit_diff_paise": 0, "scope": "bill"}),
             Check("row_counts", "skipped"),
         ],
     )

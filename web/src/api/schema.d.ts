@@ -1795,8 +1795,6 @@ export interface components {
              * @description Its Account.
              */
             account_id: number;
-            /** @description The add-on card. */
-            addon_card?: string | null;
             /**
              * Format: int64
              * @description Amount in paise, above 0.
@@ -1843,8 +1841,6 @@ export interface components {
         };
         /** @description A Transaction as printed. */
         TransactionView: {
-            /** @description The add-on card, on a card bill. */
-            addon_card?: string | null;
             /**
              * Format: int64
              * @description Amount in paise, above 0.

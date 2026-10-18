@@ -27,7 +27,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "512345678901",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -39,7 +38,6 @@
           "foreign_amount": "25.00",
           "foreign_currency": "USD",
           "reference": null,
-          "addon_card": "4000XXXXXXXX2222",
           "source_id": "51234567907"
         },
         {
@@ -51,13 +49,12 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         }
       ],
       "checks": [
         {"name": "balance_chain", "outcome": "passed", "detail": {"rows": 3, "breaks": 0, "polarity": "normal"}},
-        {"name": "summary_totals", "outcome": "failed", "detail": {"debit_diff_paise": 100, "credit_diff_paise": 0}},
+        {"name": "summary_totals", "outcome": "failed", "detail": {"debit_diff_paise": 100, "credit_diff_paise": 0, "scope": "bill"}},
         {"name": "row_counts", "outcome": "skipped", "detail": {}}
       ]
     }

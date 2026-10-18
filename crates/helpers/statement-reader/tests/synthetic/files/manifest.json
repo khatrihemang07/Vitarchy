@@ -10,11 +10,6 @@
     "rotated_dropped": 1,
     "words": 202
   },
-  "card_with_addon.pdf": {
-    "format": "pdf",
-    "pages": 1,
-    "words": 102
-  },
   "centred_narration.pdf": {
     "bold_lines": 7,
     "format": "pdf",
@@ -72,6 +67,11 @@
     "cols": 5,
     "format": "csv",
     "rows": 12
+  },
+  "multi_card_bill.pdf": {
+    "format": "pdf",
+    "pages": 1,
+    "words": 102
   },
   "payment_history.csv": {
     "bom": true,

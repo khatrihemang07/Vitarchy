@@ -2,7 +2,7 @@ import { createMemoryHistory, createRootRoute, createRoute, createRouter, Router
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { account, jsonResponse, stubApi } from "../test-utils";
+import { account, jsonResponse, pendingForever, SETTLED_NOTICES, stubApi } from "../test-utils";
 import { parseTransactionsSearch, transactionsParams } from "../transactionsSearch";
 import { TransactionsPage } from "./TransactionsPage";
 
@@ -31,6 +31,13 @@ const item = (over: Record<string, unknown> = {}) => ({
 const page = (items: unknown[], total = items.length) => () => jsonResponse(200, { total, items });
 
 describe("TransactionsPage", () => {
+  it("shows only a loading notice, never an empty or failure one, while the queries are pending", async () => {
+    stubApi({ "GET /api/finance/accounts": pendingForever, "GET /api/finance/transactions": pendingForever });
+    const { container } = renderAt("/finance/transactions");
+    await screen.findByText("Loading Transactions…");
+    expect(container.querySelectorAll(SETTLED_NOTICES)).toHaveLength(0);
+  });
+
   it("shows amounts in INR with Indian grouping and the Account's name", async () => {
     stubApi({ "GET /api/finance/accounts": () => jsonResponse(200, [account()]), "GET /api/finance/transactions": page([item()]) });
     renderAt("/finance/transactions");

@@ -10,7 +10,7 @@ from .metadata.surface import Surface, pdf_surface
 from .normalize.rows import NormaliseError
 from .read.lines import Line, group_lines
 from .read.pdf_words import Page, PageReader
-from .statements import group_regions, make_statement, segment_group, statement_facts
+from .statements import group_regions, make_statements, segment_group, statement_facts
 from .vocabulary import Vocabulary, load_vocabulary
 
 
@@ -35,7 +35,7 @@ def _statements(regions: list[Region], page_lines: list[list[Line]], vocab: Voca
             doc_facts = statement_facts(doc_surface, None, vocab)
             facts.issuer = facts.issuer or doc_facts.issuer
             facts.kind = facts.kind or doc_facts.kind
-        statements.append(make_statement(segment_group(group, vocab), facts, doc_surface, vocab))
+        statements.extend(make_statements(segment_group(group, vocab), facts, doc_surface, vocab))
     return statements
 
 

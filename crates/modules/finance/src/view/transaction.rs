@@ -25,8 +25,6 @@ pub struct TransactionView {
     pub foreign_amount: Option<String>,
     /// Foreign currency code.
     pub foreign_currency: Option<String>,
-    /// The add-on card, on a card bill.
-    pub addon_card: Option<String>,
     /// Whether an equal row is already stored.
     pub is_duplicate: bool,
 }
@@ -44,7 +42,6 @@ impl TransactionView {
             reference: tx.reference.clone(),
             foreign_amount: tx.foreign_amount.clone(),
             foreign_currency: tx.foreign_currency.clone(),
-            addon_card: tx.addon_card.clone(),
             is_duplicate,
         }
     }

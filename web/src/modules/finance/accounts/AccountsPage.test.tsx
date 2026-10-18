@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { account, jsonResponse, preview, renderWithClient, stubApi } from "../test-utils";
+import { account, jsonResponse, pendingForever, preview, renderWithClient, SETTLED_NOTICES, stubApi } from "../test-utils";
 import { AccountsPage } from "./AccountsPage";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -11,6 +11,13 @@ const confirmed = {
 };
 
 describe("AccountsPage", () => {
+  it("shows only loading notices while Accounts and Statements are pending", () => {
+    stubApi({ "GET /api/finance/accounts": pendingForever, "GET /api/finance/statements": pendingForever });
+    const { container } = renderWithClient(<AccountsPage />);
+    expect(screen.getByText("Loading Accounts…")).toBeInTheDocument();
+    expect(container.querySelectorAll(SETTLED_NOTICES)).toHaveLength(0);
+  });
+
   it("shows each Account's issuer, kind, number and figures", async () => {
     stubApi({
       "GET /api/finance/accounts": () => jsonResponse(200, [account()]),

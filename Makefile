@@ -7,6 +7,7 @@ SHELL := /bin/bash
 LIVE_ENV ?= .env
 LIVE := scripts/with-env.sh $(LIVE_ENV)
 STAGE := scripts/with-env.sh .env.stage
+READER_DIR := crates/helpers/statement-reader
 # Where `make start` serves. Priority: `make start START_ADDR=...`, then the
 # START_ADDR environment variable, then START_ADDR in .env, then the default.
 ifeq ($(origin START_ADDR),undefined)
@@ -26,11 +27,12 @@ help: ## List targets (addresses and ports are in .env and .env.stage)
 	@echo "OTHER"
 	@grep -hE '^[a-z-]+:.*## \[other\]' Makefile | sed -E 's/:.*## \[other\] */|/' | awk -F'|' '{printf "  make %-17s %s\n", $$1, $$2}'
 
-setup: ## [other] One-time: create .env files and install web deps
+setup: ## [other] One-time: create .env files and install web deps and the Statement reader
 	@[ -f .env ] || cp .env.example .env
 	@[ -f .env.stage ] || cp .env.stage.example .env.stage
 	@[ -f web/.env ] || cp web/.env.example web/.env
 	@[ -d web/node_modules ] || (cd web && pnpm install)
+	@[ -d $(READER_DIR)/.venv ] || (cd $(READER_DIR) && uv sync)
 
 # ---- LIVE ------------------------------------------------------------------
 
@@ -76,7 +78,7 @@ stage-db-stop: ## [stage] Stop the stage Postgres (its data is discarded)
 
 test: stage-db ## [stage] Run Rust, statement-reader and web tests against stage
 	$(STAGE) cargo test --workspace
-	cd crates/helpers/statement-reader && uv run pytest
+	cd $(READER_DIR) && uv run pytest
 	pnpm --dir web test
 
 smoke: stage-db ## [stage] Start a stage server, check health and a settings save, stop it
@@ -97,7 +99,7 @@ check: stage-db ## [stage] Lint, typecheck and test everything (the Definition o
 	scripts/check-private-leaks.sh
 	cargo clippy --workspace --all-targets -- -D warnings
 	$(STAGE) cargo test --workspace
-	cd crates/helpers/statement-reader && uv run ruff check . && uv run pytest
+	cd $(READER_DIR) && uv run ruff check . && uv run pytest
 	cd web && pnpm typecheck && pnpm lint && pnpm test
 
 # ---- OTHER -----------------------------------------------------------------
@@ -117,11 +119,11 @@ helper-uninstall: ## [other] Remove the activity helper (Snapshots are kept)
 helper-run: ## [other] Run the activity helper now (via launchd, so Full Disk Access applies)
 	scripts/run-activity-helper.sh
 
-finance-reader-install: ## [other] Install the Statement reader helper's Python environment (uv sync)
-	cd crates/helpers/statement-reader && uv sync
+finance-reader-install: ## [other] Re-sync the Statement reader's Python environment (make setup installs it the first time)
+	cd $(READER_DIR) && uv sync
 
 finance-golden: ## [other] Read the private real Statements and compare with their expected counts
-	cd crates/helpers/statement-reader && uv run python -m tests.golden.run_golden
+	cd $(READER_DIR) && uv run python -m tests.golden.run_golden
 
 finance-e2e: stage-db ## [stage] Import every private real Statement on a fresh stage database and check the counts
 	scripts/finance-e2e.sh

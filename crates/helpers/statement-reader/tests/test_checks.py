@@ -1,5 +1,5 @@
 from statement_reader.checks.figures import balance_chain, chain_breaks, row_counts, summary_totals
-from statement_reader.contract import Summary, Transaction
+from statement_reader.contract import Scope, Summary, Transaction
 
 
 def tx_row(amount, direction, balance=None):
@@ -78,3 +78,12 @@ def test_counts_compare_the_printed_debit_and_credit_counts():
     check = row_counts(rows, Summary(debit_count=3, credit_count=1))
     assert check.outcome == "failed" and check.detail == {"compared": 2, "mismatched": 1}
     assert row_counts(rows, Summary()).outcome == "skipped"
+
+
+def test_a_scope_is_reported_in_the_detail_of_totals_and_counts():
+    rows = [tx_row(500, "debit")]
+    summary = Summary(total_debit_paise=500, debit_count=1)
+    assert summary_totals(rows, summary, "credit_card", scope=Scope.BILL).detail["scope"] == "bill"
+    assert row_counts(rows, summary, scope=Scope.BILL).detail["scope"] == "bill"
+    assert "scope" not in row_counts(rows, summary).detail
+    assert row_counts(rows, Summary(), scope=Scope.BILL).detail["scope"] == "bill"

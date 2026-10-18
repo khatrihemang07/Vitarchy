@@ -93,9 +93,6 @@ pub struct Transaction {
     /// A UPI RRN/UTR or NEFT/IMPS reference found in the description.
     #[serde(default)]
     pub reference: Option<String>,
-    /// The add-on card, on a card bill.
-    #[serde(default)]
-    pub addon_card: Option<String>,
     /// An id the issuer printed for this row.
     #[serde(default)]
     pub source_id: Option<String>,

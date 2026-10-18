@@ -72,7 +72,12 @@ def card_files() -> dict[str, dict]:
         rows = [(paise(t["amount"]), 0) if t[direction_key] == "debit" else (0, paise(t["amount"]))
                 for t in entry["transactions"]]
         outcome = "failed" if entry["file"] in FAILING_TOTALS else "passed"
-        expected[entry["file"]] = statement_file([statement(rows, {"summary_totals": outcome})])
+        # Each card section on a bill is its own Statement, in the order the sections are printed.
+        sections: dict[str | None, list[tuple[int, int]]] = {}
+        for row, transaction in zip(rows, entry["transactions"], strict=True):
+            sections.setdefault(transaction.get("section_card"), []).append(row)
+        expected[entry["file"]] = statement_file(
+            [statement(part, {"summary_totals": outcome}) for part in sections.values()])
     return expected
 
 

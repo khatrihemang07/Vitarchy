@@ -30,7 +30,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -42,7 +41,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "232860129040",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -54,7 +52,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "697251027346",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -66,7 +63,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -78,7 +74,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "441177151620",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -90,7 +85,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -102,7 +96,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "649420555266",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -114,7 +107,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -126,7 +118,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -138,7 +129,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "749952525594",
-          "addon_card": null,
           "source_id": null
         }
       ]

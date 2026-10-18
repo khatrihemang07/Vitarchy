@@ -30,7 +30,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -42,7 +41,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "391500080636",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -54,7 +52,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -66,7 +63,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -78,7 +74,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "585178128657",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -90,7 +85,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "283038836859",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -102,7 +96,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "828836075983",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -114,7 +107,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -126,7 +118,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "110704341925",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -138,7 +129,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -150,7 +140,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -162,7 +151,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "806956042304",
-          "addon_card": null,
           "source_id": null
         }
       ]

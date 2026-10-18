@@ -48,8 +48,8 @@ def _mask_in_sentence(surface: Surface, vocab: Vocabulary) -> str | None:
 
 
 def _header_mask(surface: Surface, vocab: Vocabulary) -> str | None:
-    """A masked number printed inside other text. A number alone on its line is an add-on card's
-    section marker, which only serves as the mask when nothing else names the Account."""
+    """The mask that names the Account: the first masked number printed inside other text, or None.
+    A number alone on its line is a card section's marker and is skipped here."""
     prose = " ".join(c.text for c in surface.cells if not vocab.masked_number.fullmatch(c.text.strip()))
     return first_mask(prose, vocab)
 

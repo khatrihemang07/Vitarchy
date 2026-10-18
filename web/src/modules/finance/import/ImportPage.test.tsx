@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { jsonResponse, preview, renderWithClient, stubApi } from "../test-utils";
+import { jsonResponse, pendingForever, preview, renderWithClient, SETTLED_NOTICES, stubApi } from "../test-utils";
 import { ImportPage } from "./ImportPage";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -18,6 +18,29 @@ const summary = {
 };
 
 describe("ImportPage", () => {
+  it("shows loading notices only, and no warning, empty or failure notice, while everything is pending", () => {
+    stubApi({
+      "GET /api/finance/status": pendingForever,
+      "GET /api/finance/statements": pendingForever,
+      "GET /api/finance/statement-passwords": pendingForever,
+      "GET /api/finance/accounts": pendingForever,
+    });
+    const { container } = renderWithClient(<ImportPage />);
+    expect(screen.getByText("Checking the statement reader…")).toBeInTheDocument();
+    expect(container.querySelectorAll(SETTLED_NOTICES)).toHaveLength(0);
+  });
+
+  it("warns once the status settles as reader not available", async () => {
+    stubApi({
+      ...base,
+      "GET /api/finance/status": () =>
+        jsonResponse(200, { account_count: 0, unconfirmed_statement_count: 0, unlinked_payment_record_count: 0, reader_available: false, latest_runs: [] }),
+      "GET /api/finance/statements": () => jsonResponse(200, []),
+    });
+    renderWithClient(<ImportPage />);
+    expect(await screen.findByText("The statement reader is not installed")).toBeInTheDocument();
+  });
+
   it("lists Statements waiting from earlier sessions", async () => {
     stubApi({ ...base, "GET /api/finance/statements": () => jsonResponse(200, [summary]) });
     renderWithClient(<ImportPage />);

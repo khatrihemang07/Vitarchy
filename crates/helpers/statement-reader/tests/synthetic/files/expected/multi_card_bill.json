@@ -30,7 +30,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "542205879158",
-          "addon_card": null,
           "source_id": "14000000000"
         },
         {
@@ -42,7 +41,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "762230128916",
-          "addon_card": null,
           "source_id": "14000000001"
         },
         {
@@ -54,7 +52,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": "14000000002"
         },
         {
@@ -66,7 +63,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "361901933501",
-          "addon_card": null,
           "source_id": "14000000003"
         },
         {
@@ -78,9 +74,29 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "783616319229",
-          "addon_card": null,
           "source_id": "14000000004"
-        },
+        }
+      ]
+    },
+    {
+      "account": {
+        "issuer": "Example Bank",
+        "kind": "credit_card",
+        "mask": "4000XXXXXXXX2222"
+      },
+      "period": {
+        "start": "2026-06-29",
+        "end": "2026-07-28"
+      },
+      "summary": {
+        "opening_paise": 5000000,
+        "closing_paise": 8190027,
+        "total_debit_paise": 3649660,
+        "total_credit_paise": 459633,
+        "debit_count": null,
+        "credit_count": null
+      },
+      "transactions": [
         {
           "date": "2026-07-09",
           "description": "UPI/901632980589/FAKE FUELS",
@@ -90,7 +106,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "901632980589",
-          "addon_card": "4000XXXXXXXX2222",
           "source_id": "14000000005"
         },
         {
@@ -102,7 +117,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "957363906950",
-          "addon_card": "4000XXXXXXXX2222",
           "source_id": "14000000006"
         },
         {
@@ -114,7 +128,6 @@
           "foreign_amount": "25.00",
           "foreign_currency": "USD",
           "reference": null,
-          "addon_card": "4000XXXXXXXX2222",
           "source_id": "14000000007"
         },
         {
@@ -126,7 +139,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": "4000XXXXXXXX2222",
           "source_id": "14000000008"
         }
       ]

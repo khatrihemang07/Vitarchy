@@ -123,3 +123,9 @@ export function account(over: Partial<AccountSummary> = {}): AccountSummary {
     ...over,
   };
 }
+
+/** A handler whose request never settles: the query stays pending. */
+export const pendingForever = () => new Promise<Response>(() => undefined);
+
+/** Every notice kind that must stay absent while queries are still loading. */
+export const SETTLED_NOTICES = '[data-kind="warning"], [data-kind="empty"], [data-kind="failure"]';

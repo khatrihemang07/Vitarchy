@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react";
-import { jsonResponse, renderWithClient, stubApi } from "../test-utils";
+import { jsonResponse, pendingForever, renderWithClient, stubApi } from "../test-utils";
 import { ReaderStatus } from "./ReaderStatus";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -19,6 +19,14 @@ describe("ReaderStatus", () => {
     renderWithClient(<ReaderStatus />);
     expect(await screen.findByText("make finance-reader-install")).toBeInTheDocument();
     expect(screen.getByText("The statement reader is not installed")).toBeInTheDocument();
+  });
+
+  it("shows no warning while the status is still loading", () => {
+    stubApi({ "GET /api/finance/status": pendingForever });
+    renderWithClient(<ReaderStatus />);
+    expect(screen.getByRole("status")).toHaveTextContent("Checking the statement reader");
+    expect(screen.queryByText(/not installed/)).not.toBeInTheDocument();
+    expect(screen.queryByText("make finance-reader-install")).not.toBeInTheDocument();
   });
 
   it("shows a loading state, then a failure that can be retried", async () => {

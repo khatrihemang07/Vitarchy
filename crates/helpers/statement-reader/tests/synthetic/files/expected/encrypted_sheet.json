@@ -30,7 +30,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -42,7 +41,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -54,7 +52,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "960903234853",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -66,7 +63,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -78,7 +74,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -90,7 +85,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -102,7 +96,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "531476926738",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -114,7 +107,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "277626895867",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -126,7 +118,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "078105121977",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -138,7 +129,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         }
       ]

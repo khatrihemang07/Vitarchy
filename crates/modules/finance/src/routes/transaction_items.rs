@@ -44,8 +44,6 @@ pub struct TransactionItem {
     pub foreign_amount: Option<String>,
     /// Foreign currency code.
     pub foreign_currency: Option<String>,
-    /// The add-on card.
-    pub addon_card: Option<String>,
     /// True when a Read again no longer finds this row.
     pub no_longer_found: bool,
     /// The linked Payment record, if any.
@@ -84,7 +82,6 @@ impl From<PageRow> for TransactionItem {
             reference: r.reference,
             foreign_amount: r.foreign_amount,
             foreign_currency: r.foreign_currency,
-            addon_card: r.addon_card,
             no_longer_found: r.no_longer_found,
             payment_record,
         }

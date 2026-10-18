@@ -13,8 +13,8 @@ if is_live_url "${DATABASE_URL:-}"; then
   echo "refusing: the e2e run writes data and DATABASE_URL is the LIVE database" >&2
   exit 1
 fi
-reader=crates/helpers/statement-reader/.venv/bin/statement-reader
+reader=$FINANCE_READER  # exported by with-env.sh, the one place the default is defined
 [ -x "$reader" ] || { echo "the reader is not installed; run 'make finance-reader-install'" >&2; exit 1; }
 
 cargo build -q -p vitarchy-server
-exec crates/helpers/statement-reader/.venv/bin/python crates/helpers/statement-reader/tests/golden/e2e.py
+exec "$(dirname "$reader")/python" crates/helpers/statement-reader/tests/golden/e2e.py

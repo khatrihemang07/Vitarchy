@@ -8,6 +8,14 @@
 #   2. ENV_FILE;
 #   3. variables the command sets itself, e.g. `with-env.sh .env.stage env WEB_DIST=web/dist ...`.
 #
+# FINANCE_READER (the Statement reader helper) is cleared like the rest, then defaults to the
+# helper's own virtualenv (installed by `make setup` / `make finance-reader-install`) when the
+# env file leaves it unset or empty. This script is the one place that default path is defined;
+# callers (e.g. scripts/finance-e2e.sh) read the exported FINANCE_READER.
+# FINANCE_STATEMENTS_DIR (where the original Statement files are stored) is cleared too and read
+# from ENV_FILE only, so a value in the caller's shell can never point stage runs at the person's
+# real Statement folder; unset, the server falls back to its own default location.
+#
 # For any file other than the live `.env` ("stage"), this also:
 #   - refuses to run if its DATABASE_URL is the live database (see lib/db-url.sh);
 #   - exports TEST_DATABASE_URL (= DATABASE_URL, for Rust tests) and LIVE_DATABASE_URL
@@ -26,12 +34,13 @@ live_url=$(live_database_url)
 # Every variable the app, the web build or compose read from an env file.
 unset DATABASE_URL BIND_ADDR START_ADDR WEB_DIST RUST_LOG LOG_FORMAT TEST_DATABASE_URL \
   LIVE_DATABASE_URL VITARCHY_STAGE POSTGRES_PORT POSTGRES_STAGE_PORT POSTGRES_DB \
-  POSTGRES_STAGE_DB POSTGRES_USER POSTGRES_PASSWORD WEB_PORT API_PORT VITE_API_BASE_URL
+  POSTGRES_STAGE_DB POSTGRES_USER POSTGRES_PASSWORD WEB_PORT API_PORT VITE_API_BASE_URL FINANCE_READER FINANCE_STATEMENTS_DIR
 
 set -a
 # shellcheck disable=SC1090
 . "$path"
 set +a
+export FINANCE_READER=${FINANCE_READER:-$ROOT/crates/helpers/statement-reader/.venv/bin/statement-reader}
 
 if [ ! "$path" -ef ./.env ]; then
   if is_live_url "${DATABASE_URL:-}"; then

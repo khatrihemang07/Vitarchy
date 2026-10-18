@@ -30,7 +30,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -42,7 +41,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -54,7 +52,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -66,7 +63,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -78,7 +74,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "342191735829",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -90,7 +85,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "660230308715",
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -102,7 +96,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": null,
-          "addon_card": null,
           "source_id": null
         },
         {
@@ -114,7 +107,6 @@
           "foreign_amount": null,
           "foreign_currency": null,
           "reference": "162075629613",
-          "addon_card": null,
           "source_id": null
         }
       ]

@@ -34,8 +34,6 @@ pub struct TransactionRow {
     pub foreign_currency: Option<String>,
     /// A UPI or NEFT reference.
     pub reference: Option<String>,
-    /// The add-on card, on a card bill.
-    pub addon_card: Option<String>,
     /// An id the issuer printed.
     pub source_id: Option<String>,
     /// Set when a Read again no longer finds it.
@@ -44,7 +42,7 @@ pub struct TransactionRow {
     pub created_at: DateTime<Utc>,
 }
 
-const COLUMNS: &str = "id, account_id, statement_id, date, description, amount_paise, direction, balance_paise, foreign_amount, foreign_currency, reference, addon_card, source_id, no_longer_found_at, created_at";
+const COLUMNS: &str = "id, account_id, statement_id, date, description, amount_paise, direction, balance_paise, foreign_amount, foreign_currency, reference, source_id, no_longer_found_at, created_at";
 
 /// Stores one Transaction under an Account and Statement.
 ///
@@ -59,8 +57,8 @@ pub async fn insert(
     sqlx::query_scalar(
         "INSERT INTO finance.transactions
            (account_id, statement_id, date, description, amount_paise, direction, balance_paise,
-            foreign_amount, foreign_currency, reference, addon_card, source_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id",
+            foreign_amount, foreign_currency, reference, source_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
     )
     .bind(account_id)
     .bind(statement_id)
@@ -72,7 +70,6 @@ pub async fn insert(
     .bind(&tx.foreign_amount)
     .bind(&tx.foreign_currency)
     .bind(&tx.reference)
-    .bind(&tx.addon_card)
     .bind(&tx.source_id)
     .fetch_one(db)
     .await

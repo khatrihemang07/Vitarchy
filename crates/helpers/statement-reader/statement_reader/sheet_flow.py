@@ -9,7 +9,7 @@ from .normalize.payments import build_payment_records
 from .normalize.rows import NormaliseError
 from .read.sheet import Grid
 from .segment.grid_rows import grid_rows
-from .statements import make_statement, statement_facts
+from .statements import make_statements, statement_facts
 from .vocabulary import load_vocabulary
 
 
@@ -29,7 +29,7 @@ def read_sheet(grid: Grid) -> Result:
             return Result(outcome="read", kind="payment_history", payment_records=records,
                           diagnostics=diagnostics)
         surface = sheet_surface(grid, range(header.first, header.last + 1))
-        statement = make_statement(rows, statement_facts(surface, None, vocab), surface, vocab)
+        statements = make_statements(rows, statement_facts(surface, None, vocab), surface, vocab)
     except NormaliseError as error:
         return Result(outcome="no_table", diagnostics=Diagnostics("normalize", error.code, rows=len(rows)))
-    return Result(outcome="read", kind="statement", statements=[statement], diagnostics=diagnostics)
+    return Result(outcome="read", kind="statement", statements=statements, diagnostics=diagnostics)

@@ -90,6 +90,6 @@ def transaction(row: Row, **extra) -> dict:
         "direction": "debit" if row.debit else "credit",
         "balance_paise": row.balance,
         "foreign_amount": None, "foreign_currency": None,
-        "reference": planted_reference(row.description), "addon_card": None, "source_id": None,
+        "reference": planted_reference(row.description), "source_id": None,
         **extra,
     }

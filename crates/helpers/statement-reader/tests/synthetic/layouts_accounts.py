@@ -74,8 +74,8 @@ def consolidated(out: Path) -> Built:
                  {"format": "pdf", "pages": 3, "words": pdf.words, "invisible_null": 6})
 
 
-def card_with_addon(out: Path) -> Built:
-    """(g) Card sections for a primary and an add-on card, and an international row."""
+def multi_card_bill(out: Path) -> Built:
+    """(g) A bill listing two cards, each in its own section, and an international row."""
     rows = ledger(9, 9, 0, date(2026, 7, 2))
     previous = 5_000_000
     pdf = Pdf()
@@ -99,8 +99,6 @@ def card_with_addon(out: Path) -> Built:
         row.description = row.description[:40]
         row.balance = None
         extra = {"source_id": f"1400{i:07d}"}
-        if i >= 5:
-            extra["addon_card"] = "4000XXXXXXXX2222"
         if i == 7:
             row.credit, row.debit = 0, 207_500
             extra |= {"foreign_amount": "25.00", "foreign_currency": "USD"}
@@ -122,9 +120,11 @@ def card_with_addon(out: Path) -> Built:
         pdf.text(40 + i * 120, 140, label, 7)
         pdf.text(40 + i * 120, 156, indian(value))
     pdf.text(40, y + 12, "# International Spends")
-    pdf.save(out / "card_with_addon.pdf")
-    stmt = statement(ISSUER, "credit_card", "4000XXXXXXXX1111",
-                     (date(2026, 6, 29), date(2026, 7, 28)), rows, extras, opening_paise=previous,
-                     closing_paise=due, total_debit_paise=debit, total_credit_paise=credit)
-    return Built("card_with_addon.pdf", expected_statements([stmt]),
+    pdf.save(out / "multi_card_bill.pdf")
+    period = (date(2026, 6, 29), date(2026, 7, 28))
+    bill = {"opening_paise": previous, "closing_paise": due,
+            "total_debit_paise": debit, "total_credit_paise": credit}
+    sections = [statement(ISSUER, "credit_card", mask, period, part, {i: extras[i + start] for i in range(len(part))}, **bill)
+                for mask, start, part in (("4000XXXXXXXX1111", 0, rows[:5]), ("4000XXXXXXXX2222", 5, rows[5:]))]
+    return Built("multi_card_bill.pdf", expected_statements(sections),
                  {"format": "pdf", "pages": 1, "words": pdf.words})

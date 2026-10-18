@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
+from enum import Enum
 from typing import Any
 
 CONTRACT_VERSION = 1
@@ -63,8 +64,13 @@ class Transaction:
     foreign_amount: str | None = None
     foreign_currency: str | None = None
     reference: str | None = None
-    addon_card: str | None = None
     source_id: str | None = None
+
+
+class Scope(Enum):
+    """Check detail: what the printed figures cover beyond one Statement's rows."""
+
+    BILL = "bill"  # every card on the bill
 
 
 @dataclass

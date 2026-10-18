@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 
 from .checks.figures import balance_chain, row_counts, summary_totals
-from .contract import Account, Period, Statement
+from .contract import Account, Period, Scope, Statement, Transaction
 from .locate.regions import Region
 from .metadata.facts import Facts, read_facts
 from .metadata.periods import fill_period
 from .metadata.surface import Surface
 from .normalize.rows import Built, build_transactions
+from .segment.card_sections import CardSection, split_by_card
 from .segment.rows import RawRow, segment_region
 from .vocabulary import Vocabulary
 
@@ -43,20 +45,29 @@ def iso(value: date | None) -> str | None:
     return value.isoformat() if value else None
 
 
-def make_statement(rows: list[RawRow], facts: Facts, surface: Surface, vocab: Vocabulary) -> Statement:
-    """Normalise `rows`, then fill the summary and run the Checks."""
-    period = fill_period(facts.period, surface, vocab)
-    built: Built = build_transactions(rows, vocab, facts.kind, period,
-                                      facts.summary.opening_paise, facts.mask)
-    summary = facts.summary
+def _statement(section: CardSection, built: Built, everything: list[Transaction], facts: Facts,
+               period: tuple[date | None, date | None], scope: Scope | None) -> Statement:
+    summary = replace(facts.summary)
     if summary.opening_paise is None:
         summary.opening_paise = built.opening_paise
-    transactions = built.transactions
-    checks = [balance_chain(transactions, summary.opening_paise),
-              summary_totals(transactions, summary, facts.kind, facts.charges),
-              row_counts(transactions, summary)]
-    return Statement(Account(facts.issuer, facts.kind, facts.mask), Period(iso(period[0]), iso(period[1])),
-                     summary, transactions, checks)
+    checks = [balance_chain(built.transactions, summary.opening_paise),
+              summary_totals(everything, summary, facts.kind, facts.charges, scope),
+              row_counts(everything, summary, scope)]
+    return Statement(Account(facts.issuer, facts.kind, section.mask or facts.mask),
+                     Period(iso(period[0]), iso(period[1])), summary, built.transactions, checks)
+
+
+def make_statements(rows: list[RawRow], facts: Facts, surface: Surface, vocab: Vocabulary) -> list[Statement]:
+    """One Statement per card section of `rows`, each normalised and Checked. A bill prints one
+    summary for all its cards, so its totals and counts are Checked over every section's rows
+    (Scope.BILL); the balance chain stays per section."""
+    period = fill_period(facts.period, surface, vocab)
+    sections = split_by_card(rows, facts.mask)
+    scope = Scope.BILL if len(sections) > 1 else None
+    built = [build_transactions(s.rows, vocab, facts.kind, period, facts.summary.opening_paise)
+             for s in sections]
+    everything = [t for b in built for t in b.transactions]
+    return [_statement(s, b, everything, facts, period, scope) for s, b in zip(sections, built, strict=True)]
 
 
 def statement_facts(surface: Surface, group_heading, vocab: Vocabulary) -> Facts:

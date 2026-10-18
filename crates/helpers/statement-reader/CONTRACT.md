@@ -47,7 +47,7 @@ statement-reader < request.json > result.json
 | `format` | `pdf` · `csv` · `xls` · `xlsx` · `null` when unsupported |
 | `unlocked_with` | index into `passwords` of the password whose variant worked, or `null` |
 | `kind` | `statement` (bank or card) · `payment_history` (Payment history from a payment app such as PhonePe) · `null` unless `outcome` is `read` |
-| `statements` | `[]` unless `kind` is `statement`. One file may hold several (consolidated savings + loans) |
+| `statements` | `[]` unless `kind` is `statement`. One file may hold several (consolidated savings + loans, or a card bill listing several cards) |
 | `payment_records` | `[]` unless `kind` is `payment_history` |
 | `diagnostics.stage` | when `outcome` is not `read`, the stage that stopped: `open` · `read` · `locate` · `segment` · `normalize` |
 | `diagnostics.code` | a stable snake_case reason, e.g. `no_header_or_columns`, `no_rows` |
@@ -87,14 +87,13 @@ statement-reader < request.json > result.json
   "foreign_amount": "25.00",
   "foreign_currency": "USD",
   "reference": "512345678901",
-  "addon_card": "5123XXXXXXXX1357",
   "source_id": null
 }
 ```
 
 - **`description`:** the text exactly as printed. Wrapped lines are joined: with a single space normally, and with nothing when the wrap split a token. Only runs of whitespace are collapsed.
 - **`amount_paise`:** always greater than 0. `direction` is `debit` (money out of, or charged to, the Account) or `credit`.
-- **Nullable fields:** `balance_paise`, `foreign_*`, `reference`, `addon_card` and `source_id` may be `null`.
+- **Nullable fields:** `balance_paise`, `foreign_*`, `reference` and `source_id` may be `null`.
   - `reference`: a UPI RRN/UTR, or a NEFT/IMPS reference found in the description.
   - `source_id`: an id the issuer printed for this Transaction, if any.
 - **Order:** Transactions are listed in the Statement's printed order.
@@ -111,7 +110,7 @@ statement-reader < request.json > result.json
 | `summary_totals` | The sums of debits and credits equal the printed totals, and opening ± sums equals closing |
 | `row_counts` | The debit and credit counts equal the printed counts |
 
-`outcome` is `passed`, `failed` or `skipped` (not enough printed figures). `detail` holds only numbers and enum strings.
+`outcome` is `passed`, `failed` or `skipped` (not enough printed figures). `detail` holds only numbers and enum strings. `summary_totals` and `row_counts` carry `"scope": "bill"` when the printed figures cover every card of a bill that lists several (each card is its own Statement): they are then Checked over the rows of all those Statements and reported on each.
 
 ### PaymentRecord
 

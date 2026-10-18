@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .layouts_accounts import card_with_addon, consolidated
+from .layouts_accounts import consolidated, multi_card_bill
 from .layouts_ledger import borderless_wrapped, encrypted_pdf, ruled_simple, side_panel
 from .layouts_pages import centred_narration, headerless, two_line_header_pages
 from .layouts_robust import balance_first, month_first_csv, signed_amount
@@ -18,7 +18,7 @@ from .layouts_sheets import encrypted_xlsx, payment_history_csv, xls_with_ghost_
 FILES = Path(__file__).parent / "files"
 BUILDERS = [
     ruled_simple, borderless_wrapped, side_panel, two_line_header_pages, headerless,
-    consolidated, card_with_addon, centred_narration, encrypted_pdf, encrypted_xlsx,
+    consolidated, multi_card_bill, centred_narration, encrypted_pdf, encrypted_xlsx,
     xls_with_ghost_row, payment_history_csv, balance_first, signed_amount, month_first_csv,
 ]
 

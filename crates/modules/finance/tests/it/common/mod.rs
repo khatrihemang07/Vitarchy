@@ -39,7 +39,6 @@ pub fn tx(day: u32, description: &str, amount_paise: i64) -> Transaction {
         foreign_amount: None,
         foreign_currency: None,
         reference: None,
-        addon_card: None,
         source_id: None,
     }
 }

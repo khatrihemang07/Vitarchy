@@ -85,15 +85,6 @@ def test_a_dash_in_a_source_id_cell_is_no_id():
     assert t.source_id is None
 
 
-def test_the_add_on_card_is_the_section_card_that_is_not_the_accounts_own():
-    rows = [row("A", card="4000XXXXXXXX1111", date="01/03/2026", debit="1"),
-            row("B", card="4000XXXXXXXX2222", date="01/03/2026", debit="1")]
-    got = build_transactions(rows, V, kind="credit_card", mask="4000XXXXXXXX1111").transactions
-    assert [t.addon_card for t in got] == [None, "4000XXXXXXXX2222"]
-    got = build_transactions(rows, V, kind="credit_card").transactions
-    assert [t.addon_card for t in got] == [None, "4000XXXXXXXX2222"]
-
-
 @pytest.mark.parametrize("text,expected", [("USD 25.00", ("25.00", "USD")), ("EUR 1,234.50", ("1234.50", "EUR")),
                                            ("25.00", ("25.00", None)), ("-", None), ("", None)])
 def test_foreign_amounts_split_into_amount_and_currency(text, expected):

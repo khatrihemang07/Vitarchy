@@ -40,8 +40,6 @@ pub struct PageRow {
     pub foreign_currency: Option<String>,
     /// A UPI or NEFT reference.
     pub reference: Option<String>,
-    /// The add-on card.
-    pub addon_card: Option<String>,
     /// Whether a Read again no longer finds it.
     pub no_longer_found: bool,
     /// The linked Payment record's id.
@@ -71,7 +69,7 @@ pub async fn page(
 ) -> Result<Vec<PageRow>, sqlx::Error> {
     sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT t.id, t.account_id, t.date, t.description, t.amount_paise, t.direction,
-                t.balance_paise, t.foreign_amount, t.foreign_currency, t.reference, t.addon_card,
+                t.balance_paise, t.foreign_amount, t.foreign_currency, t.reference,
                 t.no_longer_found_at IS NOT NULL AS no_longer_found,
                 p.id AS record_id, p.occurred_at AS record_occurred_at,
                 p.description AS record_description, p.utr AS record_utr,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..contract import Check, Summary, Transaction
+from ..contract import Check, Scope, Summary, Transaction
 
 ROUNDING_TOLERANCE = 99  # paise: some issuers print the closing balance in whole rupees
 
@@ -53,8 +53,13 @@ def _identity_holds(opening: int, closing: int, debit: int, credit: int, charges
     return normal if kind == "savings" else normal or inverted
 
 
+def _detail(compared: int, mismatched: int, scope: Scope | None) -> dict:
+    """`scope` says the figures cover more than this Statement's rows (a bill listing several cards)."""
+    return {"compared": compared, "mismatched": mismatched, **({"scope": scope.value} if scope else {})}
+
+
 def summary_totals(transactions: list[Transaction], summary: Summary, kind: str | None,
-                   charges: int = 0) -> Check:
+                   charges: int = 0, scope: Scope | None = None) -> Check:
     """Sums equal the printed totals, and opening and closing follow from them."""
     debit, credit = _sums(transactions)
     results: list[bool] = []
@@ -66,19 +71,17 @@ def summary_totals(transactions: list[Transaction], summary: Summary, kind: str 
         results.append(_identity_holds(summary.opening_paise, summary.closing_paise, debit, credit,
                                        charges, kind))
     if not results:
-        return Check("summary_totals", "skipped", {"compared": 0, "mismatched": 0})
+        return Check("summary_totals", "skipped", _detail(0, 0, scope))
     bad = results.count(False)
-    return Check("summary_totals", "passed" if bad == 0 else "failed",
-                 {"compared": len(results), "mismatched": bad})
+    return Check("summary_totals", "passed" if bad == 0 else "failed", _detail(len(results), bad, scope))
 
 
-def row_counts(transactions: list[Transaction], summary: Summary) -> Check:
+def row_counts(transactions: list[Transaction], summary: Summary, scope: Scope | None = None) -> Check:
     """The numbers of debit and credit rows equal the printed counts."""
     printed = {"debit": summary.debit_count, "credit": summary.credit_count}
     results = [sum(t.direction == direction for t in transactions) == count
                for direction, count in printed.items() if count is not None]
     if not results:
-        return Check("row_counts", "skipped", {"compared": 0, "mismatched": 0})
+        return Check("row_counts", "skipped", _detail(0, 0, scope))
     bad = results.count(False)
-    return Check("row_counts", "passed" if bad == 0 else "failed",
-                 {"compared": len(results), "mismatched": bad})
+    return Check("row_counts", "passed" if bad == 0 else "failed", _detail(len(results), bad, scope))
