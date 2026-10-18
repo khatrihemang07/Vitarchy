@@ -7,3 +7,6 @@ web/openapi.json
 .DS_Store
 .env.stage
 backups
+.commandcode/*
+!.commandcode/taste/
+!.commandcode/taste/**
