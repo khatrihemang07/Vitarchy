@@ -1,4 +1,4 @@
-import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
@@ -12,7 +12,7 @@ const log = createLogger("time");
  * descriptions. Repeated filters (`project=1&project=2`) are openapi-fetch's
  * default array encoding, which the server reads as lists.
  */
-export async function fetchReport(query: ReportQuery): Promise<Report> {
+async function fetchReport(query: ReportQuery): Promise<Report> {
   const report = await callApi(() => api.GET("/api/time/report", { params: { query } }));
   log.debug("report loaded", {
     kind: query.kind,
@@ -25,20 +25,16 @@ export async function fetchReport(query: ReportQuery): Promise<Report> {
   return report;
 }
 
-/** How to load a Report (disabled for null); shared by the hook and by the route loader that warms it. */
-export function reportOptions(query: ReportQuery | null) {
-  return queryOptions({
-    queryKey: timeReportKey(query),
-    queryFn: () => fetchReport(query as ReportQuery),
-    enabled: query !== null,
-    retry: false,
-  });
-}
-
 /**
  * Query for a Report. The previous Report stays on screen while the next Period
  * loads, so moving between Periods does not flash an empty page.
  */
 export function useReport(query: ReportQuery | null) {
-  return useQuery({ ...reportOptions(query), placeholderData: keepPreviousData });
+  return useQuery({
+    queryKey: timeReportKey(query),
+    queryFn: () => fetchReport(query as ReportQuery),
+    enabled: query !== null,
+    placeholderData: keepPreviousData,
+    retry: false,
+  });
 }

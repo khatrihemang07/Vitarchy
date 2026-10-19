@@ -1,5 +1,5 @@
 import { useSyncTime, useTimeStatus, type TimeStatus } from "@/api/time";
-import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle, Notice } from "@/design";
+import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle, Notice, QueryNotices } from "@/design";
 import { errorMessage } from "./failureMessage";
 import { formatCount, formatDay } from "./format";
 import { LastRun } from "./LastRun";
@@ -34,6 +34,7 @@ export function SyncCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4">
+        <QueryNotices inline query={status} describeError={errorMessage} loadingTitle="Loading status…" />
         {status.data ? <p className="text-sm text-muted-foreground">{mirroredSpan(status.data)}</p> : null}
         {lastSync ? <LastRun noun="sync" run={lastSync} now={now} /> : null}
         {status.data && !lastSync ? <p className="text-sm text-muted-foreground">Not synced yet.</p> : null}

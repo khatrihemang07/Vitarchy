@@ -18,6 +18,18 @@ const ready: TimeStatus = {
 };
 
 describe("ActivityImports", () => {
+  it("shows a loading state while the status is pending", () => {
+    stubApi({ "GET /api/time/status": () => new Promise<Response>(() => undefined) });
+    renderWithClient(<ActivityImports />);
+    expect(screen.getByText("Loading status…")).toBeInTheDocument();
+  });
+
+  it("shows an error when the status cannot be loaded", async () => {
+    stubApi({ "GET /api/time/status": () => new Response("", { status: 502 }) });
+    renderWithClient(<ActivityImports />);
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+  });
+
   it("shows one card per Source, in the status order", async () => {
     stubApi({ "GET /api/time/status": () => jsonResponse(200, disconnected) });
     renderWithClient(<ActivityImports />);

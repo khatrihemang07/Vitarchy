@@ -188,8 +188,7 @@ design/controls  Vitarchy controls built on ui (SegmentedControl, PeriodPicker, 
 design/effects   copied-in Magic UI effects (NumberTicker, BorderBeam, MagicCard)
 design/motion    spring presets, MotionProvider, MotionButton, Pressable, FadeUp
 design/layout    ModulePageFrame (header, tabs, page), ModulePageHeader, ModuleTabs, SectionCard, ListRow
-design/notice    Notice (kinds as data), QueryNotices (delayed skeleton), IconChip
-design/skeleton  Skeleton, TableSkeleton, CardSkeleton
+design/notice    Notice (kinds as data), QueryNotices (delayed loading notice), IconChip
 design/progress  Progress
 design/table     ColumnHeaderBar (the muted header bar with column tooltips; a heading with `sort` becomes a sort button)
 design/quest     XpBar, LevelBadge, StreakFlame, AchievementBadge, StatCard (and its ChangeBadge), QuestList
@@ -209,11 +208,12 @@ design/brand     LogoMark (same artwork as public/favicon.svg)
 ### Pages, width and loading
 
 - **Width:** the shell's `<main>` is the one place content width is decided. A page fills it and sets no `max-w-*` of its own. Only long prose uses `max-w-prose-token` (from `--measure-prose` in `tokens.css`).
-- **A Module's pages:** a layout route renders `ModulePageFrame` (header, tabs, `<Outlet />`) with the Module's page table, as `TimePageLayout` and `FinancePageLayout` do. `ModuleTabs` lives in `design/` because it only renders router links (routing, not data access); every tab preloads on hover or focus (`preload="intent"`).
-- **Page bodies:** wrap sections in `FadeUp` with a rising `index` (the header and tabs are 0 and 1), use `gap-6`, and give each section a titled `SectionCard` or a `font-display text-xl font-bold` heading. Tables use `ColumnHeaderBar` plus `px-4 py-3` grid rows with `hover:bg-accent/50`, as Time's Summary does.
+- **A Module's pages:** a layout route renders `ModulePageFrame` (header, tabs, `<Outlet />`) with the Module's page table, as `TimePageLayout` and `FinancePageLayout` do. `ModuleTabs` lives in `design/` because it only renders router links (routing, not data access); the tabs are plain links, so the active tab moves at once and the page shows its own loading state.
+- **Page bodies:** wrap sections in `FadeUp` with a rising `index` (the header, a bare `header.animate-fade-up`, and the tabs, a `FadeUp` of index 1, come first; sections start at 2 and count up in the order shown, with no gaps), use `gap-6`, and give each section a titled `SectionCard` or a `font-display text-xl font-bold` heading. Tables use `ColumnHeaderBar` plus `px-4 py-3` grid rows with `hover:bg-accent/50`, as Time's Summary does.
 - **Notices:** `Notice` has the built-in kinds `loading`, `failure`, `empty` and `warning`. A Module adds its own as data (`modules/time/noticeViews.ts`) and passes them as `views`. Warning-style kinds spread `WARNING_STYLE` so they share one tone.
-- **Loading:** show `QueryNotices` with a `skeleton` shaped like the real content. Nothing shows until the query has been pending for `--duration-loading-delay` (`useDelayedFlag`), so a fast load never flashes a skeleton; a failure shows at once with Try again. A page that reads several lists shows one skeleton for all of them (`pendingTogether`). Keep `transition-opacity` on content that dims while the next page loads.
-- **Route loaders:** give each page `loader: warmCache([warm(someOptions)])` (from `@/app/module-manifest`) so hovering its tab starts its main queries. Query options live in `@/api` (`accountsOptions`, `timeStatusOptions`, ...) and the hooks use the same ones. Loaders never reject; the page shows a failure itself. For a page whose query depends on the URL, add `loaderDeps` and use `warmCacheWith`. The app's query client treats results as fresh for a few seconds (`api/queryClient.ts`) so a warmed page is not fetched twice.
+- **Loading:** show `QueryNotices` with a `loadingTitle` ("Loading report…"): the same spinner Notice every page uses (`inline` inside a card). Nothing shows until the query has been pending for `--duration-loading-delay` (`useDelayedFlag`), so a fast load never flashes a notice; a failure shows at once with Try again. Each section of a page has its own notice, so the frame and controls stay visible. Pass `stagger` to `QueryNotices` so it brings its own `FadeUp` and nothing sits in the page during the delay. Keep `transition-opacity` on content that dims while the next page loads (`keepPreviousData`).
+- **Clear filters:** use `ClearFiltersButton` with `placement="bar"` (ghost, small, at the end of a filter bar) or `placement="notice"` (outlined, as the action of a "nothing matches" notice).
+- **No route loaders:** pages fetch with their own hooks, so navigation never waits for the server (the tab, the URL and the Period move at once).
 
 ## Checks
 

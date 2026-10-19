@@ -18,12 +18,14 @@ interface DailyStackedBarsProps<K extends string> {
   formatAxis?: (value: number) => string;
   /** Where the axis ticks fall, from 0 to above the largest bar; defaults to round times. */
   ticksFor?: (max: number) => number[];
+  /** Width in pixels of the value axis; widen it for longer labels such as money. */
+  axisWidth?: number;
   /** Accessible name of the chart. */
   label: string;
   className?: string;
 }
 
-function Swatch(props: Pick<StackSeries, "look" | "color">) {
+function Swatch(props: Pick<StackSeries, "look" | "color" | "border">) {
   return <span aria-hidden="true" className="inline-block size-3 rounded-sm" style={swatchStyle(props)} />;
 }
 
@@ -42,7 +44,7 @@ function StackTooltip<K extends string>({ active, payload, series, formatValue }
       <div className="text-xs text-muted-foreground">{fullDayLabel(point.date)}</div>
       {series.map((s) => (
         <div key={s.key} className="flex items-center justify-between gap-4 tabular-nums">
-          <span className="flex items-center gap-1.5"><Swatch look={s.look} color={s.color} />{s.label}</span>
+          <span className="flex items-center gap-1.5"><Swatch look={s.look} color={s.color} border={s.border} />{s.label}</span>
           <span className="font-medium">{formatValue(point[s.key])}</span>
         </div>
       ))}
@@ -60,7 +62,7 @@ const fillOf = (s: StackSeries, hatchId: string) => (s.look === "hatched" ? `url
  * readers. Series differ in look (solid, hatched, faded), so they read apart without colour.
  * Stacked bars are separated by a surface-coloured gap.
  */
-export function DailyStackedBars<K extends string>({ data, series, stacked = true, formatValue, formatAxis = formatValue, ticksFor = niceTicks, label, className }: DailyStackedBarsProps<K>) {
+export function DailyStackedBars<K extends string>({ data, series, stacked = true, formatValue, formatAxis = formatValue, ticksFor = niceTicks, axisWidth = 48, label, className }: DailyStackedBarsProps<K>) {
   const points = [...data];
   const hatchId = `hatch-${useId().replace(/:/g, "")}`;
   const dayMax = (p: StackedDayPoint<K>) => (stacked ? series.reduce((sum, s) => sum + p[s.key], 0) : Math.max(...series.map((s) => p[s.key])));
@@ -69,7 +71,7 @@ export function DailyStackedBars<K extends string>({ data, series, stacked = tru
     <figure className={className} aria-label={label}>
       <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         {series.map((s) => (
-          <li key={s.key} className="flex items-center gap-1.5"><Swatch look={s.look} color={s.color} />{s.label}</li>
+          <li key={s.key} className="flex items-center gap-1.5"><Swatch look={s.look} color={s.color} border={s.border} />{s.label}</li>
         ))}
       </ul>
       <div className="h-52 w-full" aria-hidden="true">
@@ -85,7 +87,7 @@ export function DailyStackedBars<K extends string>({ data, series, stacked = tru
             </defs>
             <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="3 3" />
             <XAxis dataKey="date" tickFormatter={(day: string) => axisLabel(day, points.length)} tick={TICK} tickLine={false} axisLine={{ stroke: "var(--border)" }} interval="preserveStartEnd" minTickGap={8} />
-            <YAxis tickFormatter={(v: number) => formatAxis(v)} tick={TICK} tickLine={false} axisLine={false} width={56} ticks={ticks} domain={[0, ticks[ticks.length - 1] ?? 1]} />
+            <YAxis tickFormatter={(v: number) => formatAxis(v)} tick={TICK} tickLine={false} axisLine={false} width={axisWidth} ticks={ticks} domain={[0, ticks[ticks.length - 1] ?? 1]} />
             <Tooltip cursor={{ fill: "var(--accent)", opacity: 0.6 }} content={<StackTooltip series={series} formatValue={formatValue} />} />
             {series.map((s, index) => (
               <Bar key={s.key} dataKey={s.key} {...(stacked && { stackId: "day" })} fill={fillOf(s, hatchId)} stroke={stacked ? "var(--card)" : s.color} strokeWidth={1} radius={!stacked || index === series.length - 1 ? [4, 4, 0, 0] : 0} isAnimationActive={false} />

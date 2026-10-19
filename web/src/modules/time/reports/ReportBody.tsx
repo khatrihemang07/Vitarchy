@@ -28,7 +28,7 @@ export function ReportBody({ report, mode, compare, clock, filtered, onClear, fi
           kind="empty"
           title={filtered ? "No Time Entries match" : "No Time Entries in this Period"}
           action={
-            filtered ? <ClearFiltersButton onClear={onClear} /> : undefined
+            filtered ? <ClearFiltersButton placement="notice" onClear={onClear} /> : undefined
           }
         >
           {filtered ? "Try other filters, or another Period." : "Try another Period, or Sync from the Time page."}

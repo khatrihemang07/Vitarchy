@@ -56,7 +56,7 @@ describe("TransactionsPage", () => {
   it("shows only a loading notice, never an empty or failure one, while the queries are pending", async () => {
     stubApi({ "GET /api/finance/accounts": pendingForever, "GET /api/finance/transactions": pendingForever, "GET /api/finance/overview": pendingForever });
     renderAt("/finance/transactions");
-    await screen.findByText("Loading Transactions");
+    await screen.findByText("Loading Transactions…");
     expect(document.querySelectorAll(SETTLED_NOTICES)).toHaveLength(0);
   });
 
@@ -291,19 +291,19 @@ describe("TransactionsPage", () => {
   it("holds the rows back until the Account names are in, instead of showing a placeholder name", async () => {
     stubs({ "GET /api/finance/accounts": pendingForever });
     renderAt("/finance/transactions");
-    expect(await screen.findByText("Loading Transactions")).toBeInTheDocument();
+    expect(await screen.findByText("Loading Transactions…")).toBeInTheDocument();
     expect(screen.queryByText("Groceries")).not.toBeInTheDocument();
     expect(screen.queryByText("Account", { selector: "span" })).not.toBeInTheDocument();
   });
 
-  it("shows no skeleton for a load that finishes inside the loading delay", async () => {
+  it("shows no loading notice for a load that finishes inside the loading delay", async () => {
     document.documentElement.style.setProperty("--duration-loading-delay", "250ms");
     try {
       stubs();
       renderAt("/finance/transactions");
-      expect(screen.queryByText("Loading Transactions")).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading Transactions…")).not.toBeInTheDocument();
       expect(await screen.findByText("Groceries")).toBeInTheDocument();
-      expect(screen.queryByText("Loading Transactions")).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading Transactions…")).not.toBeInTheDocument();
     } finally {
       document.documentElement.style.removeProperty("--duration-loading-delay");
     }

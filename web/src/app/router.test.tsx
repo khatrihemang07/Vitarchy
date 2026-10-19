@@ -27,11 +27,10 @@ const timeModule: ModuleManifest = {
 };
 
 function renderAt(path: string, modules: ModuleManifest[], includeDesignShowcase = false) {
-  const queryClient = new QueryClient();
-  const router = createAppRouter(modules, { includeDesignShowcase, queryClient });
-  router.update({ history: createMemoryHistory({ initialEntries: [path] }), context: { queryClient } });
+  const router = createAppRouter(modules, { includeDesignShowcase });
+  router.update({ history: createMemoryHistory({ initialEntries: [path] }) });
   return render(
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={new QueryClient()}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );

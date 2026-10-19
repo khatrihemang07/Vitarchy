@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { type TransactionItem, useLinkTransfer, useTransferCandidates } from "@/api/finance";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, MotionButton, Notice, Skeleton } from "@/design";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, MotionButton, Notice, QueryNotices } from "@/design";
 import { errorMessage } from "../failureMessage";
 import { formatInr } from "../money";
 import { CandidateList } from "./CandidateList";
@@ -35,10 +35,8 @@ export function LinkTransferDialog({ item, names, open, onOpenChange }: LinkTran
               : "Choose the Money out on another Account that paid this Money in."}
           </DialogDescription>
         </DialogHeader>
-        {candidates.isPending ? (
-          <Skeleton role="status" aria-hidden={false} aria-label="Loading candidates" className="h-24 w-full" />
-        ) : candidates.isError ? (
-          <Notice inline kind="failure" title={errorMessage(candidates.error)} onRetry={() => void candidates.refetch()} />
+        {!candidates.data ? (
+          <QueryNotices inline query={candidates} describeError={errorMessage} loadingTitle="Loading candidates…" />
         ) : found.length === 0 ? (
           <Notice inline kind="empty" title="Nothing nearby fits">
             No other Account has {several ? "Money in" : "Money out"} within a week of this that is not already part of a Transfer.

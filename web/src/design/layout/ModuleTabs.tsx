@@ -18,18 +18,16 @@ interface ModuleTabsProps {
 }
 
 /**
- * The tab pill that switches between a Module's pages. Hovering or focusing a tab preloads its
- * page (code and the data its route loader asks for), so opening it shows the content at once.
- * It renders router links, which is routing, not data access, so it lives in the design system.
+ * The tab pill that switches between a Module's pages; the active tab moves at once, before the
+ * page's data arrives. It renders router links, which is routing, not data access, so it lives in the design system.
  */
 export function ModuleTabs({ tabs, label, indicatorId }: ModuleTabsProps) {
   return (
-    <nav aria-label={label} className="flex w-fit max-w-full gap-1 overflow-x-auto">
+    <nav aria-label={label} className="flex w-fit gap-1">
       {tabs.map((tab) => (
         <Link
           key={tab.to}
           to={tab.to}
-          preload="intent"
           activeOptions={{ exact: true, includeSearch: false }}
           className={cn(
             "relative rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors",

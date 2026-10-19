@@ -1,4 +1,4 @@
-import { Notice, QueryNotices, TableSkeleton, CardSkeleton, SectionCard, FadeUp, ClearFiltersButton, cn } from "@/design";
+import { ClearFiltersButton, FadeUp, Notice, QueryNotices, cn } from "@/design";
 import { errorMessage } from "../failureMessage";
 import { OverviewStrip } from "./OverviewStrip";
 import { Pagination } from "./Pagination";
@@ -12,12 +12,6 @@ import { useTransactionsView } from "./useTransactionsView";
 const FILTERS_STAGGER = 2;
 const OVERVIEW_STAGGER = FILTERS_STAGGER + 1;
 const BODY_STAGGER = OVERVIEW_STAGGER + 1;
-
-const tableSkeleton = (
-  <SectionCard title="Transactions">
-    <TableSkeleton label="Loading Transactions" rows={8} columns={4} />
-  </SectionCard>
-);
 
 /** `/finance/transactions`: Money in, Money out and Transfers of a Period, and the Transactions behind them, a page at a time. */
 export function TransactionsPage() {
@@ -39,21 +33,21 @@ export function TransactionsPage() {
           ) : null}
         </div>
       </FadeUp>
-      <FadeUp index={OVERVIEW_STAGGER}>
-        {overview.data ? (
+      {overview.data ? (
+        <FadeUp index={OVERVIEW_STAGGER}>
           <div aria-busy={overview.isPlaceholderData} className={cn("transition-opacity", overview.isPlaceholderData && "opacity-60")}>
             <OverviewStrip overview={overview.data} />
           </div>
-        ) : (
-          <QueryNotices query={overview} describeError={errorMessage} skeleton={<CardSkeleton label="Loading overview" lines={4} />} />
-        )}
-      </FadeUp>
+        </FadeUp>
+      ) : (
+        <QueryNotices query={overview} describeError={errorMessage} loadingTitle="Loading overview…" stagger={OVERVIEW_STAGGER} />
+      )}
       {!items ? (
-        <QueryNotices query={waitingOn} describeError={errorMessage} skeleton={tableSkeleton} />
+        <QueryNotices query={waitingOn} describeError={errorMessage} loadingTitle="Loading Transactions…" stagger={BODY_STAGGER} />
       ) : (
         <FadeUp index={BODY_STAGGER}>
           {items.items.length === 0 ? (
-            <Notice kind="empty" title={empty.title} action={reason === "filtered" ? <ClearFiltersButton onClear={handlers.onClear} /> : undefined}>
+            <Notice kind="empty" title={empty.title} action={reason === "filtered" ? <ClearFiltersButton placement="notice" onClear={handlers.onClear} /> : undefined}>
               {empty.hint}
             </Notice>
           ) : (

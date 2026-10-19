@@ -1,6 +1,6 @@
 import { useFacets, useReport, useTimeStatus } from "@/api/time";
 import { Link } from "@tanstack/react-router";
-import { Button, FadeUp, Notice, PeriodPicker, QueryNotices, SectionCard, stagger, TableSkeleton } from "@/design";
+import { Button, FadeUp, Notice, PeriodPicker, QueryNotices, stagger } from "@/design";
 import { browserTimeZone } from "../browserTimeZone";
 import { errorMessage } from "../failureMessage";
 import { useClock } from "@/lib/useClock";
@@ -76,15 +76,7 @@ export function ReportsPage() {
           </Notice>
         </FadeUp>
       ) : null}
-      {showReport && (report.isPending || report.isError) ? (
-        <FadeUp index={BODY_STAGGER}>
-          <QueryNotices
-            query={report}
-            describeError={errorMessage}
-            skeleton={<SectionCard title="Summary"><TableSkeleton label="Loading report" rows={6} columns={4} /></SectionCard>}
-          />
-        </FadeUp>
-      ) : null}
+      {showReport ? <QueryNotices query={report} describeError={errorMessage} loadingTitle="Loading report…" stagger={BODY_STAGGER} /> : null}
       {showReport && report.data ? (
         <div aria-busy={report.isPlaceholderData} className={report.isPlaceholderData ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <ReportBody report={report.data} mode={search.mode} compare={compare} clock={settings.clock} filtered={hasAnyFilter(search)} onClear={handlers.onClear} firstStagger={BODY_STAGGER} />

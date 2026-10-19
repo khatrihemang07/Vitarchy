@@ -6,7 +6,7 @@ import { formatSpan } from "../format";
 const SERIES: StackSeries<"active" | "away" | "unknown">[] = [
   { key: "active", label: "Active", look: "solid", color: "var(--module-accent)" },
   { key: "away", label: "Away", look: "hatched", color: "var(--away)" },
-  { key: "unknown", label: "Away unknown", look: "faded", color: "var(--away-unknown)" },
+  { key: "unknown", label: "Away unknown", look: "faded", color: "var(--away-unknown)", border: "var(--away)" },
 ];
 
 /** Active, Away and Away unknown time for each Day of a longer Period. */

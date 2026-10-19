@@ -1,5 +1,5 @@
 import { useTimelineSummary } from "@/api/time";
-import { FadeUp, Notice, PeriodPicker, QueryNotices, SectionCard, stagger, TableSkeleton } from "@/design";
+import { Notice, PeriodPicker, QueryNotices, stagger } from "@/design";
 import { browserTimeZone } from "../browserTimeZone";
 import { errorMessage } from "../failureMessage";
 import { containsDay, todayOf } from "@/lib/period/period";
@@ -36,15 +36,7 @@ export function TimelinePage() {
       <div className="animate-fade-up flex flex-col gap-3" style={stagger(PICKER_STAGGER)}>
         <PeriodPicker kind={search.kind} range={range} isCurrent={search.kind !== "custom" && containsDay(range, today)} onKind={handlers.onKind} onShift={handlers.onShift} onToday={handlers.onToday} onCustom={handlers.onCustom} />
       </div>
-      {summary.isPending || summary.isError ? (
-        <FadeUp index={BODY_STAGGER}>
-          <QueryNotices
-            query={summary}
-            describeError={errorMessage}
-            skeleton={<SectionCard title="Timeline"><TableSkeleton label="Loading Timeline" rows={6} columns={3} /></SectionCard>}
-          />
-        </FadeUp>
-      ) : null}
+      <QueryNotices query={summary} describeError={errorMessage} loadingTitle="Loading Timeline…" stagger={BODY_STAGGER} />
       {summary.data ? (
         <div aria-busy={summary.isPlaceholderData} className={summary.isPlaceholderData ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <TimelineBody summary={summary.data} clock={settings.clock} now={now} highlight={search.app} onApp={handlers.onApp} firstStagger={BODY_STAGGER} />

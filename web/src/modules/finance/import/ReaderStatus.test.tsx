@@ -10,20 +10,20 @@ const status = (reader_available: boolean) => () =>
 describe("ReaderStatus", () => {
   it("says the reader is ready", async () => {
     stubApi({ "GET /api/finance/status": status(true) });
-    renderWithClient(<ReaderStatus />);
+    renderWithClient(<ReaderStatus stagger={0} />);
     expect(await screen.findByText("The statement reader is ready.")).toBeInTheDocument();
   });
 
   it("tells the person how to install a missing reader", async () => {
     stubApi({ "GET /api/finance/status": status(false) });
-    renderWithClient(<ReaderStatus />);
+    renderWithClient(<ReaderStatus stagger={0} />);
     expect(await screen.findByText("make finance-reader-install")).toBeInTheDocument();
     expect(screen.getByText("The statement reader is not installed")).toBeInTheDocument();
   });
 
   it("shows no warning while the status is still loading", () => {
     stubApi({ "GET /api/finance/status": pendingForever });
-    renderWithClient(<ReaderStatus />);
+    renderWithClient(<ReaderStatus stagger={0} />);
     expect(screen.getByRole("status")).toHaveTextContent("Checking the statement reader");
     expect(screen.queryByText(/not installed/)).not.toBeInTheDocument();
     expect(screen.queryByText("make finance-reader-install")).not.toBeInTheDocument();
@@ -31,7 +31,7 @@ describe("ReaderStatus", () => {
 
   it("shows a loading state, then a failure that can be retried", async () => {
     stubApi({ "GET /api/finance/status": () => jsonResponse(500, {}) });
-    renderWithClient(<ReaderStatus />);
+    renderWithClient(<ReaderStatus stagger={0} />);
     expect(screen.getByRole("status")).toHaveTextContent("Checking the statement reader");
     expect(await screen.findByRole("button", { name: "Try again" })).toBeInTheDocument();
   });

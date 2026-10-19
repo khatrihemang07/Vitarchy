@@ -93,7 +93,7 @@
   --duration-base: 250ms;
   --duration-slow: 600ms;
   --duration-reduced: 0.01ms;
-  /* How long a query may stay pending before its skeleton shows: a fast load never flashes one. */
+  /* How long a query may stay pending before its loading notice shows: a fast load never flashes one. */
   --duration-loading-delay: 250ms;
 
   /* Layout and focus */

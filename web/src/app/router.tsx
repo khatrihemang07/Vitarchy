@@ -1,6 +1,5 @@
-import type { QueryClient } from "@tanstack/react-query";
 import {
-  createRootRouteWithContext,
+  createRootRoute,
   createRoute,
   createRouter,
   lazyRouteComponent,
@@ -10,7 +9,6 @@ import { HomePage } from "./home/HomePage";
 import { NotFound } from "./NotFound";
 import type { ModuleManifest } from "./module-manifest";
 import { buildNav } from "./nav";
-import type { RouterContext } from "./prefetch";
 import { generalSection } from "./settings/core-sections";
 import { buildSections } from "./settings/sections";
 import { Shell } from "./shell/Shell";
@@ -22,8 +20,6 @@ const loadShowcase = import.meta.env.DEV ? () => import("./dev/DesignShowcase") 
 const SettingsRoute = lazyRouteComponent(() => import("./settings/SettingsRoute"), "SettingsRoute");
 
 interface RouterOptions {
-  /** The cache route loaders warm and pages read, so a tab that is hovered opens with its data. */
-  queryClient: QueryClient;
   /** Registers the /design showcase. Defaults to dev builds only. */
   includeDesignShowcase?: boolean;
 }
@@ -31,11 +27,11 @@ interface RouterOptions {
 /** Builds the router: Home, Settings, the dev showcase, then each Module's routes. */
 export function createAppRouter(
   modules: readonly ModuleManifest[],
-  { includeDesignShowcase = import.meta.env.DEV, queryClient }: RouterOptions,
+  { includeDesignShowcase = import.meta.env.DEV }: RouterOptions = {},
 ) {
   const nav = buildNav(modules);
   const sections = buildSections(modules);
-  const root = createRootRouteWithContext<RouterContext>()({ component: () => <Shell nav={nav} sections={sections} /> });
+  const root = createRootRoute({ component: () => <Shell nav={nav} sections={sections} /> });
   const home = createRoute({
     getParentRoute: () => root,
     path: "/",
@@ -65,7 +61,6 @@ export function createAppRouter(
         ]
       : [];
   return createRouter({
-    context: { queryClient },
     defaultNotFoundComponent: NotFound,
     routeTree: root.addChildren([
       home,

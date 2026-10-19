@@ -64,7 +64,7 @@ export function TransactionsFilterBar({ search, range, today, accounts, handlers
             ))}
           </SelectContent>
         </Select>
-        {hasActiveFilters(search) ? <ClearFiltersButton onClear={handlers.onClear} /> : null}
+        {hasActiveFilters(search) ? <ClearFiltersButton placement="bar" onClear={handlers.onClear} /> : null}
       </div>
     </div>
   );

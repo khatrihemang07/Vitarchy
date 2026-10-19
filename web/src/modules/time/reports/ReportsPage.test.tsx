@@ -39,7 +39,7 @@ describe("ReportsPage", () => {
   it("shows a loading notice, then the Report with every row closed", async () => {
     stubApi(api(() => jsonResponse(200, report([group("Standup"), group("Review")]))));
     renderPage();
-    expect(await screen.findByText("Loading report")).toBeInTheDocument();
+    expect(await screen.findByText("Loading report…")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /Standup/ })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: /Review/ })).toHaveAttribute("aria-expanded", "false");
   });
@@ -143,5 +143,30 @@ describe("ReportsPage", () => {
     await screen.findByRole("button", { name: /Standup/ });
     const sent = fetchMock.mock.calls.map(([r]) => new URL(r.url)).find((u) => u.pathname === "/api/time/report");
     expect(sent?.searchParams.getAll("project")).toEqual([]);
+  });
+
+  it("keeps the previous Report on screen, dimmed, while the next Period loads", async () => {
+    let release: (response: Response) => void = () => undefined;
+    stubApi({
+      ...api(() => jsonResponse(200, report([group("Standup")]))),
+      "GET /api/time/report": [
+        () => jsonResponse(200, report([group("Standup")])),
+        () => new Promise<Response>((resolve) => { release = resolve; }),
+      ],
+    });
+    renderPage();
+    const row = await screen.findByRole("button", { name: /Standup/ });
+    const wrapper = row.closest("[aria-busy]");
+    expect(wrapper).toHaveAttribute("aria-busy", "false");
+    expect(wrapper).toHaveClass("transition-opacity");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next week" }));
+
+    await waitFor(() => { expect(screen.getByRole("button", { name: /Standup/ }).closest("[aria-busy]")).toHaveAttribute("aria-busy", "true"); });
+    expect(screen.getByRole("button", { name: /Standup/ }).closest("[aria-busy]")).toHaveClass("opacity-60", "transition-opacity");
+
+    release(jsonResponse(200, report([group("Review")])));
+    expect(await screen.findByRole("button", { name: /Review/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Review/ }).closest("[aria-busy]")).toHaveAttribute("aria-busy", "false");
   });
 });

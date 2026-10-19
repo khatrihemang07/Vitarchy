@@ -26,7 +26,9 @@ describe("ImportPage", () => {
       "GET /api/finance/accounts": pendingForever,
     });
     const { container } = renderWithClient(<ImportPage />);
-    expect(screen.getAllByText("Loading the Import page").length).toBeGreaterThan(0);
+    expect(screen.getByText("Checking the statement reader…")).toBeInTheDocument();
+    expect(screen.getByText("Loading passwords…")).toBeInTheDocument();
+    expect(screen.getByText("Import Statements")).toBeInTheDocument();
     expect(container.querySelectorAll(SETTLED_NOTICES)).toHaveLength(0);
   });
 

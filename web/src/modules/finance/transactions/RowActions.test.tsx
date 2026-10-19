@@ -85,11 +85,11 @@ describe("RowActions", () => {
     expect(await screen.findByText("Nothing nearby fits")).toBeInTheDocument();
   });
 
-  it("shows a skeleton while loading and the server's reason when linking is refused", async () => {
+  it("shows a loading notice while the candidates load", async () => {
     stubApi({ [CANDIDATES]: pendingForever });
     renderWithClient(<RowActions item={row()} names={names} />);
     await openDialog();
-    expect(await screen.findByLabelText("Loading candidates")).toBeInTheDocument();
+    expect(await screen.findByText("Loading candidates…")).toBeInTheDocument();
   });
 
   it("explains a refused link and keeps the dialog open", async () => {

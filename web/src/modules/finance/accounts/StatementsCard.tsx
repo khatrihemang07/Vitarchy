@@ -1,5 +1,5 @@
 import { useConfirmedStatements } from "@/api/finance";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Notice, QueryNotices, TableSkeleton } from "@/design";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Notice, QueryNotices } from "@/design";
 import { errorMessage } from "../failureMessage";
 import { ReadAllAgain } from "./ReadAllAgain";
 import { StatementRow } from "./StatementRow";
@@ -15,7 +15,7 @@ export function StatementsCard() {
       </CardHeader>
       <CardContent>
         {!statements.data ? (
-          <QueryNotices inline query={statements} describeError={errorMessage} skeleton={<TableSkeleton label="Loading Statements" rows={3} columns={3} />} />
+          <QueryNotices inline query={statements} describeError={errorMessage} loadingTitle="Loading Statements…" />
         ) : statements.data.length === 0 ? (
           <Notice inline kind="empty" title="No confirmed Statements yet." />
         ) : (

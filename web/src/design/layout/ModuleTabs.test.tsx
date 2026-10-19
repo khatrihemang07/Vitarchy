@@ -40,17 +40,31 @@ describe("ModuleTabs", () => {
   });
 });
 
-describe("ModuleTabs preloading", () => {
-  it("loads a page's route when its tab is hovered, before it is opened", async () => {
-    const loader = vi.fn();
-    const root = createRootRoute({ component: () => <ModuleTabs tabs={TABS} label="Finance pages" indicatorId="preload-indicator" /> });
-    const routes = TABS.map((tab) => createRoute({ getParentRoute: () => root, path: tab.to, ...(tab.to === "/finance/accounts" ? { loader } : {}) }));
-    const router = createRouter({ routeTree: root.addChildren(routes), history: createMemoryHistory({ initialEntries: ["/finance"] }) });
-    render(<RouterProvider router={router} />);
+describe("ModuleTabs behaviour", () => {
+  it("is not an overflow container, so the active pill's ring and the focus ring are never clipped", async () => {
+    renderAt("/finance");
+    const nav = await screen.findByRole("navigation", { name: "Finance pages" });
+    expect(nav.className).not.toMatch(/overflow/);
+  });
 
-    await userEvent.hover(await screen.findByRole("link", { name: "Accounts" }));
+  it("starts no request when a tab is hovered; only opening the tab does", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const loader = vi.fn();
+      const root = createRootRoute({ component: () => <ModuleTabs tabs={TABS} label="Finance pages" indicatorId="hover-indicator" /> });
+      const routes = TABS.map((tab) => createRoute({ getParentRoute: () => root, path: tab.to, ...(tab.to === "/finance/accounts" ? { loader } : {}) }));
+      const router = createRouter({ routeTree: root.addChildren(routes), history: createMemoryHistory({ initialEntries: ["/finance"] }) });
+      render(<RouterProvider router={router} />);
 
-    await waitFor(() => { expect(loader).toHaveBeenCalled(); });
-    expect(router.state.location.pathname).toBe("/finance");
+      await user.hover(await screen.findByRole("link", { name: "Accounts" }));
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(loader).not.toHaveBeenCalled();
+
+      await user.click(screen.getByRole("link", { name: "Accounts" }));
+      await waitFor(() => { expect(loader).toHaveBeenCalled(); });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

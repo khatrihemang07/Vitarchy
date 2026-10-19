@@ -11,5 +11,5 @@ const SERIES: StackSeries<"money_in" | "money_out">[] = [
 /** Money in and Money out for each day, side by side (stacking them would add up two opposite things). */
 export function MoneyBars({ daily }: { daily: readonly DailyFigure[] }) {
   const data = daily.map((d) => ({ date: d.date, money_in: d.money_in_paise, money_out: d.money_out_paise }));
-  return <DailyStackedBars label="Money in and Money out per day" data={data} series={SERIES} stacked={false} formatValue={formatInr} formatAxis={formatInrCompact} ticksFor={decimalTicks} />;
+  return <DailyStackedBars label="Money in and Money out per day" data={data} series={SERIES} stacked={false} formatValue={formatInr} formatAxis={formatInrCompact} ticksFor={decimalTicks} axisWidth={56} />;
 }

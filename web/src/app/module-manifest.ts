@@ -4,7 +4,6 @@ import type { ModuleSettings } from "./settings/schema";
 
 export { useModuleSettings } from "./settings/useModuleSettings";
 export { withDefaults } from "./settings/schema";
-export { type WarmableQuery, warm, warmCache, warmCacheWith, warmed } from "./prefetch";
 export type {
   ModuleSettings,
   SelectField,

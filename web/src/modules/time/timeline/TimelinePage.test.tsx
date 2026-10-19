@@ -41,7 +41,7 @@ describe("TimelinePage", () => {
   it("shows a loading notice, then the Timeline", async () => {
     stubApi(api(() => jsonResponse(200, summary())));
     renderPage();
-    expect(await screen.findByText("Loading Timeline")).toBeInTheDocument();
+    expect(await screen.findByText("Loading Timeline…")).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
   });
 

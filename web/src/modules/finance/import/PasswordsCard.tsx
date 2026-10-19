@@ -1,5 +1,5 @@
 import { usePasswords } from "@/api/finance";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Notice, QueryNotices, TableSkeleton } from "@/design";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Notice, QueryNotices } from "@/design";
 import { errorMessage } from "../failureMessage";
 import { PasswordForm } from "./PasswordForm";
 import { PASSWORDS_CARD_ID } from "./passwordsAnchor";
@@ -16,7 +16,7 @@ export function PasswordsCard() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {!passwords.data ? (
-          <QueryNotices inline query={passwords} describeError={errorMessage} skeleton={<TableSkeleton label="Loading passwords" rows={2} columns={2} />} />
+          <QueryNotices inline query={passwords} describeError={errorMessage} loadingTitle="Loading passwords…" />
         ) : passwords.data.length === 0 ? (
           <Notice inline kind="empty" title="No Statement passwords saved yet." />
         ) : (

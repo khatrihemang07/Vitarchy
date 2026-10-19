@@ -8,6 +8,18 @@ afterEach(() => vi.unstubAllGlobals());
 const connectedNeverSynced = { ...synced, last_sync: null, time_entry_count: 0 };
 
 describe("SyncCard", () => {
+  it("shows a loading state while the status is pending", () => {
+    stubApi({ "GET /api/time/status": () => new Promise<Response>(() => undefined) });
+    renderWithClient(<SyncCard />);
+    expect(screen.getByText("Loading status…")).toBeInTheDocument();
+  });
+
+  it("shows an error when the status cannot be loaded", async () => {
+    stubApi({ "GET /api/time/status": () => new Response("", { status: 502 }) });
+    renderWithClient(<SyncCard />);
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+  });
+
   it("disables Sync and says why when Toggl is not connected", async () => {
     stubApi({ "GET /api/time/status": () => jsonResponse(200, disconnected) });
     renderWithClient(<SyncCard />);

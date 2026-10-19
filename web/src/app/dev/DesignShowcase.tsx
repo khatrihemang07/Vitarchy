@@ -25,7 +25,7 @@ export function DesignShowcase() {
       <Section title="Controls (shadcn, Motion springs)">
         <ControlsDemo />
       </Section>
-      <Section title="Feedback (Notice, TableSkeleton, Progress)">
+      <Section title="Feedback (Notice, Progress)">
         <FeedbackDemo />
       </Section>
     </div>

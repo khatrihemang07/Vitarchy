@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { FRESH_MS } from "@/api/queryClient";
 import type { AccountSummary, Overview, SectionPreview, StatementPreview, TransactionView } from "@/api/finance";
 import { TooltipProvider } from "@/design";
 
@@ -43,7 +42,7 @@ export function requestsOf(fetchMock: ReturnType<typeof stubApi>): string[] {
 /** Renders `ui` with a fresh query cache and the tooltip provider the app mounts at its root. */
 export function renderWithClient(ui: ReactElement) {
   return render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: FRESH_MS } } })}>
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <TooltipProvider>{ui}</TooltipProvider>
     </QueryClientProvider>,
   );

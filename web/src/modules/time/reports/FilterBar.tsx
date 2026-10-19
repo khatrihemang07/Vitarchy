@@ -31,7 +31,7 @@ export function FilterBar({ facets, search, active, onFacet, onSearch, onClear }
       ))}
       <DescriptionSearch value={search.q} onSearch={onSearch} />
       {active ? (
-        <ClearFiltersButton onClear={onClear} />
+        <ClearFiltersButton placement="bar" onClear={onClear} />
       ) : null}
     </div>
   );

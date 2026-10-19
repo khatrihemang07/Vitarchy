@@ -14,7 +14,7 @@ describe("AccountsPage", () => {
   it("shows only loading notices while Accounts and Statements are pending", () => {
     stubApi({ "GET /api/finance/accounts": pendingForever, "GET /api/finance/statements": pendingForever });
     const { container } = renderWithClient(<AccountsPage />);
-    expect(screen.getAllByText("Loading Accounts").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Loading Accounts…").length).toBeGreaterThan(0);
     expect(container.querySelectorAll(SETTLED_NOTICES)).toHaveLength(0);
   });
 
