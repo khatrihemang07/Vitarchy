@@ -5,13 +5,13 @@ import {
   confirmedStatementsOptions,
   financeStatusOptions,
   passwordsOptions,
-  transactionsOptions,
   unconfirmedStatementsOptions,
 } from "@/api/finance";
 import { type ModuleManifest, warm, warmCache, warmCacheWith } from "@/app/module-manifest";
 import { FINANCE_COMMAND_PAGES } from "./financePages";
 import { FinancePageLayout } from "./FinancePageLayout";
-import { parseTransactionsSearch, toTransactionQuery, transactionsParams } from "./transactionsSearch";
+import { warmTransactions } from "./transactions/transactionsLoader";
+import { parseTransactionsSearch, transactionsParams } from "./transactions/transactionsSearch";
 
 // Pages load on first visit.
 const ImportPage = lazyRouteComponent(() => import("./import/ImportPage"), "ImportPage");
@@ -56,10 +56,7 @@ export const financeModule: ModuleManifest = {
           validateSearch: (raw: Record<string, unknown>) => transactionsParams(parseTransactionsSearch(raw)),
           // The page's query depends on the filters in the address, so the loader re-runs when they change.
           loaderDeps: ({ search }: { search: Record<string, unknown> }) => ({ search }),
-          loader: warmCacheWith(({ search }: { search: Record<string, unknown> }) => [
-            warm(transactionsOptions(toTransactionQuery(parseTransactionsSearch(search)))),
-            warm(accountsOptions),
-          ]),
+          loader: warmCacheWith(({ search }: { search: Record<string, unknown> }) => [warmTransactions(search)]),
           component: TransactionsPage,
         }),
       ]),

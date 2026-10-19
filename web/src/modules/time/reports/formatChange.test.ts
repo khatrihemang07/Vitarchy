@@ -1,4 +1,4 @@
-import { changeDirection, formatChange } from "./formatChange";
+import { formatChange } from "./formatChange";
 
 describe("formatChange", () => {
   it("shows a rise and a fall in time with an arrow", () => {
@@ -14,11 +14,5 @@ describe("formatChange", () => {
   it("formats counts as plain numbers", () => {
     expect(formatChange(3, "count")).toBe("↑ 3");
     expect(formatChange(-2, "count")).toBe("↓ 2");
-  });
-
-  it("tells the direction", () => {
-    expect(changeDirection(5)).toBe("up");
-    expect(changeDirection(-5)).toBe("down");
-    expect(changeDirection(0)).toBe("none");
   });
 });

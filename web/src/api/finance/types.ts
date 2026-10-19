@@ -54,3 +54,11 @@ export type LinkedTransfer = Schemas["LinkedTransfer"];
 export type PrintingItem = Schemas["PrintingItem"];
 /** Query of `GET /api/finance/transactions`. */
 export type TransactionQuery = NonNullable<paths["/api/finance/transactions"]["get"]["parameters"]["query"]>;
+/** Query of `GET /api/finance/overview`. */
+export type OverviewQuery = NonNullable<paths["/api/finance/overview"]["get"]["parameters"]["query"]>;
+/** Money in, Money out, Net and Transfers of a range, with the range before it. */
+export type Overview = Schemas["FinanceOverview"];
+/** One Overview figure and the same figure for the range before. */
+export type OverviewFigure = Schemas["OverviewFigure"];
+/** One day's Money in and Money out. */
+export type DailyFigure = Schemas["OverviewDay"];

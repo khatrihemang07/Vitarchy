@@ -1,5 +1,5 @@
 import type { ReportQuery } from "@/api/time";
-import type { DayRange } from "./period";
+import type { DayRange } from "@/lib/period/period";
 import type { ReportSearch } from "./reportSearch";
 
 /** The server query for a page state; lists and text are sent only when they have content. */

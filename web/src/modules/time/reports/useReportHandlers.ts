@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import type { Grouping, PeriodKind } from "@/api/time";
 import type { CompareMode } from "./compareMode";
-import { changeKind, type DayRange, fitRange, jumpToToday, shiftPeriod, type WeekStart } from "./period";
-import { clearFilters, type FacetKey, withFacet, withGroups, withRange } from "./reportActions";
+import { changeKind, type DayRange, fitRange, jumpToToday, shiftPeriod, type WeekStart } from "@/lib/period/period";
+import { withRange } from "@/lib/period/periodSearch";
+import { clearFilters, type FacetKey, withFacet, withGroups } from "./reportActions";
 import type { ReportSearch, StatMode } from "./reportSearch";
 
 interface HandlerInput {

@@ -1,12 +1,11 @@
 import { useTimelineSummary } from "@/api/time";
-import { FadeUp, Notice, QueryNotices, SectionCard, stagger, TableSkeleton } from "@/design";
+import { FadeUp, Notice, PeriodPicker, QueryNotices, SectionCard, stagger, TableSkeleton } from "@/design";
 import { browserTimeZone } from "../browserTimeZone";
 import { errorMessage } from "../failureMessage";
-import { PeriodPicker } from "../reports/PeriodPicker";
-import { containsDay, todayOf } from "../reports/period";
-import { rangeOf } from "../reports/reportSearch";
+import { containsDay, todayOf } from "@/lib/period/period";
+import { rangeOf } from "@/lib/period/periodSearch";
 import { useDisplaySettings } from "../reports/useDisplaySettings";
-import { useClock } from "../useClock";
+import { useClock } from "@/lib/useClock";
 import { TimelineBody } from "./TimelineBody";
 import { useTimelineHandlers } from "./useTimelineHandlers";
 import { useTimelineSearch } from "./useTimelineSearch";

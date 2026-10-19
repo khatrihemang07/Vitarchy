@@ -1,15 +1,5 @@
-import type { Grouping, PeriodKind } from "@/api/time";
-import type { DayRange } from "./period";
-import { hasFilters, type PeriodSearch, type ReportFilters, type ReportSearch } from "./reportSearch";
-
-/** The state after moving to `range`; a custom stretch keeps both ends, others one anchor Day. */
-export function withRange<T extends PeriodSearch>(search: T, kind: PeriodKind, range: DayRange): T {
-  const next: T = { ...search, kind };
-  delete next.date;
-  delete next.from;
-  delete next.to;
-  return kind === "custom" ? { ...next, from: range.from, to: range.to } : { ...next, date: range.from };
-}
+import type { Grouping } from "@/api/time";
+import { hasFilters, type ReportFilters, type ReportSearch } from "./reportSearch";
 
 /** Which filter a list of chosen values belongs to. */
 export type FacetKey = keyof ReportFilters;

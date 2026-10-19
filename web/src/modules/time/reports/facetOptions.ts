@@ -1,14 +1,7 @@
 import type { Facets } from "@/api/time";
+import type { FacetOption } from "@/design";
 import type { FacetKey } from "./reportActions";
 import type { ReportFilters } from "./reportSearch";
-
-/** One choice in a filter. */
-export interface FacetOption {
-  value: string;
-  label: string;
-  /** Extra word shown beside the label, e.g. "archived". */
-  hint?: string;
-}
 
 /** Everything one filter picker needs: what it is, what it offers and what is chosen. */
 export interface FacetDescriptor {

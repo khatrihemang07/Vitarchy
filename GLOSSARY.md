@@ -95,7 +95,7 @@ One calendar day in the person's own time zone, from midnight to midnight. A Tim
 _Avoid_: Date, 24 hours
 
 **Period**:
-The stretch of Days a Report covers: one Day, a week, a month, or a custom stretch of Days. Weeks start on the Core week-start Setting.
+The stretch of Days a Report, the Timeline or the Transactions page covers: one Day, a week, a month, or a custom stretch of Days. Weeks start on the Core week-start Setting. The Transactions page compares a Period with the stretch of the same length just before it, whether or not that one has Transactions (unlike Time's Previous Period).
 _Avoid_: Timeframe, window
 
 **Report**:

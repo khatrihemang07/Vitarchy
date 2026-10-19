@@ -3,7 +3,7 @@ import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle
 import { errorMessage } from "./failureMessage";
 import { formatCount, formatDay } from "./format";
 import { LastRun } from "./LastRun";
-import { useClock } from "./useClock";
+import { useClock } from "@/lib/useClock";
 
 function mirroredSpan(status: TimeStatus): string {
   if (status.time_entry_count === 0 || !status.oldest_entry || !status.newest_entry) {

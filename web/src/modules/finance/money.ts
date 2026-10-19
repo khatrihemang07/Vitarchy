@@ -36,3 +36,10 @@ const countFormat = new Intl.NumberFormat("en-IN");
 export function formatCount(n: number): string {
   return countFormat.format(n);
 }
+
+/** A short amount for chart axes, in Indian units: "₹250", "₹1.5k", "₹1.2L" (lakh), "₹3Cr" (crore). */
+export function formatInrCompact(paise: number): string {
+  const rupees = Math.abs(paise) / 100;
+  const [value, suffix] = rupees >= 1e7 ? [rupees / 1e7, "Cr"] : rupees >= 1e5 ? [rupees / 1e5, "L"] : rupees >= 1e3 ? [rupees / 1e3, "k"] : [rupees, ""];
+  return `${paise < 0 ? "−" : ""}₹${String(Math.round(value * 10) / 10)}${suffix}`;
+}

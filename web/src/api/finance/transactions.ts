@@ -13,7 +13,7 @@ export function transactionsOptions(query: TransactionQuery) {
   });
 }
 
-/** One page of Transactions; the previous page stays on screen while the next loads. */
-export function useTransactions(query: TransactionQuery) {
-  return useQuery({ ...transactionsOptions(query), placeholderData: keepPreviousData });
+/** One page of Transactions; the previous page stays on screen while the next loads. A null query waits (e.g. for the week start). */
+export function useTransactions(query: TransactionQuery | null) {
+  return useQuery({ ...transactionsOptions(query ?? {}), enabled: query !== null, placeholderData: keepPreviousData });
 }

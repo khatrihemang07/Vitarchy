@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useMemo } from "react";
-import { parseTransactionsSearch, type TransactionsSearch, transactionsParams } from "../transactionsSearch";
+import { parseTransactionsSearch, type TransactionsSearch, transactionsParams } from "./transactionsSearch";
 
 /** The page state kept in the URL, with a setter that writes it back (only non-default values are kept). */
 export function useTransactionsSearch() {

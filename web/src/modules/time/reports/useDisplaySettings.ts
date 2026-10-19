@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { coreWithDefaults, useSettings } from "@/api/settings";
 import { createLogger } from "@/lib/log";
 import type { Clock } from "./entryTimes";
-import type { WeekStart } from "./period";
+import type { WeekStart } from "@/lib/period/period";
 
 const log = createLogger("time");
 

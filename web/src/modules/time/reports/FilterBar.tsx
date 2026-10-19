@@ -1,8 +1,6 @@
 import type { Facets } from "@/api/time";
-import { ClearFiltersButton } from "@/design";
-import { DescriptionSearch } from "./DescriptionSearch";
+import { ClearFiltersButton, DescriptionSearch, FacetFilter } from "@/design";
 import { facetDescriptors } from "./facetOptions";
-import { FacetFilter } from "./FacetFilter";
 import type { FacetKey } from "./reportActions";
 import type { ReportSearch } from "./reportSearch";
 
@@ -23,7 +21,9 @@ export function FilterBar({ facets, search, active, onFacet, onSearch, onClear }
       {descriptors.map((facet) => (
         <FacetFilter
           key={facet.key}
-          facet={facet}
+          label={facet.label}
+          options={facet.options}
+          selected={facet.selected}
           onChange={(values) => {
             onFacet(facet.key, values);
           }}

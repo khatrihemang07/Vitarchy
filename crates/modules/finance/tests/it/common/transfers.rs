@@ -1,7 +1,7 @@
 //! Statements of several invented Accounts, imported in order, for the Transfer tests. Every
 //! name, number and amount here is made up.
 
-use serde_json::Value;
+use serde_json::{Value, json};
 use vitarchy_finance::reader::{
     ReaderResult,
     contract::{AccountKind, Transaction},
@@ -76,4 +76,24 @@ pub async fn transfer_count(env: &Env) -> i64 {
         .fetch_one(&env.db.pool)
         .await
         .unwrap()
+}
+
+/// The id of the row described exactly `description`.
+pub async fn id_of(env: &Env, description: &str) -> i64 {
+    items(env)
+        .await
+        .into_iter()
+        .find(|item| item["description"] == description)
+        .map(|item| item["id"].as_i64().unwrap())
+        .unwrap()
+}
+
+/// Links the row described `debit` to the rows described `credits` by hand.
+pub async fn link(env: &Env, debit: &str, credits: &[&str]) -> super::app::Reply {
+    let mut ids = Vec::new();
+    for credit in credits {
+        ids.push(id_of(env, credit).await);
+    }
+    let body = json!({"debit_id": id_of(env, debit).await, "credit_ids": ids});
+    env.post("/transfers", &body.to_string()).await
 }

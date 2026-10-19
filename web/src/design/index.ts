@@ -24,6 +24,8 @@ export * from "./ui/tooltip";
 
 export { DailyBars, type DailyBarPoint } from "./charts/DailyBars";
 export { DailyStackedBars, type StackedDayPoint } from "./charts/DailyStackedBars";
+export { decimalTicks } from "./charts/ticks";
+export type { SeriesLook, StackSeries } from "./charts/stackSeries";
 export { HourHeat } from "./charts/HourHeat";
 export { ModulePageFrame } from "./layout/ModulePageFrame";
 export { ModulePageHeader } from "./layout/ModulePageHeader";
@@ -39,7 +41,11 @@ export { CardSkeleton } from "./skeleton/CardSkeleton";
 export { Skeleton } from "./skeleton/Skeleton";
 export { TableSkeleton } from "./skeleton/TableSkeleton";
 export { ColumnHeaderBar, type ColumnHeading } from "./table/ColumnHeaderBar";
+export type { SortState } from "./table/SortButton";
 export { ClearFiltersButton } from "./controls/ClearFiltersButton";
+export { DescriptionSearch } from "./controls/DescriptionSearch";
+export { FacetFilter, type FacetOption } from "./controls/FacetFilter";
+export { PeriodPicker } from "./controls/PeriodPicker";
 export { SegmentedControl, type SegmentedOption } from "./controls/SegmentedControl";
 
 export * from "./effects/border-beam";
@@ -57,6 +63,8 @@ export { stagger } from "./motion/stagger";
 export { useMotionReduced } from "./motion/useMotionReduced";
 
 export { AchievementBadge } from "./quest/AchievementBadge";
+export { ChangeBadge } from "./quest/ChangeBadge";
+export { type ChangeDirection, changeDirection, changeText } from "./quest/changeText";
 export { LevelBadge } from "./quest/LevelBadge";
 export { QuestList, type Quest } from "./quest/QuestList";
 export { StatCard } from "./quest/StatCard";

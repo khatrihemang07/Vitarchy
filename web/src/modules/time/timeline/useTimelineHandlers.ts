@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { PeriodKind } from "@/api/time";
-import { changeKind, type DayRange, fitRange, jumpToToday, shiftPeriod, type WeekStart } from "../reports/period";
+import { changeKind, type DayRange, fitRange, jumpToToday, shiftPeriod, type WeekStart } from "@/lib/period/period";
 import { type TimelineSearch, withApp, withPeriod } from "./timelineSearch";
 
 interface HandlerInput {

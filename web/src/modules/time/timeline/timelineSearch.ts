@@ -1,7 +1,7 @@
 import type { PeriodKind } from "@/api/time";
-import type { DayRange } from "../reports/period";
-import { withRange } from "../reports/reportActions";
-import { parsePeriodSearch, type PeriodSearch, periodParams } from "../reports/reportSearch";
+import type { DayRange } from "@/lib/period/period";
+import { type PeriodSearch, withRange } from "@/lib/period/periodSearch";
+import { parseTimePeriod, timePeriodParams } from "../reports/reportSearch";
 
 /** Everything the URL of the Timeline page says: the Period (as on Reports) and the highlighted app. */
 export interface TimelineSearch extends PeriodSearch {
@@ -14,12 +14,12 @@ const MAX_APP_LENGTH = 200;
 /** Turns whatever the URL held into a valid state; the URL is user-editable, so nothing is trusted. */
 export function parseTimelineSearch(raw: Record<string, unknown>): TimelineSearch {
   const app = typeof raw.app === "string" || typeof raw.app === "number" ? String(raw.app).slice(0, MAX_APP_LENGTH) : "";
-  return { ...parsePeriodSearch(raw), ...(app && { app }) };
+  return { ...parseTimePeriod(raw), ...(app && { app }) };
 }
 
 /** The URL form of a state: defaults are left out. */
 export function timelineParams(search: TimelineSearch): Record<string, unknown> {
-  return { ...periodParams(search), ...(search.app && { app: search.app }) };
+  return { ...timePeriodParams(search), ...(search.app && { app: search.app }) };
 }
 
 /** The state after moving to another Period; the highlight is dropped because the apps differ. */

@@ -1,7 +1,7 @@
 import type { TimelineSummary, UsualFigure } from "@/api/time";
 import { formatCount } from "../format";
 import type { ChangeUnit } from "../reports/formatChange";
-import { periodLabel } from "../reports/period";
+import { periodLabel } from "@/lib/period/period";
 import { USUAL_PHRASE } from "../usualWords";
 
 /** One headline tile: its value, how it is written, and its change from the Usual (null when not comparable). */

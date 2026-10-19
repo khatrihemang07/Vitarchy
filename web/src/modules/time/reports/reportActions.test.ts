@@ -1,21 +1,7 @@
-import { clearFilters, hasAnyFilter, withFacet, withGroups, withRange } from "./reportActions";
+import { clearFilters, hasAnyFilter, withFacet, withGroups } from "./reportActions";
 import { parseReportSearch } from "./reportSearch";
 
 const base = parseReportSearch({ project: [1], tag: ["a"], q: "x", group1: "project", group2: "tag" });
-
-describe("withRange", () => {
-  it("keeps one anchor Day for a week, month or Day", () => {
-    const next = withRange(base, "week", { from: "2026-10-12", to: "2026-10-18" });
-    expect(next).toMatchObject({ kind: "week", date: "2026-10-12" });
-    expect(next.from).toBeUndefined();
-  });
-
-  it("keeps both ends for a custom stretch", () => {
-    const next = withRange(base, "custom", { from: "2026-10-01", to: "2026-10-09" });
-    expect(next).toMatchObject({ kind: "custom", from: "2026-10-01", to: "2026-10-09" });
-    expect(next.date).toBeUndefined();
-  });
-});
 
 describe("withFacet", () => {
   it("turns text values into ids for projects and clients", () => {

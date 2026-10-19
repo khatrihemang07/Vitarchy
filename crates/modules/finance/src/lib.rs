@@ -7,6 +7,7 @@ mod dedupe;
 mod error;
 pub mod files;
 mod import;
+mod ledger;
 mod linking;
 mod merge;
 mod printings;

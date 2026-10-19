@@ -1,4 +1,4 @@
-import { formatBalance, formatCount, formatInr, formatSignedAmount, isCredit } from "./money";
+import { formatInrCompact, formatBalance, formatCount, formatInr, formatSignedAmount, isCredit } from "./money";
 
 describe("formatInr", () => {
   it.each([
@@ -40,5 +40,19 @@ describe("formatBalance", () => {
     expect(formatBalance(9_876_500)).toBe("₹98,765.00");
     expect(formatBalance(null)).toBe("");
     expect(formatBalance(undefined)).toBe("");
+  });
+});
+
+describe("formatInrCompact", () => {
+  it("uses k, lakh and crore and drops a pointless .0", () => {
+    expect(formatInrCompact(0)).toBe("₹0");
+    expect(formatInrCompact(25_000)).toBe("₹250");
+    expect(formatInrCompact(150_000)).toBe("₹1.5k");
+    expect(formatInrCompact(100_000)).toBe("₹1k");
+    expect(formatInrCompact(12_000_000)).toBe("₹1.2L");
+    expect(formatInrCompact(3_000_000_000)).toBe("₹3Cr");
+  });
+  it("keeps a minus sign", () => {
+    expect(formatInrCompact(-150_000)).toBe("−₹1.5k");
   });
 });

@@ -1,6 +1,6 @@
 import { MotionButton } from "@/design";
 import { formatCount } from "../money";
-import { pageRange } from "../transactionsSearch";
+import { pageRange } from "./transactionsQuery";
 
 interface PaginationProps {
   total: number;

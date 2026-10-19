@@ -1,6 +1,6 @@
-import type { Grouping, PeriodKind } from "@/api/time";
+import type { Grouping } from "@/api/time";
 import { COMPARE_MODES, type CompareMode, defaultCompare } from "./compareMode";
-import { type DayRange, fitRange, periodFor, type WeekStart } from "./period";
+import { parsePeriodSearch, type PeriodSearch, periodParams } from "@/lib/period/periodSearch";
 
 /** Whether group stats show daily totals or single entries. */
 export type StatMode = "per_day" | "per_entry";
@@ -10,16 +10,6 @@ export interface ReportFilters {
   project: number[];
   tag: string[];
   client: number[];
-}
-
-/** The part of a page's URL that chooses a Period; shared by Reports and the Timeline. */
-export interface PeriodSearch {
-  kind: PeriodKind;
-  /** Any Day inside a Day, week or month Period; today when absent. */
-  date?: string;
-  /** Custom Periods only. */
-  from?: string;
-  to?: string;
 }
 
 /** Everything the URL of the Reports page says. */
@@ -33,19 +23,12 @@ export interface ReportSearch extends ReportFilters, PeriodSearch {
   compare?: CompareMode;
 }
 
-const KINDS: readonly PeriodKind[] = ["day", "week", "month", "custom"];
 const GROUPINGS: readonly Grouping[] = ["description", "project", "tag"];
 const MODES: readonly StatMode[] = ["per_day", "per_entry"];
 const MAX_QUERY_LENGTH = 200;
 
 const pick = <T extends string>(options: readonly T[], value: unknown): T | undefined =>
   options.find((option) => option === value);
-
-function validDay(value: unknown): string | undefined {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
-  const date = new Date(`${value}T00:00:00Z`);
-  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value ? undefined : value;
-}
 
 const asList = (value: unknown): unknown[] => (Array.isArray(value) ? value : value === undefined ? [] : [value]);
 
@@ -62,34 +45,11 @@ function names(value: unknown): string[] {
   return [...new Set(found)];
 }
 
-function customRange(raw: Record<string, unknown>): DayRange | undefined {
-  const a = validDay(raw.from);
-  const b = validDay(raw.to);
-  if (!a || !b) return undefined;
-  return fitRange({ from: a, to: b });
-}
+/** Time's Periods default to a week. */
+export const parseTimePeriod = (raw: Record<string, unknown>): PeriodSearch => parsePeriodSearch(raw, "week");
 
-/** The Period the URL names; anything unusable falls back to the current week. */
-export function parsePeriodSearch(raw: Record<string, unknown>): PeriodSearch {
-  const range = raw.kind === "custom" ? customRange(raw) : undefined;
-  const kind = range ? "custom" : (pick(KINDS, raw.kind) ?? "week");
-  const date = kind === "custom" ? undefined : validDay(raw.date);
-  return {
-    kind: kind === "custom" && !range ? "week" : kind,
-    ...(date && { date }),
-    ...(range && range),
-  };
-}
-
-/** The URL form of a Period: defaults are left out. */
-export function periodParams(search: PeriodSearch): Record<string, unknown> {
-  return {
-    ...(search.kind !== "week" && { kind: search.kind }),
-    ...(search.date && { date: search.date }),
-    ...(search.from && { from: search.from }),
-    ...(search.to && { to: search.to }),
-  };
-}
+/** The URL form of a Period in Time: a week is the default and left out. */
+export const timePeriodParams = (search: PeriodSearch): Record<string, unknown> => periodParams(search, "week");
 
 /** Turns whatever the URL held into a valid state; the URL is user-editable, so nothing is trusted. */
 export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
@@ -98,7 +58,7 @@ export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
   const q = typeof raw.q === "string" || typeof raw.q === "number" ? String(raw.q).slice(0, MAX_QUERY_LENGTH) : "";
   const compare = pick(COMPARE_MODES, raw.compare);
   return {
-    ...parsePeriodSearch(raw),
+    ...parseTimePeriod(raw),
     project: ids(raw.project),
     tag: names(raw.tag),
     client: ids(raw.client),
@@ -113,7 +73,7 @@ export function parseReportSearch(raw: Record<string, unknown>): ReportSearch {
 /** The URL form of a state: defaults are left out. */
 export function toSearchParams(search: ReportSearch): Record<string, unknown> {
   return {
-    ...periodParams(search),
+    ...timePeriodParams(search),
     ...(search.project.length > 0 && { project: search.project }),
     ...(search.tag.length > 0 && { tag: search.tag }),
     ...(search.client.length > 0 && { client: search.client }),
@@ -123,12 +83,6 @@ export function toSearchParams(search: ReportSearch): Record<string, unknown> {
     ...(search.mode !== "per_day" && { mode: search.mode }),
     ...(search.compare && search.compare !== defaultCompare(search.kind) && { compare: search.compare }),
   };
-}
-
-/** The Days the state covers; relative to `today` when the URL names no Day. */
-export function rangeOf(search: PeriodSearch, today: string, weekStart: WeekStart): DayRange {
-  if (search.kind === "custom" && search.from && search.to) return { from: search.from, to: search.to };
-  return periodFor(search.kind === "custom" ? "week" : search.kind, search.date ?? today, weekStart);
 }
 
 /** True when the URL already chooses a project, tag or client (then remembered choices are not applied). */

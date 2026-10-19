@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { FRESH_MS } from "@/api/queryClient";
-import type { AccountSummary, SectionPreview, StatementPreview, TransactionView } from "@/api/finance";
+import type { AccountSummary, Overview, SectionPreview, StatementPreview, TransactionView } from "@/api/finance";
 import { TooltipProvider } from "@/design";
 
 /** A `Response` carrying JSON (problem documents use the problem content type). */
@@ -135,3 +135,18 @@ export const pendingForever = () => new Promise<Response>(() => undefined);
 
 /** Every notice kind that must stay absent while queries are still loading. */
 export const SETTLED_NOTICES = '[data-kind="warning"], [data-kind="empty"], [data-kind="failure"]';
+
+/** An Overview of two days with a rise in Money in and no change in Money out. */
+export function overview(over: Partial<Overview> = {}): Overview {
+  return {
+    money_in: { paise: 500_000, previous_paise: 380_000 },
+    money_out: { paise: 120_000, previous_paise: 120_000 },
+    net: { paise: 380_000, previous_paise: 260_000 },
+    transfers_total: { paise: 100_000, previous_paise: 250_000 },
+    daily: [
+      { date: "2026-04-01", money_in_paise: 500_000, money_out_paise: 0 },
+      { date: "2026-04-02", money_in_paise: 0, money_out_paise: 120_000 },
+    ],
+    ...over,
+  };
+}

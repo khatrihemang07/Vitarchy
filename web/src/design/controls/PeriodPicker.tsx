@@ -1,7 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { PeriodKind } from "@/api/time";
-import { Button, Input, SegmentedControl, type SegmentedOption } from "@/design";
-import { type DayRange, periodLabel } from "./period";
+import { type DayRange, type PeriodKind, periodLabel } from "@/lib/period/period";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { SegmentedControl, type SegmentedOption } from "./SegmentedControl";
 
 const OPTIONS: readonly SegmentedOption[] = [
   { value: "day", label: "Day" },
@@ -25,7 +26,7 @@ interface PeriodPickerProps {
 
 const asKind = (value: string): PeriodKind => OPTIONS.find((o) => o.value === value)?.value as PeriodKind | undefined ?? "week";
 
-/** Chooses the Period: its kind, which one (arrows, Today) and, for Custom, both end Days. */
+/** Chooses the Period (any page with one): its kind, which one (arrows, Today) and, for Custom, both end Days. */
 export function PeriodPicker({ kind, range, isCurrent, onKind, onShift, onToday, onCustom }: PeriodPickerProps) {
   const noun = NOUNS[kind];
   return (

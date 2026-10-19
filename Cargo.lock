@@ -2333,6 +2333,7 @@ dependencies = [
  "toml",
  "tower",
  "tracing",
+ "url",
  "utoipa",
  "utoipa-axum",
  "vitarchy-core",

@@ -30,3 +30,6 @@ export const statementPreviewKey = (id: number) => [...statementsKeyPrefix, "pre
 
 /** Query key of the Transactions a Transaction could be linked to; under the Transactions prefix so a link or an import refreshes it. */
 export const transferCandidatesKey = (transactionId: number) => ["finance", "transactions", "transfer-candidates", transactionId] as const;
+
+/** Query key of the Overview of a range; under the Transactions prefix so a confirm, Read again or link refreshes it. */
+export const overviewKey = (query: unknown) => ["finance", "transactions", "overview", query] as const;

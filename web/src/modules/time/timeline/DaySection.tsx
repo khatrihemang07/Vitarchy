@@ -1,7 +1,7 @@
 import type { TimelineSummary } from "@/api/time";
 import { formatSpan } from "../format";
 import { type Clock } from "../reports/entryTimes";
-import { periodLabel } from "../reports/period";
+import { periodLabel } from "@/lib/period/period";
 import { type AppColors } from "./appColors";
 import { ColorLegend } from "./ColorLegend";
 import { DayBand } from "./DayBand";

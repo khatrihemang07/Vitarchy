@@ -2,7 +2,7 @@ import { COMPARE, compareNote, compareOf, defaultCompare } from "./compareMode";
 import { group, report } from "./testReport";
 import { USUAL_LABEL, USUAL_PHRASE } from "../usualWords";
 import { parseReportSearch, toSearchParams } from "./reportSearch";
-import { withRange } from "./reportActions";
+import { withRange } from "@/lib/period/periodSearch";
 
 describe("defaultCompare", () => {
   it("compares a Day with the last 4 weeks and every other kind with the Previous Period", () => {

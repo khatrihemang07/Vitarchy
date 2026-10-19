@@ -1,4 +1,5 @@
-import { hasFilters, parseReportSearch, rangeOf, toSearchParams } from "./reportSearch";
+import { rangeOf } from "@/lib/period/periodSearch";
+import { hasFilters, parseReportSearch, toSearchParams } from "./reportSearch";
 
 describe("parseReportSearch", () => {
   it("defaults to the current week grouped by description, per Day", () => {

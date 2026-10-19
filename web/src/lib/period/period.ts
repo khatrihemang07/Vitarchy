@@ -1,8 +1,9 @@
-import type { PeriodKind } from "@/api/time";
-
 // Navigation only: this moves the picker (prev, next, Today, kind) and the server validates
-// the Period it is sent. The Previous Period is the server's alone; the page shows
-// `report.period.previous_from/previous_to` and never computes it here.
+// the Period it is sent. Time shows the Previous Period the server worked out and never
+// computes it here; Finance's server does the same for its Overview.
+
+/** How a Period was chosen: one Day, a week, a calendar month or a custom stretch. */
+export type PeriodKind = "day" | "week" | "month" | "custom";
 
 /** Inclusive stretch of Days, as `YYYY-MM-DD`. */
 export interface DayRange {

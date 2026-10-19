@@ -48,6 +48,10 @@ async fn the_whole_import_flow_logs_counts_but_no_password_description_or_amount
         env.post(&format!("/statements/{id}/read-again/confirm"), "{}")
             .await;
         env.get("/transactions").await;
+        // What the person types in the search is an entered value.
+        env.get("/transactions?q=SECRETDESCRIPTION").await;
+        env.get("/overview?from=2026-07-01&to=2026-07-31&q=SECRETDESCRIPTION")
+            .await;
         id
     })
     .await;

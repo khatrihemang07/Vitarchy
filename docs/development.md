@@ -152,6 +152,17 @@ Money moving between your own Accounts is a **Transfer** (ADR 0017). The rules a
 - **Unlinking** (`DELETE /api/finance/transfers/{id}`) records the pairs so detection never links them again; linking by hand (`POST /api/finance/transfers`) ignores them. Hiding an Account (`PATCH /api/finance/accounts/{id}` with `hidden`) takes it out of every Transfer at once and excludes its Transactions from `GET /api/finance/transactions`; showing it runs detection again.
 - **Private data:** the end-to-end run (`make finance-e2e`) asserts Transfers by structure only (each of the reference, account number and bill payment rungs found some, no rule is broken, an unlink survives a Read again). `partial_transfers` in the private `e2e_expected.json` raises the number of partial Transfers it requires (default 0).
 
+## Finance Transactions page
+
+`GET /api/finance/transactions` and `GET /api/finance/overview` read one filter, parsed by `crates/modules/finance/src/ledger/query.rs` (a repeated `account_id`, `q`, `from`, `to`, `direction`, `sort`) and applied by one SQL fragment (`repo/ledger_sql.rs`), so the table and the Overview always see the same rows. Hidden Accounts are always out.
+
+- **`q`** matches the shown description or any Printing's, ignoring case; `%`, `_` and `\` in it are matched literally. Logs say only that a search was present, never its text.
+- **`direction`:** `transfer` is either side of a Transfer. `out` is debits outside Transfers plus debits of partial Transfers (their remainder is Money out). `in` is credits outside Transfers plus the credit carrying an Extra: the latest credit of the Transfer by date, then id. The same rules sum up in `ledger/sums.rs`, which reuses `transfers::figures`.
+- **`sort`:** `date_desc` (default), `date_asc`, `amount_desc`, `amount_asc`; ties break by id the same way.
+- **Overview figures:** Money in and Money out leave Transfers out except the Extra (on its credit's date) and a partial Transfer's remainder (on its debit's date). Transfers counts each Transfer once: `min(debit, credited)` when its debit is inside the filter, else what its credits inside the filter received (at most that). So filtering by one Account still shows its side as a Transfer. `previous` is the range of the same length ending the day before `from`; a range is at most 366 days.
+- **Web:** `modules/finance/transactions/transactionsSearch.ts` holds the URL state (only non-defaults are written; the Period defaults to the month holding today). The shared pieces are `@/lib/period` (period math, URL parsing, picker handlers), and in `@/design` `PeriodPicker`, `FacetFilter`, `DescriptionSearch`, `ChangeBadge` and `DailyStackedBars` (any `series`, stacked or side by side, with `ticksFor` for round axis ticks; the Transactions chart shows Money in and Money out side by side). Time uses the same ones.
+- **A new filter** is a field in `transactionsSearch.ts`, a line in `transactionsQuery.ts`, a control in `TransactionsFilterBar.tsx` and, if it narrows the Overview too, a clause in `ledger/query.rs` and `repo/ledger_sql.rs`.
+
 ## Activity snapshot helper
 
 Toggl Track's Activity lives in a macOS-protected folder. `crates/helpers/activity-snapshot` is a small signed binary, run by launchd, that copies it into `~/Library/Application Support/Vitarchy/activity/latest.sqlite` (the Snapshot). It has its own Full Disk Access grant, so the terminal and editor need none. Why: [ADR 0009](adr/0009-activity-via-signed-snapshot-helper.md).
@@ -173,15 +184,15 @@ The look is "Chroma + Quest" (light and dark) on shadcn/ui, Tailwind v4 and Moti
 ```
 design/theme     tokens.css (colours per theme, radius, shadows, timing), base.css (grain, glow), fonts
 design/ui        shadcn components (`pnpm dlx shadcn add <name>`; keep them close to upstream)
-design/controls  Vitarchy controls built on ui (SegmentedControl)
+design/controls  Vitarchy controls built on ui (SegmentedControl, PeriodPicker, FacetFilter, DescriptionSearch, ClearFiltersButton)
 design/effects   copied-in Magic UI effects (NumberTicker, BorderBeam, MagicCard)
 design/motion    spring presets, MotionProvider, MotionButton, Pressable, FadeUp
 design/layout    ModulePageFrame (header, tabs, page), ModulePageHeader, ModuleTabs, SectionCard, ListRow
 design/notice    Notice (kinds as data), QueryNotices (delayed skeleton), IconChip
 design/skeleton  Skeleton, TableSkeleton, CardSkeleton
 design/progress  Progress
-design/table     ColumnHeaderBar (the muted header bar with column tooltips)
-design/quest     XpBar, LevelBadge, StreakFlame, AchievementBadge, StatCard, QuestList
+design/table     ColumnHeaderBar (the muted header bar with column tooltips; a heading with `sort` becomes a sort button)
+design/quest     XpBar, LevelBadge, StreakFlame, AchievementBadge, StatCard (and its ChangeBadge), QuestList
 design/brand     LogoMark (same artwork as public/favicon.svg)
 ```
 

@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use crate::common::{
     app::Env,
     results::credit,
-    transfers::{card_file, import, items, savings_file, transfer_count, transfer_of},
+    transfers::{card_file, id_of, import, link, savings_file, transfer_count, transfer_of},
     tx,
 };
 
@@ -31,24 +31,6 @@ async fn world(label: &str) -> Env {
         import(&env, name).await;
     }
     env
-}
-
-async fn id_of(env: &Env, description: &str) -> i64 {
-    items(env)
-        .await
-        .into_iter()
-        .find(|item| item["description"] == description)
-        .map(|item| item["id"].as_i64().unwrap())
-        .unwrap()
-}
-
-async fn link(env: &Env, debit: &str, credits: &[&str]) -> crate::common::app::Reply {
-    let mut ids = Vec::new();
-    for credit in credits {
-        ids.push(id_of(env, credit).await);
-    }
-    let body = json!({"debit_id": id_of(env, debit).await, "credit_ids": ids});
-    env.post("/transfers", &body.to_string()).await
 }
 
 #[tokio::test]

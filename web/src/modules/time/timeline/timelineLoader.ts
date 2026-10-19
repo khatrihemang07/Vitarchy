@@ -2,8 +2,8 @@ import { coreWithDefaults, settingsOptions } from "@/api/settings";
 import { timelineSummaryOptions, type TimelineQuery } from "@/api/time";
 import { warmed, type WarmableQuery } from "@/app/module-manifest";
 import { browserTimeZone } from "../browserTimeZone";
-import { todayOf, type WeekStart } from "../reports/period";
-import { rangeOf } from "../reports/reportSearch";
+import { todayOf, type WeekStart } from "@/lib/period/period";
+import { rangeOf } from "@/lib/period/periodSearch";
 import { parseTimelineSearch, type TimelineSearch } from "./timelineSearch";
 
 /** The Timeline query the page will ask for, worked out the way the page does. Pure, so both agree on one cache key. */

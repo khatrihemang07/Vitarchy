@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Input } from "@/design";
+import { Input } from "../ui/input";
 
 /** Waits for a pause in typing so each keystroke does not become a request. */
 const DEBOUNCE_MS = 300;

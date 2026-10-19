@@ -1,6 +1,6 @@
 import type { PeriodKind, Report, ReportGroup } from "@/api/time";
 import { USUAL_LABEL, USUAL_PHRASE } from "../usualWords";
-import { dayCount, periodLabel } from "./period";
+import { dayCount, periodLabel } from "@/lib/period/period";
 import type { ReportSearch } from "./reportSearch";
 
 /** What a Report compares with: the Previous Period, or the Usual (the last 4 weeks). */

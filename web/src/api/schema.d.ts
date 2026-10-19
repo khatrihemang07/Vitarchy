@@ -38,6 +38,26 @@ export interface paths {
         patch: operations["patch_account"];
         trace?: never;
     };
+    "/api/finance/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Money in, Money out, Net and Transfers over `from..=to`, each against the range of the same
+         *     length just before it, and per-day Money in and out. Hidden Accounts are left out.
+         */
+        get: operations["get_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/finance/statement-passwords": {
         parameters: {
             query?: never;
@@ -239,7 +259,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Transactions, newest first. Rows a Read again no longer finds are included and flagged.
+         * Transactions, newest first unless `sort` says otherwise. Rows a Read again no longer finds are included and flagged.
          *     Transactions of hidden Accounts are left out.
          */
         get: operations["list_transactions"];
@@ -842,6 +862,23 @@ export interface components {
             /** @description Tags with entries. */
             tags: components["schemas"]["TagFacet"][];
         };
+        /**
+         * @description The Overview of a range. Transfers between the person's own Accounts are left out of Money
+         *     in and Money out, except a Transfer's Extra (Money in) and a partial Transfer's remainder
+         *     (Money out).
+         */
+        FinanceOverview: {
+            /** @description Every day of the range, days without Transactions included. */
+            daily: components["schemas"]["OverviewDay"][];
+            /** @description Money in. */
+            money_in: components["schemas"]["OverviewFigure"];
+            /** @description Money out. */
+            money_out: components["schemas"]["OverviewFigure"];
+            /** @description Money in minus Money out. */
+            net: components["schemas"]["OverviewFigure"];
+            /** @description What moved between the person's own Accounts. */
+            transfers_total: components["schemas"]["OverviewFigure"];
+        };
         /** @description A read, confirm or Read again attempt. */
         FinanceRunInfo: {
             /** @description What it did (counts only); empty when it failed. */
@@ -1069,6 +1106,37 @@ export interface components {
              * @description Seconds.
              */
             total_s: number;
+        };
+        /** @description One day's Money in and Money out. */
+        OverviewDay: {
+            /**
+             * Format: date
+             * @description The day.
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description Money in, in paise.
+             */
+            money_in_paise: number;
+            /**
+             * Format: int64
+             * @description Money out, in paise.
+             */
+            money_out_paise: number;
+        };
+        /** @description One figure of the range and the same figure for the range before it. */
+        OverviewFigure: {
+            /**
+             * Format: int64
+             * @description In paise, over the range.
+             */
+            paise: number;
+            /**
+             * Format: int64
+             * @description In paise, over the equally long range just before it.
+             */
+            previous_paise: number;
         };
         /** @description A saved password as listed: never its secret. */
         PasswordItem: {
@@ -2196,6 +2264,44 @@ export interface operations {
             };
         };
     };
+    get_overview: {
+        parameters: {
+            query: {
+                /** @description First day, `YYYY-MM-DD`. */
+                from: string;
+                /** @description Last day (inclusive), `YYYY-MM-DD`; at most 366 days after `from`. */
+                to: string;
+                /** @description Only these Accounts (repeat the name). Hidden Accounts are never included. */
+                account_id?: number[];
+                /** @description Only descriptions containing this text, ignoring case; any Printing's description counts. */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The Overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceOverview"];
+                };
+            };
+            /** @description Invalid range or filter (`invalid_query`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
     list_passwords: {
         parameters: {
             query?: never;
@@ -2648,12 +2754,18 @@ export interface operations {
     list_transactions: {
         parameters: {
             query?: {
-                /** @description Only this Account. */
-                account_id?: number;
+                /** @description Only these Accounts (repeat the name). Hidden Accounts are never included. */
+                account_id?: number[];
                 /** @description Only on or after this date, `YYYY-MM-DD`. */
                 from?: string;
                 /** @description Only on or before this date, `YYYY-MM-DD`. */
                 to?: string;
+                /** @description Only descriptions containing this text, ignoring case; any Printing's description counts. */
+                q?: string;
+                /** @description Only Money in, Money out or Transfers. */
+                direction?: "in" | "out" | "transfer";
+                /** @description Order; ties break by id. Default `date_desc`. */
+                sort?: "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
                 /** @description Rows per page: 1 to 500, default 100. */
                 limit?: number;
                 /** @description Rows to skip, default 0. */

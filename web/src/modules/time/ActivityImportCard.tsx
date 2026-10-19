@@ -5,7 +5,7 @@ import { errorMessage } from "./failureMessage";
 import { formatAge, formatCount, formatDay } from "./format";
 import { LastRun } from "./LastRun";
 import { sourceCopy } from "./sourceCopy";
-import { useClock } from "./useClock";
+import { useClock } from "@/lib/useClock";
 
 function storedSpan(activity: SourceActivityStatus): string {
   if (activity.activity_count === 0 || !activity.oldest || !activity.newest) return "No Activity imported yet.";
