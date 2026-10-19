@@ -14,3 +14,13 @@ pub async fn run(pool: &PgPool, modules: &[Module]) -> Result<(), sqlx::migrate:
     }
     Ok(())
 }
+
+/// Runs each Module's startup job, in registry order, once migrations are done.
+pub async fn start(pool: &PgPool, modules: &[Module]) {
+    for module in modules {
+        if let Some(task) = module.startup() {
+            tracing::info!(module = module.id(), "running startup job");
+            task(pool.clone()).await;
+        }
+    }
+}

@@ -3,6 +3,8 @@ import { CardSkeleton, FadeUp, Notice, QueryNotices } from "@/design";
 import { errorMessage } from "../failureMessage";
 import { pendingTogether } from "../pendingTogether";
 import { AccountCard } from "./AccountCard";
+import { splitHidden } from "./hiddenGroup";
+import { HiddenAccounts } from "./HiddenAccounts";
 import { StatementsCard } from "./StatementsCard";
 
 /** Header and tabs are 0 and 1 of the page's entrance sequence; the Accounts and Statements follow. */
@@ -21,6 +23,7 @@ const skeleton = (
 /** `/finance/accounts`: every Account with its figures, and the Statements behind them. */
 export function AccountsPage() {
   const accounts = useAccounts();
+  const { shown, hidden } = splitHidden(accounts.data ?? []);
   // One skeleton for the whole page until both lists have answered, instead of one spinner per section.
   const loading = pendingTogether([accounts, useConfirmedStatements()]);
   if (loading.isPending) return <QueryNotices query={loading} describeError={errorMessage} skeleton={skeleton} />;
@@ -35,13 +38,16 @@ export function AccountsPage() {
           </Notice>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
-            {accounts.data.map((account) => (
+            {shown.map((account) => (
               <AccountCard key={account.id} account={account} />
             ))}
           </div>
         )}
       </FadeUp>
-      <FadeUp index={FIRST_STAGGER + 1}>
+      <FadeUp index={FIRST_STAGGER}>
+        <HiddenAccounts accounts={hidden} />
+      </FadeUp>
+      <FadeUp index={FIRST_STAGGER + 2}>
         <StatementsCard />
       </FadeUp>
     </div>

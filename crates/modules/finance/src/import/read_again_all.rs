@@ -6,6 +6,7 @@ use super::read_again::{Apply, ReadAgainCounts, apply_row};
 use crate::{
     error::FinanceError,
     files::FileStore,
+    linking::{self, Cause, Trigger},
     reader::StatementReader,
     repo::statements::{self, StatementRow},
 };
@@ -86,6 +87,9 @@ pub async fn apply_all(
         failed = total.failed,
         "read all again applied"
     );
+    if total.statements > 0 {
+        linking::after_everything(pool, Cause::in_request(Trigger::ReadAllAgain, request_id)).await;
+    }
     Ok(total)
 }
 

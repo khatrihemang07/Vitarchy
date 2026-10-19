@@ -44,6 +44,12 @@ export type PasswordItem = Schemas["PasswordItem"];
 export type TransactionPage = Schemas["TransactionPage"];
 /** A Transaction row. */
 export type TransactionItem = Schemas["TransactionItem"];
+/** The Transfer a Transaction row is part of. */
+export type TransferInfo = Schemas["TransferInfo"];
+/** A Transaction that could be the other side of a Transfer. */
+export type TransferCandidate = Schemas["TransferCandidate"];
+/** A Transfer just linked by hand. */
+export type LinkedTransfer = Schemas["LinkedTransfer"];
 /** One Statement's Printing of a Transaction, as that Statement printed it. */
 export type PrintingItem = Schemas["PrintingItem"];
 /** Query of `GET /api/finance/transactions`. */

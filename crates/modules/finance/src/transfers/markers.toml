@@ -1,0 +1,8 @@
+# What marks a card-bill payment, as data (ADR 0017). Matching ignores case and punctuation and
+# looks for whole words, so "cred.club" and "CRED Club" are the same marker.
+
+# What a bank Statement's debit says when it pays a card bill through a bill-payment service.
+payee = ["cred.club", "CRED Club"]
+
+# What a card Statement's credit says when it receives such a payment.
+receipt = ["BBPS", "PAYMENT RECEIVED"]

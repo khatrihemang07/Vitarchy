@@ -4,7 +4,8 @@ use chrono::{NaiveDate, NaiveTime};
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use crate::{reader::contract::Direction, repo::transaction_page::PageRow};
+use super::transfer_info::TransferInfo;
+use crate::{reader::contract::Direction, repo::transaction_page::PageRow, transfers::Parts};
 
 /// One Transaction row.
 #[derive(Serialize, ToSchema)]
@@ -35,6 +36,9 @@ pub struct TransactionItem {
     pub no_longer_found: bool,
     /// How many Statements printed it; above 1, `GET /transactions/{id}/printings` lists them.
     pub printing_count: i64,
+    /// The Transfer this row is part of, or null. A Transfer is money moving between two of
+    /// the person's own Accounts, so it is neither Money in nor Money out.
+    pub transfer: Option<TransferInfo>,
 }
 
 /// A page of Transactions.
@@ -46,9 +50,25 @@ pub struct TransactionPage {
     pub items: Vec<TransactionItem>,
 }
 
+impl TransactionItem {
+    /// The row, with its Transfer (if any) taken from `transfers`.
+    #[must_use]
+    pub fn of(r: PageRow, transfers: &[Parts]) -> Self {
+        let transfer = r
+            .transfer_id
+            .and_then(|id| transfers.iter().find(|t| t.id == id))
+            .map(|parts| TransferInfo::of(parts, r.account_id));
+        Self {
+            transfer,
+            ..Self::from(r)
+        }
+    }
+}
+
 impl From<PageRow> for TransactionItem {
     fn from(r: PageRow) -> Self {
         Self {
+            transfer: None,
             id: r.id,
             account_id: r.account_id,
             date: r.date,

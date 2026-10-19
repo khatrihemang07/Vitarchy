@@ -3,6 +3,7 @@ import { Badge, Card, CardContent, CardHeader } from "@/design";
 import { maskOrNone } from "../mask";
 import { accountKindLabel } from "../statementCopy";
 import { accountFigures } from "./accountFigures";
+import { HideAccountButton } from "./HideAccountButton";
 import { RenameField } from "./RenameField";
 
 /** One Account: its name (renamed in place), issuer, kind, masked number and figures. */
@@ -14,6 +15,7 @@ export function AccountCard({ account }: { account: AccountSummary }) {
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span>{account.issuer}</span>
           <Badge variant="secondary">{accountKindLabel(account.kind)}</Badge>
+          {account.hidden ? <Badge variant="outline">Hidden</Badge> : null}
         </div>
         <p className="text-sm text-muted-foreground tabular-nums">{maskOrNone(account.mask)}</p>
       </CardHeader>
@@ -26,6 +28,9 @@ export function AccountCard({ account }: { account: AccountSummary }) {
             </div>
           ))}
         </dl>
+        <div className="mt-4">
+          <HideAccountButton account={account} />
+        </div>
       </CardContent>
     </Card>
   );

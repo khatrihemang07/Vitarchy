@@ -7,10 +7,11 @@ use axum::{
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use vitarchy_core::{ApiError, ApiJson, AppState};
+use vitarchy_core::{ApiError, ApiJson, AppState, RequestId};
 
 use crate::{
     error::FinanceError,
+    linking,
     problem::{ProblemBody, Refusal},
     repo::{
         account_stats::{self, AccountStats},
@@ -31,6 +32,9 @@ pub struct AccountSummary {
     pub mask: Option<String>,
     /// The name the person sees.
     pub name: String,
+    /// True when the person hid it: its Transactions leave the Transactions page and it takes
+    /// no part in Transfers.
+    pub hidden: bool,
     /// Balance after the latest-dated Transaction that printed one.
     pub latest_balance_paise: Option<i64>,
     /// Transactions stored (rows a Read again no longer finds are not counted).
@@ -51,6 +55,7 @@ impl From<AccountStats> for AccountSummary {
             kind: a.kind,
             mask: a.mask,
             name: a.name,
+            hidden: a.hidden,
             latest_balance_paise: a.latest_balance_paise,
             transaction_count: a.transaction_count,
             first_date: a.first_date,
@@ -60,11 +65,14 @@ impl From<AccountStats> for AccountSummary {
     }
 }
 
-/// Body of `PATCH /api/finance/accounts/{id}`.
+/// Body of `PATCH /api/finance/accounts/{id}`: whichever of the fields are given change.
 #[derive(Deserialize, ToSchema)]
-pub struct RenameAccount {
+pub struct UpdateAccount {
     /// The new name; trimmed, not empty.
-    pub name: String,
+    pub name: Option<String>,
+    /// Hide the Account (its Transactions leave the Transactions page and it takes no part in
+    /// Transfers) or show it again.
+    pub hidden: Option<bool>,
 }
 
 /// Every Account with its figures, oldest first.
@@ -83,16 +91,16 @@ pub async fn list_accounts(
     Ok(Json(rows.into_iter().map(AccountSummary::from).collect()))
 }
 
-/// Renames an Account.
+/// Renames an Account, hides it or shows it again.
 #[utoipa::path(
     patch,
     path = "/accounts/{id}",
     tag = "finance",
     params(("id" = i64, Path, description = "Account id")),
-    request_body = RenameAccount,
+    request_body = UpdateAccount,
     responses(
-        (status = 200, description = "Renamed", body = AccountSummary),
-        (status = 400, description = "Empty name (`empty_name`)", body = ProblemBody),
+        (status = 200, description = "Updated", body = AccountSummary),
+        (status = 400, description = "Empty name (`empty_name`) or nothing to change (`nothing_to_change`)", body = ProblemBody),
         (status = 404, description = "No such Account"),
     )
 )]
@@ -100,18 +108,30 @@ pub async fn list_accounts(
 pub async fn patch_account(
     State(state): State<AppState>,
     Path(id): Path<i64>,
-    ApiJson(body): ApiJson<RenameAccount>,
+    RequestId(request_id): RequestId,
+    ApiJson(body): ApiJson<UpdateAccount>,
 ) -> Result<Json<AccountSummary>, FinanceError> {
-    let name = body.name.trim();
-    if name.is_empty() {
+    let name = body.name.as_deref().map(str::trim);
+    if name.is_some_and(str::is_empty) {
         return Err(Refusal::EMPTY_NAME.into());
     }
-    if !accounts::rename(&state.pool, id, name).await? {
-        return Err(ApiError::NotFound("no such Account".to_owned()).into());
+    if name.is_none() && body.hidden.is_none() {
+        return Err(Refusal::NOTHING_TO_CHANGE.into());
+    }
+    let missing = || ApiError::NotFound("no such Account".to_owned());
+    if let Some(name) = name
+        && !accounts::rename(&state.pool, id, name).await?
+    {
+        return Err(missing().into());
+    }
+    if let Some(hidden) = body.hidden
+        && !linking::set_hidden(&state.pool, id, hidden, request_id.as_deref()).await?
+    {
+        return Err(missing().into());
     }
     let row = account_stats::get(&state.pool, id)
         .await?
-        .ok_or_else(|| ApiError::NotFound("no such Account".to_owned()))?;
-    tracing::info!("account renamed");
+        .ok_or_else(missing)?;
+    tracing::info!(renamed = name.is_some(), "account updated");
     Ok(Json(row.into()))
 }

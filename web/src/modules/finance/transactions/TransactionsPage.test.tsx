@@ -49,6 +49,19 @@ describe("TransactionsPage", () => {
     expect(await screen.findByText("HDFC Savings", { selector: "span" })).toBeInTheDocument();
   });
 
+  it("marks a Transfer row with its other Account and offers linking on a row that is not one", async () => {
+    stubApi({
+      "GET /api/finance/accounts": () => jsonResponse(200, [account(), account({ id: 2, name: "SBI Card", kind: "credit_card" })]),
+      "GET /api/finance/transactions": page([
+        item({ transfer: { id: 4, rung: "bill_payment", other_accounts: [2], partial: false, remaining_paise: 0, extra_paise: 0 } }),
+        item({ id: 2, description: "Cafe" }),
+      ]),
+    });
+    renderAt("/finance/transactions");
+    expect(await screen.findByRole("button", { name: "Transfer → SBI Card, details" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Actions for this Transaction" })).toHaveLength(1);
+  });
+
   it("flags rows no longer found", async () => {
     stubApi({
       "GET /api/finance/accounts": () => jsonResponse(200, [account()]),

@@ -57,7 +57,7 @@ Two environments with separate Postgres instances (ADR 0007). **Live** holds the
 ## Adding a Module
 
 **Backend:**
-1. Create the crate `crates/modules/<id>`. It may depend only on `vitarchy-core`, and it exports `fn module() -> Module` built with `Module::new`.
+1. Create the crate `crates/modules/<id>`. It may depend only on `vitarchy-core`, and it exports `fn module() -> Module` built with `Module::new` (and `.with_startup(...)` if it has a job to run once at server start, after its migrations).
 2. The Module owns one Postgres schema named after its id. Its migrations create and use only that schema.
 3. Add the crate to the workspace `members` in the root `Cargo.toml`, to the dependencies of `crates/server/Cargo.toml`, and as one line in `MODULES` in `crates/server/src/registry.rs`. (Cargo cannot use a `crates/modules/*` glob until that folder exists.)
 
@@ -141,6 +141,16 @@ Time keeps two things apart: **Time Entries** (what you record in Toggl, brought
   - "The Snapshot could not be read": the file is damaged or not that Source's database. `make helper-run` takes a fresh one.
   - Snapshot looks old: it is at most 8 hours old by design. `make helper-run` takes one now.
   - Server logs: `activity import finished` carries `source`, `read`, `inserted`, `updated`, `unchanged`, `skipped`, `duration_ms` and the request id. Titles and app names are never logged.
+
+## Finance Transfers
+
+Money moving between your own Accounts is a **Transfer** (ADR 0017). The rules are pure and live in `crates/modules/finance/src/transfers/` (one file per rung, each with `*_tests.rs`); the database side is `src/linking/`.
+
+- **Adding to the ladder:** a rung is a `find(&Context, &Used) -> Found` function listed in `RUNGS` in `transfers/ladder.rs`, strongest first. The card-bill payee and receipt markers are data in `transfers/markers.toml` (matched as whole words, ignoring case and punctuation); edit the file, no code changes. `BILL_TOLERANCE_PAISE` (₹50) is the only tolerance, and only the bill-payment rung uses it.
+- **When detection runs** (`linking::after_*`, always after the change commits, over the changed dates ±3 days; a failure is logged as `transfer detection failed` and never undoes the change): after a Statement is confirmed, after a Read again of one Statement, after Read all again (everywhere), after `merge_duplicate_accounts`, and when an Account is shown again. Every run takes the confirm lock and logs `transfers detected` with `trigger`, a count per rung, `ambiguous` and `duration_ms`, never an amount or description. The request id comes from the request's span.
+- **Backfill:** the Finance Module's startup job (`Module::with_startup`, run by `migrate::start` in the server after migrations, before it listens) runs detection over everything once, in one transaction with the `transfer_backfill_done` row of `finance.markers`. A confirm holding the lock, or a failure, skips it and it is retried at the next start. To run it again, delete that marker row. Unlinks recorded in `finance.transfer_rejections` are respected.
+- **Unlinking** (`DELETE /api/finance/transfers/{id}`) records the pairs so detection never links them again; linking by hand (`POST /api/finance/transfers`) ignores them. Hiding an Account (`PATCH /api/finance/accounts/{id}` with `hidden`) takes it out of every Transfer at once and excludes its Transactions from `GET /api/finance/transactions`; showing it runs detection again.
+- **Private data:** the end-to-end run (`make finance-e2e`) asserts Transfers by structure only (each of the reference, account number and bill payment rungs found some, no rule is broken, an unlink survives a Read again). `partial_transfers` in the private `e2e_expected.json` raises the number of partial Transfers it requires (default 0).
 
 ## Activity snapshot helper
 

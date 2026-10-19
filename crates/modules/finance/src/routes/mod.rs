@@ -12,6 +12,9 @@ mod statements;
 mod status;
 mod transaction_items;
 mod transactions;
+mod transfer_candidates;
+mod transfer_info;
+mod transfers;
 mod uploads;
 
 use std::sync::Arc;
@@ -55,6 +58,9 @@ pub fn router_with(reader: Arc<dyn StatementReader>, files: FileStore) -> OpenAp
         .routes(routes!(accounts::patch_account))
         .routes(routes!(transactions::list_transactions))
         .routes(routes!(printings::list_printings))
+        .routes(routes!(transfer_candidates::list_transfer_candidates))
+        .routes(routes!(transfers::post_transfer))
+        .routes(routes!(transfers::delete_transfer))
         .routes(routes!(passwords::list_passwords, passwords::post_password))
         .routes(routes!(passwords::delete_password))
         .routes(routes!(status::get_finance_status))

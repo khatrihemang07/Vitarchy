@@ -16,6 +16,8 @@ pub struct AccountStats {
     pub mask: Option<String>,
     /// The name the person sees.
     pub name: String,
+    /// Whether the person hid it.
+    pub hidden: bool,
     /// Balance after the latest-dated Transaction that printed one.
     pub latest_balance_paise: Option<i64>,
     /// Transactions stored.
@@ -29,7 +31,7 @@ pub struct AccountStats {
 }
 
 const SELECT: &str = "
-SELECT a.id, a.issuer, a.kind, a.mask, a.name,
+SELECT a.id, a.issuer, a.kind, a.mask, a.name, a.hidden,
   (SELECT t.balance_paise FROM finance.transactions t
     WHERE t.account_id = a.id AND t.balance_paise IS NOT NULL AND t.no_longer_found_at IS NULL
     ORDER BY t.date DESC, t.id DESC LIMIT 1) AS latest_balance_paise,

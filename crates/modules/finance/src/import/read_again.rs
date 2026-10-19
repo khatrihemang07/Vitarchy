@@ -13,6 +13,7 @@ use super::{
 use crate::{
     error::FinanceError,
     files::FileStore,
+    linking::{self, Cause, Trigger},
     problem::Refusal,
     reader::StatementReader,
     repo::{
@@ -38,6 +39,9 @@ pub async fn apply(
         .await?
         .ok_or(Refusal::STATEMENT_NOT_FOUND)?;
     let counts = apply_row(pool, reader, files, &row, request_id, Apply::Always).await?;
+    if counts.is_some() {
+        linking::after_statement(pool, Cause::in_request(Trigger::ReadAgain, request_id), id).await;
+    }
     Ok(counts.unwrap_or_default())
 }
 

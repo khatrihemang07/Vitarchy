@@ -13,7 +13,10 @@ use super::transaction_items::{TransactionItem, TransactionPage};
 use crate::{
     error::FinanceError,
     problem::{ProblemBody, Refusal},
-    repo::transaction_page::{self, Filter},
+    repo::{
+        transaction_page::{self, Filter},
+        transfers_load,
+    },
 };
 
 /// Rows per page when `limit` is absent.
@@ -38,6 +41,7 @@ pub struct TransactionParams {
 }
 
 /// Transactions, newest first. Rows a Read again no longer finds are included and flagged.
+/// Transactions of hidden Accounts are left out.
 #[utoipa::path(
     get,
     path = "/transactions",
@@ -65,10 +69,12 @@ pub async fn list_transactions(
         from: p.from,
         to: p.to,
     };
-    let items: Vec<TransactionItem> = transaction_page::page(&state.pool, filter, limit, offset)
-        .await?
+    let rows = transaction_page::page(&state.pool, filter, limit, offset).await?;
+    let transfer_ids: Vec<i64> = rows.iter().filter_map(|r| r.transfer_id).collect();
+    let transfers = transfers_load::parts(&state.pool, &transfer_ids).await?;
+    let items: Vec<TransactionItem> = rows
         .into_iter()
-        .map(Into::into)
+        .map(|row| TransactionItem::of(row, &transfers))
         .collect();
     let total = transaction_page::total(&state.pool, filter).await?;
     tracing::info!(rows = items.len(), total, "transactions listed");

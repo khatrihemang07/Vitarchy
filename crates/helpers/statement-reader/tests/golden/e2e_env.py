@@ -28,7 +28,8 @@ EXPECTED_FILE = PRIVATE / "e2e_expected.json"
 def load_expected() -> dict:
     """What the private real Statements must produce. It lives beside them, never in git:
     {"accounts": [[issuer contains, kind, trailing digits shown]...], "sbi_loans": n,
-     "unique_transactions": [[issuer, kind, digits, count]...], "failed_check": {"issuer": ...}}."""
+     "unique_transactions": [[issuer, kind, digits, count]...], "failed_check": {"issuer": ...},
+     "partial_transfers": n (optional, default 0)}."""
     if not EXPECTED_FILE.exists():
         sys.exit(f"missing {EXPECTED_FILE.relative_to(ROOT)}: the real-Statement expectations are private")
     return json.loads(EXPECTED_FILE.read_text())

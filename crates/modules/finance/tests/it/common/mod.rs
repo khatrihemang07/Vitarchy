@@ -8,6 +8,7 @@ pub mod instruments;
 pub mod old_shape;
 pub mod pairs;
 pub mod results;
+pub mod transfers;
 
 use chrono::NaiveDate;
 use vitarchy_core::test_db::TestDb;

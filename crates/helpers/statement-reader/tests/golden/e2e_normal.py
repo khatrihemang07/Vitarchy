@@ -8,6 +8,7 @@ import json
 from e2e_assertions import assert_accounts, assert_payment_apps, assert_printings
 from e2e_env import FILE_COUNT, PRIVATE, Api, check, counts
 from e2e_payment_apps import section_choices
+from e2e_transfers import assert_transfers
 
 
 def confirm_all(api: Api, previews: list[dict], expected: dict, phonepe: str) -> dict[str, int]:
@@ -60,6 +61,7 @@ def run(api: Api, stage_url: str, expected: dict, phonepe: str) -> dict:
     assert_printings(stage_url, expected, gains)
     final = counts(stage_url)
     print(f"  final counts: {final}")
+    transfers = assert_transfers(api, stage_url, expected)
     _, again = api.upload(files)
     dups = sum(1 for p in again if p.get("duplicate_file"))
     check(dups == FILE_COUNT, f"re-upload: {dups}/{len(again)} duplicate_file")
@@ -75,4 +77,4 @@ def run(api: Api, stage_url: str, expected: dict, phonepe: str) -> dict:
     check(errors == 0, f"every Read again returned 200 ({len(previews) - errors}/{len(previews)})")
     check(adds == 0 and vanished == 0 and new_printings == 0 and enriched == 0,
           f"Read again: {adds} to add, {new_printings} Printings to add ({enriched} gaining detail), {vanished} no longer found")
-    return {"counts": final, "by_account": by_account}
+    return {"counts": final, "by_account": by_account, "transfers": transfers}

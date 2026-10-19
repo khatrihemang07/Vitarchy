@@ -1,4 +1,4 @@
-export { accountsOptions, useAccounts, useRenameAccount } from "./accounts";
+export { accountsOptions, useAccounts, useRenameAccount, useSetAccountHidden } from "./accounts";
 export { useConfirmStatement } from "./confirm";
 export { failureFromCode, toFinanceFailure, type FinanceFailure } from "./failure";
 export { passwordsOptions, useAddPassword, useDeletePassword, usePasswords } from "./passwords";
@@ -15,6 +15,7 @@ export {
 } from "./statements";
 export { usePrintings } from "./printings";
 export { transactionsOptions, useTransactions } from "./transactions";
+export { useLinkTransfer, useTransferCandidates, useUnlinkTransfer } from "./transfers";
 export { useUploadStatements } from "./upload";
 export type {
   AccountRef,
@@ -24,6 +25,7 @@ export type {
   ConfirmCounts,
   FinanceRun,
   FinanceStatus,
+  LinkedTransfer,
   PasswordItem,
   PrintingItem,
   ReadAgainCounts,
@@ -40,4 +42,6 @@ export type {
   TransactionPage,
   TransactionQuery,
   TransactionView,
+  TransferCandidate,
+  TransferInfo,
 } from "./types";

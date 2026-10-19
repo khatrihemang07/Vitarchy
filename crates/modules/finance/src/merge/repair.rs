@@ -7,7 +7,8 @@ use sqlx::PgPool;
 use super::{apply::merge_into, groups::duplicate_groups};
 use crate::{
     error::FinanceError,
-    repo::{accounts, confirm_lock},
+    linking::{self, Cause, Trigger},
+    repo::{accounts, confirm_lock, transfers},
 };
 
 /// What a repair did, as counts only.
@@ -57,7 +58,12 @@ pub async fn merge_duplicate_accounts(pool: &PgPool) -> Result<MergeReport, Fina
             report.printings += merged.printings;
         }
     }
+    transfers::drop_same_account_links(&mut *tx).await?;
     tx.commit().await?;
+    let kept: Vec<i64> = groups.iter().map(|g| g.keep).collect();
+    if !kept.is_empty() {
+        linking::after_accounts(pool, Cause::outside_request(Trigger::Merge), &kept).await;
+    }
     tracing::info!(
         groups = report.groups,
         accounts_merged = report.accounts_merged,

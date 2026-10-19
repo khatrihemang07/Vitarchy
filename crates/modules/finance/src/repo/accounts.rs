@@ -23,11 +23,13 @@ pub struct AccountRow {
     pub last4: Option<String>,
     /// The name the person sees.
     pub name: String,
+    /// Whether the person hid it (ADR 0017).
+    pub hidden: bool,
     /// When it was created.
     pub created_at: DateTime<Utc>,
 }
 
-const COLUMNS: &str = "id, issuer, kind, mask, last4, name, created_at";
+const COLUMNS: &str = "id, issuer, kind, mask, last4, name, hidden, created_at";
 
 /// Creates an Account; `last4` is derived from `mask`.
 ///
@@ -86,6 +88,23 @@ pub async fn rename(db: impl PgExecutor<'_>, id: i64, name: &str) -> Result<bool
     let done = sqlx::query("UPDATE finance.accounts SET name = $2 WHERE id = $1")
         .bind(id)
         .bind(name)
+        .execute(db)
+        .await?;
+    Ok(done.rows_affected() == 1)
+}
+
+/// Hides or shows an Account; `false` when it does not exist.
+///
+/// # Errors
+/// The database failed.
+pub async fn set_hidden(
+    db: impl PgExecutor<'_>,
+    id: i64,
+    hidden: bool,
+) -> Result<bool, sqlx::Error> {
+    let done = sqlx::query("UPDATE finance.accounts SET hidden = $2 WHERE id = $1")
+        .bind(id)
+        .bind(hidden)
         .execute(db)
         .await?;
     Ok(done.rows_affected() == 1)

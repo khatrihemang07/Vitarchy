@@ -102,6 +102,7 @@
   --track-date: 10rem;
   --track-account: 12rem;
   --track-money: 7.5rem;
+  --track-actions: 2rem;
   /* Readable line length, for long prose only: everything else fills the content area. */
   --measure-prose: 65ch;
   --focus-ring-width: 3px;

@@ -16,7 +16,7 @@ const printing = (over: Record<string, unknown> = {}) => ({
 });
 
 function renderRow(row: TransactionItem) {
-  return renderWithClient(<ul><TransactionRow item={row} accountName="HDFC Savings" /></ul>);
+  return renderWithClient(<ul><TransactionRow item={row} names={new Map()} accountName="HDFC Savings" /></ul>);
 }
 const PATH = "GET /api/finance/transactions/7/printings";
 

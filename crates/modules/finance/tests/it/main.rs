@@ -36,3 +36,8 @@ mod schema;
 mod statements_routes;
 mod status_route;
 mod transactions_routes;
+mod transfers_again;
+mod transfers_detect;
+mod transfers_hidden;
+mod transfers_routes;
+mod transfers_storage;

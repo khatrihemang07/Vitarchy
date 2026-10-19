@@ -6,7 +6,7 @@ mod mask;
 
 pub use instrument::{find_instrument, instrument_key};
 
-pub use mask::{last4, remembered_digits, same_number};
+pub use mask::{last4, remembered_digits, same_number, visible_digits};
 
 use std::{collections::HashMap, hash::BuildHasher};
 

@@ -120,6 +120,7 @@ export function account(over: Partial<AccountSummary> = {}): AccountSummary {
     kind: "savings",
     mask: "XXXX1234",
     name: "HDFC Savings",
+    hidden: false,
     latest_balance_paise: 9_876_500,
     transaction_count: 12,
     first_date: "2026-01-01",

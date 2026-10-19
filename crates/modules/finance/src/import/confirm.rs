@@ -16,6 +16,7 @@ use super::{
 use crate::{
     dedupe::Origin,
     error::FinanceError,
+    linking::{self, Cause, Trigger},
     problem::Refusal,
     reader::contract::{Kind, Statement},
     repo::{confirm_lock, runs, statement_accounts, statements},
@@ -42,6 +43,7 @@ pub async fn confirm(
     pool: &PgPool,
     id: i64,
     choices: &[Choice],
+    request_id: Option<&str>,
 ) -> Result<ConfirmCounts, FinanceError> {
     let started_at = Utc::now();
     let timer = Instant::now();
@@ -49,14 +51,18 @@ pub async fn confirm(
     runs::record_outcome(pool, "confirm", Some(id), started_at, outcome.as_ref()).await;
     let duration_ms = u64::try_from(timer.elapsed().as_millis()).unwrap_or(u64::MAX);
     match &outcome {
-        Ok(counts) => tracing::info!(
-            statement_id = id,
-            added = counts.added,
-            already_stored = counts.already_stored,
-            enriched = counts.enriched,
-            duration_ms,
-            "statement confirmed"
-        ),
+        Ok(counts) => {
+            tracing::info!(
+                statement_id = id,
+                added = counts.added,
+                already_stored = counts.already_stored,
+                enriched = counts.enriched,
+                duration_ms,
+                "statement confirmed"
+            );
+            linking::after_statement(pool, Cause::in_request(Trigger::Confirm, request_id), id)
+                .await;
+        }
         Err(error) => tracing::warn!(
             statement_id = id,
             error_code = error.code(),

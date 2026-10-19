@@ -53,11 +53,50 @@ pub async fn fold_transaction(
         .bind(from_id)
         .execute(&mut *db)
         .await?;
+    move_transfer_links(&mut *db, from_id, into_id).await?;
     sqlx::query("DELETE FROM finance.transactions WHERE id = $1")
         .bind(from_id)
         .execute(&mut *db)
         .await?;
     Ok(moved)
+}
+
+/// Points the Transfer links (and remembered unlinks) of a Transaction that is being folded
+/// into another at the survivor, so the Transfer outlives the fold. A link the survivor
+/// already has wins.
+async fn move_transfer_links(
+    db: &mut PgConnection,
+    from_id: i64,
+    into_id: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE finance.transfers SET debit_id = $2 WHERE debit_id = $1
+           AND NOT EXISTS (SELECT 1 FROM finance.transfers WHERE debit_id = $2)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *db)
+    .await?;
+    sqlx::query(
+        "UPDATE finance.transfer_credits SET credit_id = $2 WHERE credit_id = $1
+           AND NOT EXISTS (SELECT 1 FROM finance.transfer_credits WHERE credit_id = $2)",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(&mut *db)
+    .await?;
+    sqlx::query(
+        "INSERT INTO finance.transfer_rejections (debit_id, credit_id)
+         SELECT CASE WHEN debit_id = $1 THEN $2 ELSE debit_id END,
+                CASE WHEN credit_id = $1 THEN $2 ELSE credit_id END
+         FROM finance.transfer_rejections WHERE debit_id = $1 OR credit_id = $1
+         ON CONFLICT DO NOTHING",
+    )
+    .bind(from_id)
+    .bind(into_id)
+    .execute(db)
+    .await?;
+    Ok(())
 }
 
 /// Moves an Account's Statement slots and remembered identifiers and instruments to another

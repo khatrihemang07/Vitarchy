@@ -27,3 +27,6 @@ export const printingsKey = (transactionId: number) => ["finance", "transactions
  * (which invalidates that prefix) refreshes each open preview and its Account matches.
  */
 export const statementPreviewKey = (id: number) => [...statementsKeyPrefix, "preview", id] as const;
+
+/** Query key of the Transactions a Transaction could be linked to; under the Transactions prefix so a link or an import refreshes it. */
+export const transferCandidatesKey = (transactionId: number) => ["finance", "transactions", "transfer-candidates", transactionId] as const;

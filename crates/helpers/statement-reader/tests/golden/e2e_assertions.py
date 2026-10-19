@@ -109,3 +109,5 @@ def compare_orders(orders: dict[str, dict]) -> None:
         for key in ("transactions", "printings"):
             check(last["counts"][key] == first["counts"][key],
                   f"the same {key} count in both orders ({last['counts'][key]} vs {first['counts'][key]})")
+        # Informational: which Transfers link can depend on what was imported when.
+        print(f"  INFO  Transfers by rung, PhonePe last {last['transfers']}, first {first['transfers']}")

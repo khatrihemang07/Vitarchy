@@ -34,7 +34,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Renames an Account. */
+        /** Renames an Account, hides it or shows it again. */
         patch: operations["patch_account"];
         trace?: never;
     };
@@ -238,7 +238,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Transactions, newest first. Rows a Read again no longer finds are included and flagged. */
+        /**
+         * Transactions, newest first. Rows a Read again no longer finds are included and flagged.
+         *     Transactions of hidden Accounts are left out.
+         */
         get: operations["list_transactions"];
         put?: never;
         post?: never;
@@ -260,6 +263,67 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/transactions/{id}/transfer-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Transactions the given one could be linked to as a Transfer: the other direction, on
+         *     another Account that is not hidden, within 7 days, in no Transfer yet, and with an amount
+         *     that fits (a credit may be less than the debit, or up to 50 rupees more). Nearest first.
+         */
+        get: operations["list_transfer_candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Links a Money-out Transaction to Money-in Transactions on other Accounts as a Transfer.
+         *     Unlike detection it ignores unlinks the person made before.
+         */
+        post: operations["post_transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/finance/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unlinks a Transfer. Detection never links the same pairs again; linking them by hand
+         *     still works.
+         */
+        delete: operations["delete_transfer"];
         options?: never;
         head?: never;
         patch?: never;
@@ -500,6 +564,11 @@ export interface components {
              * @description Date of the earliest Transaction.
              */
             first_date?: string | null;
+            /**
+             * @description True when the person hid it: its Transactions leave the Transactions page and it takes
+             *     no part in Transfers.
+             */
+            hidden: boolean;
             /**
              * Format: int64
              * @description Account id.
@@ -897,6 +966,31 @@ export interface components {
              */
             stop_at: string;
         };
+        /** @description Body of `POST /api/finance/transfers`. */
+        LinkTransfer: {
+            /**
+             * @description The Money-in Transactions on other Accounts it paid; they may add up to less than the
+             *     debit (a partial Transfer) or up to 50 rupees more.
+             */
+            credit_ids: number[];
+            /**
+             * Format: int64
+             * @description The Money-out Transaction.
+             */
+            debit_id: number;
+        };
+        /** @description A Transfer just linked. */
+        LinkedTransfer: {
+            /** @description The Money-in Transactions linked to it. */
+            credit_ids: number[];
+            /**
+             * Format: int64
+             * @description The Money-out Transaction.
+             */
+            debit_id: number;
+            /** @description The Transfer as the debit's row shows it. */
+            transfer: components["schemas"]["TransferInfo"];
+        };
         /**
          * @description Motion setting: follow the system or force reduced or full.
          * @enum {string}
@@ -1238,11 +1332,6 @@ export interface components {
              */
             segment_count: number;
         };
-        /** @description Body of `PATCH /api/finance/accounts/{id}`. */
-        RenameAccount: {
-            /** @description The new name; trimmed, not empty. */
-            name: string;
-        };
         /**
          * @description A summary of the Time Entries in one Period, compared with the Previous Period
          *     and with the Usual.
@@ -1315,6 +1404,11 @@ export interface components {
              */
             started_at: string;
         };
+        /**
+         * @description The evidence a Transfer was linked on, strongest first; `Manual` is the person's own link.
+         * @enum {string}
+         */
+        Rung: "reference" | "account_number" | "bill_payment" | "unique_amount" | "manual";
         /** @description The changes to one Account section. */
         SectionChanges: {
             /** @description Rows that would be added. */
@@ -1862,6 +1956,7 @@ export interface components {
             reference?: string | null;
             /** @description The local time, when any Statement printed one (payment apps do). */
             time?: string | null;
+            transfer?: components["schemas"]["TransferInfo"] | null;
         };
         /** @description A page of Transactions. */
         TransactionPage: {
@@ -1906,6 +2001,67 @@ export interface components {
             reference?: string | null;
             /** @description The printed local time, when the source prints one. */
             time?: string | null;
+        };
+        /** @description A Transaction that could be the other side of a Transfer. */
+        TransferCandidate: {
+            /**
+             * Format: int64
+             * @description Its Account.
+             */
+            account_id: number;
+            /**
+             * Format: int64
+             * @description Amount in paise, above 0.
+             */
+            amount_paise: number;
+            /**
+             * Format: date
+             * @description The printed date.
+             */
+            date: string;
+            /** @description The shown description. */
+            description: string;
+            /** @description Which way the money moved (the opposite of the Transaction asked about). */
+            direction: components["schemas"]["Direction"];
+            /**
+             * Format: int64
+             * @description Transaction id.
+             */
+            id: number;
+        };
+        /** @description The Transfer a Transaction is part of, as its row shows it. */
+        TransferInfo: {
+            /**
+             * Format: int64
+             * @description What the credits add up to beyond the debit, in paise; it counts as Money in.
+             */
+            extra_paise: number;
+            /**
+             * Format: int64
+             * @description Transfer id (`DELETE /transfers/{id}` unlinks it).
+             */
+            id: number;
+            /** @description The Accounts on the other side of this row. */
+            other_accounts: number[];
+            /** @description The credits so far add up to less than the debit. */
+            partial: boolean;
+            /**
+             * Format: int64
+             * @description What is still on its way, in paise; it counts as Money out until it arrives.
+             */
+            remaining_paise: number;
+            /** @description What it was linked on; `manual` when the person linked it. */
+            rung: components["schemas"]["Rung"];
+        };
+        /** @description Body of `PATCH /api/finance/accounts/{id}`: whichever of the fields are given change. */
+        UpdateAccount: {
+            /**
+             * @description Hide the Account (its Transactions leave the Transactions page and it takes no part in
+             *     Transfers) or show it again.
+             */
+            hidden?: boolean | null;
+            /** @description The new name; trimmed, not empty. */
+            name?: string | null;
         };
         /**
          * @description The multipart body: one or more `file` parts. Documentation only; the handler reads the
@@ -2009,11 +2165,11 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RenameAccount"];
+                "application/json": components["schemas"]["UpdateAccount"];
             };
         };
         responses: {
-            /** @description Renamed */
+            /** @description Updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2022,7 +2178,7 @@ export interface operations {
                     "application/json": components["schemas"]["AccountSummary"];
                 };
             };
-            /** @description Empty name (`empty_name`) */
+            /** @description Empty name (`empty_name`) or nothing to change (`nothing_to_change`) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -2551,6 +2707,119 @@ export interface operations {
                 };
             };
             /** @description No such Transaction (`transaction_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    list_transfer_candidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Transaction id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The candidates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferCandidate"][];
+                };
+            };
+            /** @description No such Transaction (`transaction_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    post_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkTransfer"];
+            };
+        };
+        responses: {
+            /** @description Linked */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkedTransfer"];
+                };
+            };
+            /** @description The Transactions do not make a Transfer (`transfer_no_credits`, `transfer_wrong_direction`, `transfer_same_account`, `transfer_duplicate_credit`, `transfer_too_much`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description No such Transaction (`transaction_not_found`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+            /** @description A hidden Account or a Transaction already in a Transfer (`transfer_hidden_account`, `transfer_already_linked`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBody"];
+                };
+            };
+        };
+    };
+    delete_transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Transfer id */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unlinked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such Transfer (`transfer_not_found`) */
             404: {
                 headers: {
                     [name: string]: unknown;

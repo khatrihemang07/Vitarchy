@@ -80,6 +80,17 @@ impl Env {
         self.call("POST", uri, Some("{}"), Some(request_id)).await
     }
 
+    /// A call with a body carrying an `x-request-id`, as the server's request-id layer would add.
+    pub async fn call_with_request_id(
+        &self,
+        method: &str,
+        uri: &str,
+        body: &str,
+        request_id: &str,
+    ) -> Reply {
+        self.call(method, uri, Some(body), Some(request_id)).await
+    }
+
     pub async fn json_call(&self, method: &str, uri: &str, body: Option<&str>) -> Reply {
         self.call(method, uri, body, None).await
     }

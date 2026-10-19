@@ -6,7 +6,7 @@ use axum::{
 };
 use serde::Deserialize;
 use utoipa::ToSchema;
-use vitarchy_core::{ApiJson, AppState};
+use vitarchy_core::{ApiJson, AppState, RequestId};
 
 use crate::{
     error::FinanceError,
@@ -45,6 +45,7 @@ pub struct ConfirmRequest {
 pub async fn post_confirm(
     State(state): State<AppState>,
     Path(id): Path<i64>,
+    RequestId(request_id): RequestId,
     ApiJson(body): ApiJson<ConfirmRequest>,
 ) -> Result<Json<ConfirmCounts>, FinanceError> {
     let choices = body
@@ -52,5 +53,7 @@ pub async fn post_confirm(
         .iter()
         .map(Choice::try_from)
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(Json(confirm(&state.pool, id, &choices).await?))
+    Ok(Json(
+        confirm(&state.pool, id, &choices, request_id.as_deref()).await?,
+    ))
 }

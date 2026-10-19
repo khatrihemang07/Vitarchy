@@ -147,3 +147,23 @@ _Avoid_: Validation, reconciliation
 **Read again**:
 Running the current reading engine over a stored Statement, to find Transactions an earlier engine missed. It adds what is new and marks the Printings it no longer finds, but never deletes. A Transaction is no longer found only when all its Printings are.
 _Avoid_: Re-import, reparse, refresh
+
+**Money in** / **Money out**:
+What the screens call a credit and a debit of an Account: money that arrived on it and money that left it. A Transfer is neither, so it is left out of both.
+_Avoid_: Income and spending (a Transfer is neither), credit and debit on screen
+
+**Transfer**:
+Money moving between two of the person's own Accounts: one Money-out Transaction and one or more Money-in Transactions on other Accounts. It is never income or spending. Vitarchy links Transfers on its own when the evidence is clear and leaves anything that fits several partners alone; the person can link one by hand and unlink any, and an unlinked pair is never linked again by Vitarchy. A card-bill payment may be split across cards, so one Money out can have several Money ins.
+_Avoid_: Internal transfer, self transfer, move
+
+**Partial Transfer**:
+A Transfer whose Money-in Transactions found so far add up to less than its Money out, because the rest is still on its way (a card's Statement is not imported yet). The remainder counts as Money out until it arrives, and the Transfer completes by itself when the rest is linked.
+_Avoid_: Incomplete transfer, pending transfer
+
+**Extra**:
+What a card-bill payment's Money ins add up to beyond its Money out, up to ₹50, from cashback and the like. It counts as Money in. No other Transfer has any tolerance: its amounts must match exactly.
+_Avoid_: Surplus, tolerance (in the screens)
+
+**Hidden Account**:
+An Account the person hid, such as a loan that receives money from outside Vitarchy. Its Transactions leave the Transactions page, its filters and its totals, and it never takes part in a Transfer. Its Statements still import, and showing it again brings it back.
+_Avoid_: Archived account, deleted account

@@ -46,7 +46,13 @@ pub struct PageRow {
     pub no_longer_found: bool,
     /// How many Statements printed it (Printings, gone ones included).
     pub printing_count: i64,
+    /// The Transfer it is part of, when it is.
+    pub transfer_id: Option<i64>,
 }
+
+/// Rows of hidden Accounts never show.
+const FROM: &str = "FROM finance.transactions t
+JOIN finance.accounts a ON a.id = t.account_id AND NOT a.hidden";
 
 const WHERE: &str = "WHERE ($1::bigint IS NULL OR t.account_id = $1)
   AND ($2::date IS NULL OR t.date >= $2) AND ($3::date IS NULL OR t.date <= $3)";
@@ -65,8 +71,10 @@ pub async fn page(
         "SELECT t.id, t.account_id, t.date, t.time, t.description, t.amount_paise, t.direction,
                 t.balance_paise, t.foreign_amount, t.foreign_currency, t.reference,
                 t.no_longer_found_at IS NOT NULL AS no_longer_found,
-                (SELECT count(*) FROM finance.printings g WHERE g.transaction_id = t.id) AS printing_count
-         FROM finance.transactions t
+                (SELECT count(*) FROM finance.printings g WHERE g.transaction_id = t.id) AS printing_count,
+                COALESCE((SELECT x.id FROM finance.transfers x WHERE x.debit_id = t.id),
+                         (SELECT c.transfer_id FROM finance.transfer_credits c WHERE c.credit_id = t.id)) AS transfer_id
+         {FROM}
          {WHERE} ORDER BY t.date DESC, t.id DESC LIMIT $4 OFFSET $5"
     )))
     .bind(filter.account_id)
@@ -84,7 +92,7 @@ pub async fn page(
 /// The database failed.
 pub async fn total(db: impl PgExecutor<'_>, filter: Filter) -> Result<i64, sqlx::Error> {
     sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT count(*) FROM finance.transactions t {WHERE}"
+        "SELECT count(*) {FROM} {WHERE}"
     )))
     .bind(filter.account_id)
     .bind(filter.from)

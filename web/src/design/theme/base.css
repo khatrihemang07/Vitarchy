@@ -106,7 +106,7 @@
 
 /* Columns of a ledger table (a Transactions page, a Statement's rows), from the --track-* tokens so both share them. */
 @utility grid-cols-ledger {
-  grid-template-columns: var(--track-date) minmax(0, var(--track-account)) minmax(0, 1fr) var(--track-money) var(--track-money);
+  grid-template-columns: var(--track-date) minmax(0, var(--track-account)) minmax(0, 1fr) var(--track-money) var(--track-money) var(--track-actions);
 }
 
 @utility grid-cols-ledger-statement {

@@ -7,6 +7,7 @@ mod dedupe;
 mod error;
 pub mod files;
 mod import;
+mod linking;
 mod merge;
 mod printings;
 mod problem;
@@ -15,6 +16,7 @@ pub mod repo;
 mod routes;
 #[cfg(test)]
 mod test_support;
+mod transfers;
 mod view;
 
 use vitarchy_core::Module;
@@ -28,6 +30,7 @@ pub use dedupe::{
     read_again_diff,
 };
 pub use error::FinanceError;
+pub use linking::{BACKFILL_MARKER, backfill_once};
 pub use merge::{MergeReport, merge_duplicate_accounts};
 pub use routes::router_with;
 
@@ -35,4 +38,5 @@ pub use routes::router_with;
 #[must_use]
 pub fn module() -> Module {
     Module::new("finance", routes::router, sqlx::migrate!("./migrations"))
+        .with_startup(|pool| Box::pin(async move { linking::backfill_on_start(&pool).await }))
 }

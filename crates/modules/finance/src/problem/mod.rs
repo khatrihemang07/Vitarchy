@@ -119,4 +119,61 @@ impl Refusal {
         "invalid_query",
         "The query is invalid: check the status, dates, limit and offset.",
     );
+    /// A PATCH named nothing to change.
+    pub const NOTHING_TO_CHANGE: Self = refusal(
+        400,
+        "nothing_to_change",
+        "Give a name or whether the Account is hidden.",
+    );
+    /// No such Transfer.
+    pub const TRANSFER_NOT_FOUND: Self =
+        refusal(404, "transfer_not_found", "There is no such Transfer.");
+    /// A Transfer was given no credit.
+    pub const TRANSFER_NO_CREDITS: Self = refusal(
+        400,
+        "transfer_no_credits",
+        "Choose at least one Money-in Transaction to link.",
+    );
+    /// The debit is not Money out, or a credit is not Money in.
+    pub const TRANSFER_WRONG_DIRECTION: Self = refusal(
+        400,
+        "transfer_wrong_direction",
+        "A Transfer is one Money-out Transaction and Money-in Transactions.",
+    );
+    /// A credit is on the debit's own Account.
+    pub const TRANSFER_SAME_ACCOUNT: Self = refusal(
+        400,
+        "transfer_same_account",
+        "The money must move between two different Accounts.",
+    );
+    /// The same credit was given twice.
+    pub const TRANSFER_DUPLICATE_CREDIT: Self = refusal(
+        400,
+        "transfer_duplicate_credit",
+        "Each Money-in Transaction can be chosen once.",
+    );
+    /// The credits add up to more than the debit allows.
+    pub const TRANSFER_TOO_MUCH: Self = refusal(
+        400,
+        "transfer_too_much",
+        "These Money-in Transactions add up to more than the Money out, beyond what is allowed: only credits on credit cards may exceed it, and by up to \u{20b9}50.",
+    );
+    /// A Transaction is on a hidden Account.
+    pub const TRANSFER_HIDDEN_ACCOUNT: Self = refusal(
+        409,
+        "transfer_hidden_account",
+        "A hidden Account takes no part in Transfers. Show it first.",
+    );
+    /// A Transaction is already in a Transfer.
+    pub const TRANSFER_ALREADY_LINKED: Self = refusal(
+        409,
+        "transfer_already_linked",
+        "One of these Transactions is already in a Transfer. Unlink that first.",
+    );
+    /// A Transaction is one a Read again no longer finds.
+    pub const TRANSFER_NO_LONGER_FOUND: Self = refusal(
+        409,
+        "transfer_no_longer_found",
+        "A Transaction that a Read again no longer finds cannot be part of a Transfer.",
+    );
 }

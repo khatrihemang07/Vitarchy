@@ -11,7 +11,7 @@ export function TransactionTable({ items, accounts }: { items: readonly Transact
       <ColumnHeaderBar grid={TRANSACTION_GRID} columns={TRANSACTION_HEADINGS} />
       <ul aria-label="Transactions" className="rounded-b-xl">
         {items.map((item) => (
-          <TransactionRow key={item.id} item={item} accountName={names.get(item.account_id) ?? "Account"} />
+          <TransactionRow key={item.id} item={item} accountName={names.get(item.account_id) ?? "Account"} names={names} />
         ))}
       </ul>
     </SectionCard>

@@ -16,6 +16,6 @@ pub mod test_db;
 pub use api_json::ApiJson;
 pub use error::{ApiError, Problem};
 pub use log_level::level_for_status;
-pub use module::Module;
+pub use module::{Module, StartupTask};
 pub use request_id::{REQUEST_ID_HEADER, RequestId};
 pub use state::AppState;

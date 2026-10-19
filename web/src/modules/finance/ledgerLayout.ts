@@ -28,6 +28,7 @@ export const LEDGER_CELLS = {
   amount: "justify-self-end text-right whitespace-nowrap max-md:col-start-2 max-md:row-span-2 max-md:row-start-1",
   balance: "hidden text-right whitespace-nowrap text-muted-foreground tabular-nums md:block",
   balanceUnderAmount: "block text-xs text-muted-foreground tabular-nums md:hidden",
+  actions: "justify-self-end max-md:col-span-2",
 } as const;
 
 const DATE: ColumnHeading = { id: "date", label: "Date", tooltip: "When the Statement says it happened." };
@@ -47,6 +48,7 @@ export const TRANSACTION_HEADINGS: readonly ColumnHeading[] = [
   DESCRIPTION,
   AMOUNT,
   BALANCE,
+  { id: "actions", label: "" },
 ];
 
 /** The header bar of a Statement's rows. */

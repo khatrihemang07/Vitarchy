@@ -84,6 +84,7 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
         .connect_lazy(&config.database_url)?;
     let modules: Vec<_> = core.into_iter().chain(modules).collect();
     migrate::run(&pool, &modules).await?;
+    migrate::start(&pool, &modules).await;
 
     let router = app::build(AppState::new(pool), modules, config.web_dist.as_deref());
     let listener = tokio::net::TcpListener::bind(config.bind_addr).await?;
