@@ -1,16 +1,16 @@
 import { type ReactNode, useId } from "react";
-import { Card } from "@/design";
+import { Card } from "../ui/card";
 
-interface ReportCardProps {
+interface SectionCardProps {
   title: string;
   children: ReactNode;
 }
 
 /**
- * A titled Card for a Report section. It does not clip its content (that would cut off
+ * A titled Card for a page section or table. It does not clip its content (that would cut off
  * focus rings), so the header and the last row round their own corners.
  */
-export function ReportCard({ title, children }: ReportCardProps) {
+export function SectionCard({ title, children }: SectionCardProps) {
   const titleId = useId();
   return (
     <section aria-labelledby={titleId}>

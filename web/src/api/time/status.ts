@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { callApi } from "../callApi";
 import { api } from "../client";
 import { timeStatusKey } from "./keys";
@@ -9,7 +9,10 @@ export function fetchTimeStatus(): Promise<TimeStatus> {
   return callApi(() => api.GET("/api/time/status"));
 }
 
+/** How to load the Time status; shared by the hook and by route loaders. */
+export const timeStatusOptions = queryOptions({ queryKey: timeStatusKey, queryFn: fetchTimeStatus, retry: false });
+
 /** Query for the Time status; failures surface as `isError`, never a throw. */
 export function useTimeStatus() {
-  return useQuery({ queryKey: timeStatusKey, queryFn: fetchTimeStatus, retry: false });
+  return useQuery(timeStatusOptions);
 }

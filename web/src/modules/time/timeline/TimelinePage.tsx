@@ -1,21 +1,21 @@
 import { useTimelineSummary } from "@/api/time";
-import { FadeUp, stagger } from "@/design";
+import { FadeUp, Notice, QueryNotices, SectionCard, stagger, TableSkeleton } from "@/design";
+import { browserTimeZone } from "../browserTimeZone";
 import { errorMessage } from "../failureMessage";
 import { PeriodPicker } from "../reports/PeriodPicker";
 import { containsDay, todayOf } from "../reports/period";
 import { rangeOf } from "../reports/reportSearch";
 import { useDisplaySettings } from "../reports/useDisplaySettings";
-import { TimeNotice } from "../TimeNotice";
 import { useClock } from "../useClock";
 import { TimelineBody } from "./TimelineBody";
 import { useTimelineHandlers } from "./useTimelineHandlers";
 import { useTimelineSearch } from "./useTimelineSearch";
+import { TIME_NOTICE_VIEWS } from "../noticeViews";
 
 /** The picker is 2 in the page's entrance sequence (header and tabs are 0 and 1); the body follows. */
 const PICKER_STAGGER = 2;
 const BODY_STAGGER = PICKER_STAGGER + 1;
 
-const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** `/time/timeline`: pick a Period and see what you did on this computer, app by app, against the Usual. */
 export function TimelinePage() {
@@ -30,21 +30,20 @@ export function TimelinePage() {
   return (
     <div className="flex flex-col gap-6">
       {settings.failed ? (
-        <TimeNotice kind="settings-fallback" title="Using the default week start" onRetry={settings.retry}>
+        <Notice kind="settings-fallback" views={TIME_NOTICE_VIEWS} title="Using the default week start" onRetry={settings.retry}>
           Settings could not load.
-        </TimeNotice>
+        </Notice>
       ) : null}
       <div className="animate-fade-up flex flex-col gap-3" style={stagger(PICKER_STAGGER)}>
         <PeriodPicker kind={search.kind} range={range} isCurrent={search.kind !== "custom" && containsDay(range, today)} onKind={handlers.onKind} onShift={handlers.onShift} onToday={handlers.onToday} onCustom={handlers.onCustom} />
       </div>
-      {summary.isPending ? (
+      {summary.isPending || summary.isError ? (
         <FadeUp index={BODY_STAGGER}>
-          <TimeNotice kind="loading" title="Loading Timeline…" />
-        </FadeUp>
-      ) : null}
-      {summary.isError ? (
-        <FadeUp index={BODY_STAGGER}>
-          <TimeNotice kind="failure" title={errorMessage(summary.error)} onRetry={() => void summary.refetch()} />
+          <QueryNotices
+            query={summary}
+            describeError={errorMessage}
+            skeleton={<SectionCard title="Timeline"><TableSkeleton label="Loading Timeline" rows={6} columns={3} /></SectionCard>}
+          />
         </FadeUp>
       ) : null}
       {summary.data ? (

@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useId, useState } from "react";
 import type { AccountSummary, SectionPreview, StatementKind } from "@/api/finance";
 import { cn, Expand } from "@/design";
@@ -33,7 +33,7 @@ export function SectionView({ section, statementKind, accounts, draft, onDraft, 
       <div className="flex flex-col gap-1">
         <h3 className="font-display text-base font-semibold break-words">{heading}</h3>
         <p className="text-sm text-muted-foreground">
-          {formatPeriod(section.period)} · Debits {formatInr(section.total_debit_paise)} · Credits {formatInr(section.total_credit_paise)}
+          {formatPeriod(section.period)} · Money out {formatInr(section.total_debit_paise)} · Money in {formatInr(section.total_credit_paise)}
         </p>
       </div>
       {locked ? null : <AccountPicker section={section} accounts={accounts} draft={draft} onChange={onDraft} />}
@@ -50,7 +50,7 @@ export function SectionView({ section, statementKind, accounts, draft, onDraft, 
           onClick={() => { setOpen((v) => !v); }}
           className="flex w-fit items-center gap-1.5 rounded-md text-sm font-medium focus-ring"
         >
-          <ChevronDown aria-hidden="true" className={cn("size-4 transition-transform", open && "rotate-180")} />
+          <ChevronRight aria-hidden="true" className={cn("size-4 transition-transform", open && "rotate-90")} />
           {open ? "Hide" : "Show"} {formatCount(section.transaction_count)} Transactions
         </button>
         <Expand open={open} id={tableId}>

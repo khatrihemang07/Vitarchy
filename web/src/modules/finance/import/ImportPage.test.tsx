@@ -26,7 +26,7 @@ describe("ImportPage", () => {
       "GET /api/finance/accounts": pendingForever,
     });
     const { container } = renderWithClient(<ImportPage />);
-    expect(screen.getByText("Checking the statement reader…")).toBeInTheDocument();
+    expect(screen.getAllByText("Loading the Import page").length).toBeGreaterThan(0);
     expect(container.querySelectorAll(SETTLED_NOTICES)).toHaveLength(0);
   });
 
@@ -63,7 +63,7 @@ describe("ImportPage", () => {
     });
     renderWithClient(<ImportPage />);
 
-    await userEvent.upload(screen.getByLabelText("Statement files"), [
+    await userEvent.upload(await screen.findByLabelText("Statement files"), [
       new File(["x"], "a.pdf", { type: "application/pdf" }),
       new File(["y"], "b.csv", { type: "text/csv" }),
     ]);
@@ -80,7 +80,7 @@ describe("ImportPage", () => {
       "POST /api/finance/statements": () => jsonResponse(413, { status: 413, detail: "x", code: "upload_too_large" }),
     });
     renderWithClient(<ImportPage />);
-    await userEvent.upload(screen.getByLabelText("Statement files"), new File(["x"], "a.pdf"));
+    await userEvent.upload(await screen.findByLabelText("Statement files"), new File(["x"], "a.pdf"));
     expect(await screen.findByText(/upload is too large/)).toBeInTheDocument();
   });
 });

@@ -1,7 +1,6 @@
 import { useConfirmedStatements } from "@/api/finance";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
-import { FinanceNotice } from "../FinanceNotice";
-import { QueryNotices } from "../QueryNotices";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Notice, QueryNotices, TableSkeleton } from "@/design";
+import { errorMessage } from "../failureMessage";
 import { ReadAllAgain } from "./ReadAllAgain";
 import { StatementRow } from "./StatementRow";
 
@@ -16,9 +15,9 @@ export function StatementsCard() {
       </CardHeader>
       <CardContent>
         {!statements.data ? (
-          <QueryNotices inline query={statements} loadingTitle="Loading Statements…" />
+          <QueryNotices inline query={statements} describeError={errorMessage} skeleton={<TableSkeleton label="Loading Statements" rows={3} columns={3} />} />
         ) : statements.data.length === 0 ? (
-          <FinanceNotice inline kind="empty" title="No confirmed Statements yet." />
+          <Notice inline kind="empty" title="No confirmed Statements yet." />
         ) : (
           <div className="flex flex-col gap-4">
             <ReadAllAgain />

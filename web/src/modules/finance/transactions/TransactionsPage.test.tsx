@@ -2,6 +2,7 @@ import { createMemoryHistory, createRootRoute, createRoute, createRouter, Router
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { TooltipProvider } from "@/design";
 import { account, jsonResponse, pendingForever, SETTLED_NOTICES, stubApi } from "../test-utils";
 import { parseTransactionsSearch, transactionsParams } from "../transactionsSearch";
 import { TransactionsPage } from "./TransactionsPage";
@@ -19,7 +20,9 @@ function renderAt(path: string) {
   const router = createRouter({ routeTree: root.addChildren([route]), history: createMemoryHistory({ initialEntries: [path] }) });
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <RouterProvider router={router} />
+      <TooltipProvider>
+        <RouterProvider router={router} />
+      </TooltipProvider>
     </QueryClientProvider>,
   );
 }
@@ -34,7 +37,7 @@ describe("TransactionsPage", () => {
   it("shows only a loading notice, never an empty or failure one, while the queries are pending", async () => {
     stubApi({ "GET /api/finance/accounts": pendingForever, "GET /api/finance/transactions": pendingForever });
     const { container } = renderAt("/finance/transactions");
-    await screen.findByText("Loading Transactions…");
+    await screen.findByText("Loading Transactions");
     expect(container.querySelectorAll(SETTLED_NOTICES)).toHaveLength(0);
   });
 
@@ -43,7 +46,7 @@ describe("TransactionsPage", () => {
     renderAt("/finance/transactions");
     expect(await screen.findByText("−₹1,23,456.78")).toHaveAttribute("data-direction", "debit");
     expect(screen.getAllByText("₹5,00,000.00").length).toBeGreaterThan(0);
-    expect(await screen.findByText("HDFC Savings", { selector: "td" })).toBeInTheDocument();
+    expect(await screen.findByText("HDFC Savings", { selector: "span" })).toBeInTheDocument();
   });
 
   it("flags rows no longer found", async () => {
@@ -141,5 +144,35 @@ describe("TransactionsPage", () => {
 
     release(jsonResponse(200, { total: 120, items: [item({ id: 9, description: "Second page row" })] }));
     expect(await screen.findByText("Second page row")).toBeInTheDocument();
+  });
+
+  it("keeps the fade on the table while it is not dimmed, so the dimming eases back", async () => {
+    stubApi({ "GET /api/finance/accounts": () => jsonResponse(200, [account()]), "GET /api/finance/transactions": page([item()]) });
+    const { container } = renderAt("/finance/transactions");
+    await screen.findByText("Groceries");
+    const table = container.querySelector("[aria-busy]");
+    expect(table).toHaveClass("transition-opacity");
+    expect(table).not.toHaveClass("opacity-60");
+  });
+
+  it("holds the rows back until the Account names are in, instead of showing a placeholder name", async () => {
+    stubApi({ "GET /api/finance/accounts": pendingForever, "GET /api/finance/transactions": page([item()]) });
+    renderAt("/finance/transactions");
+    expect(await screen.findByText("Loading Transactions")).toBeInTheDocument();
+    expect(screen.queryByText("Groceries")).not.toBeInTheDocument();
+    expect(screen.queryByText("Account", { selector: "span" })).not.toBeInTheDocument();
+  });
+
+  it("shows no skeleton for a load that finishes inside the loading delay", async () => {
+    document.documentElement.style.setProperty("--duration-loading-delay", "250ms");
+    try {
+      stubApi({ "GET /api/finance/accounts": () => jsonResponse(200, [account()]), "GET /api/finance/transactions": page([item()]) });
+      renderAt("/finance/transactions");
+      expect(screen.queryByText("Loading Transactions")).not.toBeInTheDocument();
+      expect(await screen.findByText("Groceries")).toBeInTheDocument();
+      expect(screen.queryByText("Loading Transactions")).not.toBeInTheDocument();
+    } finally {
+      document.documentElement.style.removeProperty("--duration-loading-delay");
+    }
   });
 });

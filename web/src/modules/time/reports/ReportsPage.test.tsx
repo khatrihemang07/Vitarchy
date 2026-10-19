@@ -39,7 +39,7 @@ describe("ReportsPage", () => {
   it("shows a loading notice, then the Report with every row closed", async () => {
     stubApi(api(() => jsonResponse(200, report([group("Standup"), group("Review")]))));
     renderPage();
-    expect(await screen.findByText("Loading report…")).toBeInTheDocument();
+    expect(await screen.findByText("Loading report")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /Standup/ })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: /Review/ })).toHaveAttribute("aria-expanded", "false");
   });

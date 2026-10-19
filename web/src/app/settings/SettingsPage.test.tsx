@@ -46,10 +46,11 @@ function serve({ failPuts = false } = {}) {
 }
 
 function renderAt(path: string) {
-  const router = createAppRouter([timeModule], { includeDesignShowcase: false });
-  router.update({ history: createMemoryHistory({ initialEntries: [path] }) });
+  const queryClient = new QueryClient();
+  const router = createAppRouter([timeModule], { includeDesignShowcase: false, queryClient });
+  router.update({ history: createMemoryHistory({ initialEntries: [path] }), context: { queryClient } });
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );

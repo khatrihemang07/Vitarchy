@@ -165,7 +165,12 @@ design/theme     tokens.css (colours per theme, radius, shadows, timing), base.c
 design/ui        shadcn components (`pnpm dlx shadcn add <name>`; keep them close to upstream)
 design/controls  Vitarchy controls built on ui (SegmentedControl)
 design/effects   copied-in Magic UI effects (NumberTicker, BorderBeam, MagicCard)
-design/motion    spring presets, MotionProvider, MotionButton, Pressable
+design/motion    spring presets, MotionProvider, MotionButton, Pressable, FadeUp
+design/layout    ModulePageFrame (header, tabs, page), ModulePageHeader, ModuleTabs, SectionCard, ListRow
+design/notice    Notice (kinds as data), QueryNotices (delayed skeleton), IconChip
+design/skeleton  Skeleton, TableSkeleton, CardSkeleton
+design/progress  Progress
+design/table     ColumnHeaderBar (the muted header bar with column tooltips)
 design/quest     XpBar, LevelBadge, StreakFlame, AchievementBadge, StatCard, QuestList
 design/brand     LogoMark (same artwork as public/favicon.svg)
 ```
@@ -179,6 +184,15 @@ design/brand     LogoMark (same artwork as public/favicon.svg)
 - **Module accent:** the shell sets `--module-accent` from the active route, so `text-module`, `bg-module/20`, primary buttons and focus rings all follow the active Module.
 - **Motion:** animated elements are `m.*` from `motion/react`, never `motion.*` (ESLint refuses it): `MotionProvider` supplies the features through `LazyMotion`.
 - **Showcase:** `/design` shows every primitive with sample data, in dev builds only.
+
+### Pages, width and loading
+
+- **Width:** the shell's `<main>` is the one place content width is decided. A page fills it and sets no `max-w-*` of its own. Only long prose uses `max-w-prose-token` (from `--measure-prose` in `tokens.css`).
+- **A Module's pages:** a layout route renders `ModulePageFrame` (header, tabs, `<Outlet />`) with the Module's page table, as `TimePageLayout` and `FinancePageLayout` do. `ModuleTabs` lives in `design/` because it only renders router links (routing, not data access); every tab preloads on hover or focus (`preload="intent"`).
+- **Page bodies:** wrap sections in `FadeUp` with a rising `index` (the header and tabs are 0 and 1), use `gap-6`, and give each section a titled `SectionCard` or a `font-display text-xl font-bold` heading. Tables use `ColumnHeaderBar` plus `px-4 py-3` grid rows with `hover:bg-accent/50`, as Time's Summary does.
+- **Notices:** `Notice` has the built-in kinds `loading`, `failure`, `empty` and `warning`. A Module adds its own as data (`modules/time/noticeViews.ts`) and passes them as `views`. Warning-style kinds spread `WARNING_STYLE` so they share one tone.
+- **Loading:** show `QueryNotices` with a `skeleton` shaped like the real content. Nothing shows until the query has been pending for `--duration-loading-delay` (`useDelayedFlag`), so a fast load never flashes a skeleton; a failure shows at once with Try again. A page that reads several lists shows one skeleton for all of them (`pendingTogether`). Keep `transition-opacity` on content that dims while the next page loads.
+- **Route loaders:** give each page `loader: warmCache([warm(someOptions)])` (from `@/app/module-manifest`) so hovering its tab starts its main queries. Query options live in `@/api` (`accountsOptions`, `timeStatusOptions`, ...) and the hooks use the same ones. Loaders never reject; the page shows a failure itself. For a page whose query depends on the URL, add `loaderDeps` and use `warmCacheWith`. The app's query client treats results as fresh for a few seconds (`api/queryClient.ts`) so a warmed page is not fetched twice.
 
 ## Checks
 

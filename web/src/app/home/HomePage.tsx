@@ -17,7 +17,7 @@ export function HomePage({ moduleCount, now }: HomePageProps) {
   const date = now ?? live;
   const core = useCoreSettings();
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <header className="animate-fade-up">
         <h1 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Home</h1>
         <p className="font-display text-4xl font-bold tracking-tight md:text-5xl">

@@ -1,11 +1,10 @@
 import { useImportActivity, type SourceActivityStatus } from "@/api/time";
-import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
+import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle, Notice } from "@/design";
 
 import { errorMessage } from "./failureMessage";
 import { formatAge, formatCount, formatDay } from "./format";
 import { LastRun } from "./LastRun";
 import { sourceCopy } from "./sourceCopy";
-import { TimeNotice } from "./TimeNotice";
 import { useClock } from "./useClock";
 
 function storedSpan(activity: SourceActivityStatus): string {
@@ -44,7 +43,7 @@ export function ActivityImportCard({ activity }: { activity: SourceActivityStatu
           <p className="text-sm text-muted-foreground">Not imported yet.</p>
         )}
         {importActivity.isError ? (
-          <TimeNotice inline kind="failure" title={errorMessage(importActivity.error)} />
+          <Notice inline kind="failure" title={errorMessage(importActivity.error)} />
         ) : null}
         <MotionButton
           className="mt-auto self-start"

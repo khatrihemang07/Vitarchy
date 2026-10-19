@@ -1,7 +1,6 @@
 import { useDisconnect } from "@/api/time";
-import { MotionButton } from "@/design";
+import { MotionButton, Notice } from "@/design";
 import { errorMessage } from "./failureMessage";
-import { TimeNotice } from "./TimeNotice";
 
 /** The connected workspace, with a button to forget the token. */
 export function ConnectedView({ workspaceName }: { workspaceName: string }) {
@@ -15,7 +14,7 @@ export function ConnectedView({ workspaceName }: { workspaceName: string }) {
         Disconnecting forgets the token. Time Entries already synced are kept.
       </p>
       {disconnect.isError ? (
-        <TimeNotice inline kind="failure" title={errorMessage(disconnect.error)} />
+        <Notice inline kind="failure" title={errorMessage(disconnect.error)} />
       ) : null}
       <MotionButton
         variant="outline"

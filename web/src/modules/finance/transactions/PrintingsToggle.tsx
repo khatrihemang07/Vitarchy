@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/design";
 import { printedInLabel } from "./printedInLabel";
 
@@ -20,7 +20,7 @@ export function PrintingsToggle({ count, open, controls, onToggle }: PrintingsTo
       onClick={onToggle}
       className="mt-1 flex w-fit items-center whitespace-nowrap gap-1 rounded-md text-xs text-muted-foreground hover:text-foreground focus-ring"
     >
-      <ChevronDown aria-hidden="true" className={cn("size-4 transition-transform", open && "rotate-180")} />
+      <ChevronRight aria-hidden="true" className={cn("size-4 transition-transform", open && "rotate-90")} />
       {printedInLabel(count)}
     </button>
   );

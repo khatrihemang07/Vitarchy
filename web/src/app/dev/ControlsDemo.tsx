@@ -16,6 +16,8 @@ export function ControlsDemo() {
       <Separator orientation="vertical" className="h-6" />
       <Badge>Badge</Badge>
       <Badge variant="outline">Outline</Badge>
+      <Badge variant="warning">Warning</Badge>
+      <Badge variant="info">Info</Badge>
     </div>
   );
 }

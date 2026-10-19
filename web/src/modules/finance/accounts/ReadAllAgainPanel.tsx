@@ -1,7 +1,6 @@
 import { type ReadAgainItem, type ReadAllAgainCounts, useConfirmReadAllAgain } from "@/api/finance";
-import { MotionButton } from "@/design";
+import { MotionButton, Notice } from "@/design";
 import { errorMessage } from "../failureMessage";
-import { FinanceNotice } from "../FinanceNotice";
 import { formatCount } from "../money";
 import { appliedLine, sectionChangesLine } from "./readAgainCopy";
 import { itemChangesLine, summariseReadAllAgain } from "./readAllAgainSummary";
@@ -28,7 +27,7 @@ export function ReadAllAgainPanel({ items, applied, onApplied, onClose }: ReadAl
           </span>
         </p>
       ) : items.length === 0 ? (
-        <FinanceNotice kind="empty" inline title="No Statement has its original stored, so there is nothing to read again." />
+        <Notice kind="empty" inline title="No Statement has its original stored, so there is nothing to read again." />
       ) : (
         <>
           <p className="text-sm">
@@ -60,7 +59,7 @@ export function ReadAllAgainPanel({ items, applied, onApplied, onClose }: ReadAl
           ) : null}
         </>
       )}
-      {apply.isError ? <FinanceNotice kind="failure" inline title={errorMessage(apply.error)} /> : null}
+      {apply.isError ? <Notice kind="failure" inline title={errorMessage(apply.error)} /> : null}
       <div className="flex flex-wrap gap-2">
         {applied || summary.changed.length === 0 ? null : (
           <MotionButton disabled={apply.isPending} onClick={() => { apply.mutate(undefined, { onSuccess: onApplied }); }}>

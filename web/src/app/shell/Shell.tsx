@@ -36,7 +36,8 @@ export function Shell({ nav, sections }: ShellProps) {
         <header className="flex items-center p-4 md:px-8 md:pt-6">
           <CommandBar nav={nav} sections={sections} />
         </header>
-        <main className="flex-1 p-4 pb-12 md:px-8">
+        {/* The one place content width is decided: pages fill it and set no max-width of their own. */}
+        <main className="w-full min-w-0 flex-1 p-4 pb-12 md:px-8">
           <Outlet />
         </main>
       </div>

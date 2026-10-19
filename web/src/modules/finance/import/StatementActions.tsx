@@ -1,7 +1,6 @@
 import { useDiscardStatement } from "@/api/finance";
-import { MotionButton } from "@/design";
+import { MotionButton, Notice } from "@/design";
 import { errorMessage } from "../failureMessage";
-import { FinanceNotice } from "../FinanceNotice";
 
 interface StatementActionsProps {
   statementId: number;
@@ -19,7 +18,7 @@ export function StatementActions({ statementId, onConfirm, confirmDisabled, conf
   const error = confirmError ?? discard.error;
   return (
     <div className="flex flex-col gap-3">
-      {error ? <FinanceNotice kind="failure" inline title={errorMessage(error)} /> : null}
+      {error ? <Notice kind="failure" inline title={errorMessage(error)} /> : null}
       <div className="flex flex-wrap gap-2">
         {onConfirm ? (
           <MotionButton disabled={confirmDisabled === true || confirming === true || discard.isPending} onClick={onConfirm}>

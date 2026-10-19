@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
@@ -14,16 +14,20 @@ export async function fetchTimelineSummary(query: TimelineQuery): Promise<Timeli
   return summary;
 }
 
+/** How to load a Timeline summary (disabled for null); shared by the hook and by the route loader that warms it. */
+export function timelineSummaryOptions(query: TimelineQuery | null) {
+  return queryOptions({
+    queryKey: timeTimelineKey(query),
+    queryFn: () => fetchTimelineSummary(query as TimelineQuery),
+    enabled: query !== null,
+    retry: false,
+  });
+}
+
 /**
  * Query for a Timeline summary. The previous summary stays on screen while the next
  * Period loads, so moving between Periods does not flash an empty page.
  */
 export function useTimelineSummary(query: TimelineQuery | null) {
-  return useQuery({
-    queryKey: timeTimelineKey(query),
-    queryFn: () => fetchTimelineSummary(query as TimelineQuery),
-    enabled: query !== null,
-    placeholderData: keepPreviousData,
-    retry: false,
-  });
+  return useQuery({ ...timelineSummaryOptions(query), placeholderData: keepPreviousData });
 }

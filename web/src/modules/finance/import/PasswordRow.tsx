@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { type PasswordItem, useDeletePassword } from "@/api/finance";
-import { MotionButton } from "@/design";
+import { ListRow, MotionButton } from "@/design";
 import { formatLastUsed } from "../dates";
 import { errorMessage } from "../failureMessage";
 
@@ -9,11 +9,7 @@ export function PasswordRow({ password }: { password: PasswordItem }) {
   const [asking, setAsking] = useState(false);
   const remove = useDeletePassword();
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border bg-card p-3">
-      <div className="flex min-w-40 flex-1 flex-col">
-        <span className="font-medium break-words">{password.label}</span>
-        <span className="text-sm text-muted-foreground">{formatLastUsed(password.last_used_at)}</span>
-      </div>
+    <ListRow title={password.label} detail={formatLastUsed(password.last_used_at)}>
       {remove.isError ? <span role="alert" className="text-sm text-destructive">{errorMessage(remove.error)}</span> : null}
       {asking ? (
         <div className="flex items-center gap-2">
@@ -35,6 +31,6 @@ export function PasswordRow({ password }: { password: PasswordItem }) {
           Remove
         </MotionButton>
       )}
-    </li>
+    </ListRow>
   );
 }

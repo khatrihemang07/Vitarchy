@@ -1,8 +1,7 @@
 import { type SyntheticEvent, useId, useState } from "react";
 import { useSetConnection } from "@/api/time";
-import { Input, Label, MotionButton } from "@/design";
+import { Input, Label, MotionButton, Notice } from "@/design";
 import { errorMessage } from "./failureMessage";
-import { TimeNotice } from "./TimeNotice";
 
 /** Asks for the Toggl API token and sends it once; it is cleared from the field as soon as it is sent. */
 export function ConnectForm() {
@@ -40,7 +39,7 @@ export function ConnectForm() {
         </p>
       </div>
       {connect.isError ? (
-        <TimeNotice inline kind="failure" title={errorMessage(connect.error)} />
+        <Notice inline kind="failure" title={errorMessage(connect.error)} />
       ) : null}
       <MotionButton type="submit" className="mt-auto self-start" disabled={connect.isPending || token.trim() === ""}>
         {connect.isPending ? "Connecting…" : "Connect"}

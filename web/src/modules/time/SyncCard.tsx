@@ -1,10 +1,8 @@
 import { useSyncTime, useTimeStatus, type TimeStatus } from "@/api/time";
-import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
+import { Card, MotionButton, CardContent, CardDescription, CardHeader, CardTitle, Notice } from "@/design";
 import { errorMessage } from "./failureMessage";
 import { formatCount, formatDay } from "./format";
 import { LastRun } from "./LastRun";
-import { StatusNotices } from "./StatusNotices";
-import { TimeNotice } from "./TimeNotice";
 import { useClock } from "./useClock";
 
 function mirroredSpan(status: TimeStatus): string {
@@ -36,11 +34,10 @@ export function SyncCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-4">
-        <StatusNotices inline status={status} loadingTitle="Loading status…" />
         {status.data ? <p className="text-sm text-muted-foreground">{mirroredSpan(status.data)}</p> : null}
         {lastSync ? <LastRun noun="sync" run={lastSync} now={now} /> : null}
         {status.data && !lastSync ? <p className="text-sm text-muted-foreground">Not synced yet.</p> : null}
-        {sync.isError ? <TimeNotice inline kind="failure" title={errorMessage(sync.error)} /> : null}
+        {sync.isError ? <Notice inline kind="failure" title={errorMessage(sync.error)} /> : null}
         {status.data && !connected ? (
           <p className="text-sm text-muted-foreground">Connect Toggl to start syncing.</p>
         ) : null}

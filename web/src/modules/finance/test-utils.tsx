@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
+import { FRESH_MS } from "@/api/queryClient";
 import type { AccountSummary, SectionPreview, StatementPreview, TransactionView } from "@/api/finance";
+import { TooltipProvider } from "@/design";
 
 /** A `Response` carrying JSON (problem documents use the problem content type). */
 export function jsonResponse(status: number, body: unknown): Response {
@@ -38,10 +40,12 @@ export function requestsOf(fetchMock: ReturnType<typeof stubApi>): string[] {
   return fetchMock.mock.calls.map(([request]) => `${request.method} ${new URL(request.url).pathname}`);
 }
 
-/** Renders `ui` with a fresh query cache. */
+/** Renders `ui` with a fresh query cache and the tooltip provider the app mounts at its root. */
 export function renderWithClient(ui: ReactElement) {
   return render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>,
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: FRESH_MS } } })}>
+      <TooltipProvider>{ui}</TooltipProvider>
+    </QueryClientProvider>,
   );
 }
 

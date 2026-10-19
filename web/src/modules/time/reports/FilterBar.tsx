@@ -1,5 +1,5 @@
 import type { Facets } from "@/api/time";
-import { Button } from "@/design";
+import { ClearFiltersButton } from "@/design";
 import { DescriptionSearch } from "./DescriptionSearch";
 import { facetDescriptors } from "./facetOptions";
 import { FacetFilter } from "./FacetFilter";
@@ -31,9 +31,7 @@ export function FilterBar({ facets, search, active, onFacet, onSearch, onClear }
       ))}
       <DescriptionSearch value={search.q} onSearch={onSearch} />
       {active ? (
-        <Button variant="ghost" size="sm" onClick={onClear}>
-          Clear filters
-        </Button>
+        <ClearFiltersButton onClear={onClear} />
       ) : null}
     </div>
   );

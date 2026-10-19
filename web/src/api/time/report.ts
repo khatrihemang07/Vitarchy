@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions, useQuery } from "@tanstack/react-query";
 import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
@@ -25,16 +25,20 @@ export async function fetchReport(query: ReportQuery): Promise<Report> {
   return report;
 }
 
+/** How to load a Report (disabled for null); shared by the hook and by the route loader that warms it. */
+export function reportOptions(query: ReportQuery | null) {
+  return queryOptions({
+    queryKey: timeReportKey(query),
+    queryFn: () => fetchReport(query as ReportQuery),
+    enabled: query !== null,
+    retry: false,
+  });
+}
+
 /**
  * Query for a Report. The previous Report stays on screen while the next Period
  * loads, so moving between Periods does not flash an empty page.
  */
 export function useReport(query: ReportQuery | null) {
-  return useQuery({
-    queryKey: timeReportKey(query),
-    queryFn: () => fetchReport(query as ReportQuery),
-    enabled: query !== null,
-    placeholderData: keepPreviousData,
-    retry: false,
-  });
+  return useQuery({ ...reportOptions(query), placeholderData: keepPreviousData });
 }

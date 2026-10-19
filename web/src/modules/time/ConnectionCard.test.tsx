@@ -12,18 +12,6 @@ describe("ConnectionCard", () => {
     expect(await screen.findByLabelText("Toggl API token")).toBeInTheDocument();
   });
 
-  it("shows a loading state while the status is pending", () => {
-    stubApi({ "GET /api/time/status": () => new Promise<Response>(() => undefined) });
-    renderWithClient(<ConnectionCard />);
-    expect(screen.getByText("Checking connection…")).toBeInTheDocument();
-  });
-
-  it("shows an error when the server cannot be reached", async () => {
-    stubApi({ "GET /api/time/status": () => new Response("", { status: 502 }) });
-    renderWithClient(<ConnectionCard />);
-    expect(await screen.findByRole("alert")).toHaveTextContent("Could not reach the Vitarchy server.");
-  });
-
   it("sends the token, clears the field and shows the workspace once connected", async () => {
     let connected = false;
     const fetchMock = stubApi({

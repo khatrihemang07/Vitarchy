@@ -1,8 +1,8 @@
 import { useFacets, useReport, useTimeStatus } from "@/api/time";
 import { Link } from "@tanstack/react-router";
-import { Button, FadeUp, stagger } from "@/design";
+import { Button, FadeUp, Notice, QueryNotices, SectionCard, stagger, TableSkeleton } from "@/design";
+import { browserTimeZone } from "../browserTimeZone";
 import { errorMessage } from "../failureMessage";
-import { TimeNotice } from "../TimeNotice";
 import { useClock } from "../useClock";
 import { CompareToggle } from "./CompareToggle";
 import { compareOf } from "./compareMode";
@@ -19,12 +19,12 @@ import { useDisplaySettings } from "./useDisplaySettings";
 import { useReportHandlers } from "./useReportHandlers";
 import { useReportSearch } from "./useReportSearch";
 import { useStartingFilters } from "./useStartingFilters";
+import { TIME_NOTICE_VIEWS } from "../noticeViews";
 
 /** Header and tabs are 0 and 1, the filters 2; the report arrives after them. */
 const FILTERS_STAGGER = 2;
 const BODY_STAGGER = FILTERS_STAGGER + 1;
 
-const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 /** `/time/reports`: pick a Period and filters, group the Time Entries, and compare with the Previous Period or the last 4 weeks. */
 export function ReportsPage() {
@@ -47,9 +47,9 @@ export function ReportsPage() {
   return (
     <div className="flex flex-col gap-6">
       {settings.failed ? (
-        <TimeNotice kind="settings-fallback" title="Using the default week start" onRetry={settings.retry}>
+        <Notice kind="settings-fallback" views={TIME_NOTICE_VIEWS} title="Using the default week start" onRetry={settings.retry}>
           Settings could not load.
-        </TimeNotice>
+        </Notice>
       ) : null}
       <div className="animate-fade-up flex flex-col gap-3" style={stagger(FILTERS_STAGGER)}>
         <PeriodPicker kind={search.kind} range={range} isCurrent={search.kind !== "custom" && containsDay(range, today)} onKind={handlers.onKind} onShift={handlers.onShift} onToday={handlers.onToday} onCustom={handlers.onCustom} />
@@ -64,8 +64,8 @@ export function ReportsPage() {
       </div>
       {neverSynced ? (
         <FadeUp index={BODY_STAGGER}>
-          <TimeNotice
-            kind="not-connected"
+          <Notice
+            kind="not-connected" views={TIME_NOTICE_VIEWS}
             title="Toggl is not connected yet"
             action={
               <Button asChild variant="link">
@@ -74,17 +74,16 @@ export function ReportsPage() {
             }
           >
             Reports are built from your Time Entries. Connect Toggl and Sync to see them here.
-          </TimeNotice>
+          </Notice>
         </FadeUp>
       ) : null}
-      {showReport && report.isPending ? (
+      {showReport && (report.isPending || report.isError) ? (
         <FadeUp index={BODY_STAGGER}>
-          <TimeNotice kind="loading" title="Loading report…" />
-        </FadeUp>
-      ) : null}
-      {showReport && report.isError ? (
-        <FadeUp index={BODY_STAGGER}>
-          <TimeNotice kind="failure" title={errorMessage(report.error)} onRetry={() => void report.refetch()} />
+          <QueryNotices
+            query={report}
+            describeError={errorMessage}
+            skeleton={<SectionCard title="Summary"><TableSkeleton label="Loading report" rows={6} columns={4} /></SectionCard>}
+          />
         </FadeUp>
       ) : null}
       {showReport && report.data ? (

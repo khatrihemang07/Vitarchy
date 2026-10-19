@@ -99,6 +99,20 @@
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
 
+/* Readable line length for long prose; pages and tables fill the width instead. */
+@utility max-w-prose-token {
+  max-width: var(--measure-prose);
+}
+
+/* Columns of a ledger table (a Transactions page, a Statement's rows), from the --track-* tokens so both share them. */
+@utility grid-cols-ledger {
+  grid-template-columns: var(--track-date) minmax(0, var(--track-account)) minmax(0, 1fr) var(--track-money) var(--track-money);
+}
+
+@utility grid-cols-ledger-statement {
+  grid-template-columns: var(--track-date) minmax(0, 1fr) var(--track-money) var(--track-money);
+}
+
 /* Keyboard focus ring, driven by the focus tokens. */
 @utility focus-ring {
   &:focus-visible {

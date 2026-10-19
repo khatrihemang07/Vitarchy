@@ -1,7 +1,6 @@
 import { type StatementPreview, useUploadStatements } from "@/api/finance";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/design";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Notice, Progress } from "@/design";
 import { errorMessage } from "../failureMessage";
-import { FinanceNotice } from "../FinanceNotice";
 import { formatCount } from "../money";
 import { DropZone } from "./DropZone";
 
@@ -24,12 +23,10 @@ export function UploadSection({ onUploaded }: { onUploaded: (previews: Statement
             <p>
               Reading {formatCount(upload.variables.length)} {upload.variables.length === 1 ? "file" : "files"}…
             </p>
-            <div role="progressbar" aria-label="Reading files" className="h-1.5 overflow-hidden rounded-full bg-muted">
-              <div className="h-full w-full rounded-full bg-module motion-safe:animate-pulse" />
-            </div>
+            <Progress label="Reading files" />
           </div>
         ) : null}
-        {upload.isError ? <FinanceNotice kind="failure" inline title={errorMessage(upload.error)} /> : null}
+        {upload.isError ? <Notice kind="failure" inline title={errorMessage(upload.error)} /> : null}
       </CardContent>
     </Card>
   );

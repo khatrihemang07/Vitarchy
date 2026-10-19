@@ -11,7 +11,7 @@ export function PrintingLine({ printing }: { printing: PrintingItem }) {
       <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="font-medium break-all">{printing.file_name}</span>
         <span className="text-muted-foreground">{formatDateAndTime(printing.date, printing.time)}</span>
-        {printing.gone ? <Badge variant="outline" className="border-warning/50 text-warning">No longer found</Badge> : null}
+        {printing.gone ? <Badge variant="warning">No longer found</Badge> : null}
       </span>
       <span className="[overflow-wrap:anywhere]">{printing.description}</span>
       {balance || printing.reference ? (

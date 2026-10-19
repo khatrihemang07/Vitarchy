@@ -1,8 +1,9 @@
 import { useId, useState } from "react";
 import type { TransactionItem } from "@/api/finance";
-import { Badge, cn } from "@/design";
+import { Badge, cn, Expand } from "@/design";
 import { AmountCell } from "../AmountCell";
 import { formatDateAndTime } from "../dates";
+import { LEDGER_CELLS, LEDGER_ROW, TRANSACTION_GRID } from "../ledgerLayout";
 import { formatBalance } from "../money";
 import { PrintingsList } from "./PrintingsList";
 import { PrintingsToggle } from "./PrintingsToggle";
@@ -17,35 +18,30 @@ interface TransactionRowProps {
 export function TransactionRow({ item, accountName }: TransactionRowProps) {
   const [open, setOpen] = useState(false);
   const listId = useId();
+  const balance = formatBalance(item.balance_paise);
   return (
-    <>
-      <tr data-no-longer-found={item.no_longer_found} className={cn("grid grid-cols-[1fr_auto] gap-x-3 border-t align-top sm:table-row", item.no_longer_found && "opacity-60")}>
-        <td className="col-start-1 row-start-1 px-3 pt-2 whitespace-nowrap sm:py-2">{formatDateAndTime(item.date, item.time)}</td>
-        <td className="col-start-1 row-start-2 px-3 text-xs text-muted-foreground sm:table-cell sm:py-2 sm:text-sm">{accountName}</td>
-        <td className="col-span-2 row-start-3 min-w-0 px-3 py-2 [overflow-wrap:anywhere]">
+    <li data-no-longer-found={item.no_longer_found} className={cn("border-t border-border first:border-t-0 last:rounded-b-[inherit]", item.no_longer_found && "opacity-60")}>
+      <div className={cn(LEDGER_ROW, TRANSACTION_GRID, "transition-colors hover:bg-accent/50")}>
+        <span className={LEDGER_CELLS.date}>{formatDateAndTime(item.date, item.time)}</span>
+        <span className={LEDGER_CELLS.account}>{accountName}</span>
+        <div className={LEDGER_CELLS.description}>
           {item.description}
-          {item.no_longer_found ? (
-            <Badge variant="outline" className="ml-2 border-warning/50 text-warning">No longer found</Badge>
-          ) : null}
+          {item.no_longer_found ? <Badge variant="warning" className="ml-2">No longer found</Badge> : null}
           {item.printing_count > 1 ? (
             <PrintingsToggle count={item.printing_count} open={open} controls={listId} onToggle={() => { setOpen((v) => !v); }} />
           ) : null}
-        </td>
-        <td className="col-start-2 row-span-2 row-start-1 px-3 pt-2 text-right whitespace-nowrap sm:table-cell sm:py-2">
+        </div>
+        <span className={LEDGER_CELLS.amount}>
           <AmountCell paise={item.amount_paise} direction={item.direction} />
-          <span className="block text-xs text-muted-foreground tabular-nums sm:hidden">{formatBalance(item.balance_paise)}</span>
-        </td>
-        <td className="hidden px-3 py-2 text-right whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
-          {formatBalance(item.balance_paise)}
-        </td>
-      </tr>
-      {open ? (
-        <tr data-printings-for={item.id} className="block sm:table-row">
-          <td colSpan={5} className="block px-3 pb-3 sm:table-cell">
-            <PrintingsList transactionId={item.id} id={listId} />
-          </td>
-        </tr>
-      ) : null}
-    </>
+          <span className={LEDGER_CELLS.balanceUnderAmount}>{balance}</span>
+        </span>
+        <span className={LEDGER_CELLS.balance}>{balance}</span>
+      </div>
+      <Expand open={open} id={listId}>
+        <div data-printings-for={item.id} className="border-t border-border bg-muted/20 px-4 py-3">
+          <PrintingsList transactionId={item.id} />
+        </div>
+      </Expand>
+    </li>
   );
 }

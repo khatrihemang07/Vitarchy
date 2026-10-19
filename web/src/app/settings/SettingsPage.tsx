@@ -11,7 +11,7 @@ interface SettingsPageProps {
 /** `/settings/$section`: the section list beside (or above) the active section. */
 export function SettingsPage({ sections, sectionId }: SettingsPageProps) {
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <header className="animate-fade-up">
         <h1 className="font-display text-4xl font-bold tracking-tight">Settings</h1>
       </header>

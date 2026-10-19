@@ -1,7 +1,6 @@
 import { type ReadAgainCounts, type ReadAgainPreview, useConfirmReadAgain } from "@/api/finance";
-import { MotionButton } from "@/design";
+import { MotionButton, Notice } from "@/design";
 import { errorMessage } from "../failureMessage";
-import { FinanceNotice } from "../FinanceNotice";
 import { appliedLine } from "./readAgainCopy";
 import { ReadAgainChanges } from "./ReadAgainChanges";
 
@@ -27,7 +26,7 @@ export function ReadAgainPanel({ preview, applied, onApplied, onClose }: ReadAga
       ) : (
         <ReadAgainChanges preview={preview} />
       )}
-      {apply.isError ? <FinanceNotice kind="failure" inline title={errorMessage(apply.error)} /> : null}
+      {apply.isError ? <Notice kind="failure" inline title={errorMessage(apply.error)} /> : null}
       <div className="flex flex-wrap gap-2">
         {applied ? null : (
           <MotionButton

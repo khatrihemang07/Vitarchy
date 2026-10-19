@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
@@ -7,13 +7,16 @@ import { passwordsKey } from "./keys";
 
 const log = createLogger("finance");
 
+/** How to load the saved Statement passwords (labels only); shared by the hook and by route loaders. */
+export const passwordsOptions = queryOptions({
+  queryKey: passwordsKey,
+  queryFn: () => callApi(() => api.GET("/api/finance/statement-passwords")),
+  retry: false,
+});
+
 /** The saved Statement passwords (labels only). */
 export function usePasswords() {
-  return useQuery({
-    queryKey: passwordsKey,
-    queryFn: () => callApi(() => api.GET("/api/finance/statement-passwords")),
-    retry: false,
-  });
+  return useQuery(passwordsOptions);
 }
 
 /** Saves a Statement password. The secret is sent once and never logged. */

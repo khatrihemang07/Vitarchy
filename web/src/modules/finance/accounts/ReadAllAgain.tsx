@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { type ReadAgainItem, type ReadAllAgainCounts, useReadAllAgain } from "@/api/finance";
-import { MotionButton } from "@/design";
+import { MotionButton, Notice } from "@/design";
 import { errorMessage } from "../failureMessage";
-import { FinanceNotice } from "../FinanceNotice";
 import { ReadAllAgainPanel } from "./ReadAllAgainPanel";
 
 /** The Read all again button of the Statements card and, once clicked, its combined preview. */
@@ -25,7 +24,7 @@ export function ReadAllAgain() {
           {readAll.isPending ? "Reading all…" : "Read all again"}
         </MotionButton>
       </div>
-      {readAll.isError ? <FinanceNotice kind="failure" inline title={errorMessage(readAll.error)} /> : null}
+      {readAll.isError ? <Notice kind="failure" inline title={errorMessage(readAll.error)} /> : null}
       {items ? <ReadAllAgainPanel items={items} applied={applied} onApplied={setApplied} onClose={() => { setItems(null); }} /> : null}
     </div>
   );

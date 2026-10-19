@@ -42,8 +42,8 @@ describe("StatementCard", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /Show 3 Transactions/ }));
 
-    expect(screen.getByText("Stored row").closest("tr")).toHaveAttribute("data-already-stored", "true");
-    expect(screen.getByText("First row").closest("tr")).toHaveAttribute("data-already-stored", "false");
+    expect(screen.getByText("Stored row").closest("li")).toHaveAttribute("data-already-stored", "true");
+    expect(screen.getByText("First row").closest("li")).toHaveAttribute("data-already-stored", "false");
     expect(screen.getByText("+₹1,234.56")).toHaveAttribute("data-direction", "credit");
   });
 

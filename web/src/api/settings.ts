@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { callApi } from "./callApi";
 import { CORE_CHOICES, coreWithDefaults, DEFAULT_CORE } from "./coreDefaults";
 import { api } from "./client";
@@ -15,9 +15,12 @@ export async function fetchSettings(): Promise<AllSettings> {
   return callApi(() => api.GET("/api/settings"));
 }
 
+/** How to load all settings; shared by the hook and by route loaders that warm the cache. */
+export const settingsOptions = queryOptions({ queryKey: settingsKey, queryFn: fetchSettings, retry: false });
+
 /** Query for all settings; failures surface as `isError`, never a throw. */
 export function useSettings() {
-  return useQuery({ queryKey: settingsKey, queryFn: fetchSettings, retry: false });
+  return useQuery(settingsOptions);
 }
 
 /**

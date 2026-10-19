@@ -1,8 +1,7 @@
 import { type SyntheticEvent, useState } from "react";
 import { useAddPassword } from "@/api/finance";
-import { Input, Label, MotionButton } from "@/design";
+import { Input, Label, MotionButton, Notice } from "@/design";
 import { errorMessage } from "../failureMessage";
-import { FinanceNotice } from "../FinanceNotice";
 import { PASSWORD_LABEL_FIELD_ID } from "./passwordsAnchor";
 
 /** Saves a Statement password under a label; the secret is cleared from the field as soon as it is sent. */
@@ -45,7 +44,7 @@ export function PasswordForm() {
           />
         </div>
       </div>
-      {add.isError ? <FinanceNotice kind="failure" inline title={errorMessage(add.error)} /> : null}
+      {add.isError ? <Notice kind="failure" inline title={errorMessage(add.error)} /> : null}
       <MotionButton type="submit" className="self-start" disabled={add.isPending || label.trim() === "" || secret.trim() === ""}>
         {add.isPending ? "Saving…" : "Save password"}
       </MotionButton>

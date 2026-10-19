@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
@@ -7,13 +7,16 @@ import { accountsKey } from "./keys";
 
 const log = createLogger("finance");
 
+/** How to load every Account with its figures; shared by the hook and by route loaders. */
+export const accountsOptions = queryOptions({
+  queryKey: accountsKey,
+  queryFn: () => callApi(() => api.GET("/api/finance/accounts")),
+  retry: false,
+});
+
 /** Every Account with its figures. */
 export function useAccounts() {
-  return useQuery({
-    queryKey: accountsKey,
-    queryFn: () => callApi(() => api.GET("/api/finance/accounts")),
-    retry: false,
-  });
+  return useQuery(accountsOptions);
 }
 
 /** Renames an Account. */

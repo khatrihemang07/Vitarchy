@@ -1,6 +1,5 @@
 import type { Report } from "@/api/time";
-import { FadeUp, MotionButton } from "@/design";
-import { TimeNotice } from "../TimeNotice";
+import { ClearFiltersButton, FadeUp, Notice } from "@/design";
 import { DayEntries } from "./DayEntries";
 import type { Clock } from "./entryTimes";
 import { OverviewStrip } from "./OverviewStrip";
@@ -25,19 +24,15 @@ export function ReportBody({ report, mode, compare, clock, filtered, onClear, fi
   if (report.groups.length === 0) {
     return (
       <FadeUp index={firstStagger}>
-        <TimeNotice
+        <Notice
           kind="empty"
           title={filtered ? "No Time Entries match" : "No Time Entries in this Period"}
           action={
-            filtered ? (
-              <MotionButton variant="outline" onClick={onClear}>
-                Clear filters
-              </MotionButton>
-            ) : undefined
+            filtered ? <ClearFiltersButton onClear={onClear} /> : undefined
           }
         >
           {filtered ? "Try other filters, or another Period." : "Try another Period, or Sync from the Time page."}
-        </TimeNotice>
+        </Notice>
       </FadeUp>
     );
   }

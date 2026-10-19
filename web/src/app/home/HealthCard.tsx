@@ -1,7 +1,7 @@
 import { Activity, DatabaseZap, ServerOff } from "lucide-react";
 import type { ComponentType } from "react";
 import { useHealth, type HealthState } from "@/api/health";
-import { Card, cn } from "@/design";
+import { Card, cn, IconChip } from "@/design";
 
 type View = {
   state: "checking" | "ok" | "degraded" | "offline";
@@ -54,16 +54,13 @@ const checking: View = {
 export function HealthCard() {
   const { data, isPending } = useHealth();
   const view = isPending || !data ? checking : views[data.kind];
-  const Icon = view.icon;
   return (
     <Card
       role="status"
       data-state={view.state}
       className={cn("flex-row items-center gap-4 p-5", view.surface)}
     >
-      <span className={cn("grid size-11 shrink-0 place-items-center rounded-full", view.tone)}>
-        <Icon className="size-5" />
-      </span>
+      <IconChip icon={view.icon} tone={view.tone} />
       <div className="min-w-0">
         <p className="text-xs tracking-widest text-muted-foreground uppercase">System health</p>
         <p className="font-display font-semibold">{view.title}</p>

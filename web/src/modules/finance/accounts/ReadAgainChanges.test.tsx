@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import type { ReadAgainPreview } from "@/api/finance";
-import { preview, transaction } from "../test-utils";
+import { preview, renderWithClient, transaction } from "../test-utils";
 import { ReadAgainChanges } from "./ReadAgainChanges";
 
 function readAgain(): ReadAgainPreview {
@@ -26,9 +26,9 @@ function readAgain(): ReadAgainPreview {
 
 describe("ReadAgainChanges", () => {
   it("lists the stored rows that would gain a Printing and tags only those adding detail", () => {
-    render(<ReadAgainChanges preview={readAgain()} />);
+    renderWithClient(<ReadAgainChanges preview={readAgain()} />);
 
-    expect(screen.getByText("Richer row").closest("tr")).toHaveTextContent("Gains detail");
-    expect(screen.getByText("Same detail row").closest("tr")).not.toHaveTextContent("Gains detail");
+    expect(screen.getByText("Richer row").closest("li")).toHaveTextContent("Gains detail");
+    expect(screen.getByText("Same detail row").closest("li")).not.toHaveTextContent("Gains detail");
   });
 });

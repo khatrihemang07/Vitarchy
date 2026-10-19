@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createLogger } from "@/lib/log";
 import { callApi } from "../callApi";
 import { api } from "../client";
@@ -8,22 +8,28 @@ import type { StatementPreview } from "./types";
 
 const log = createLogger("finance");
 
+/** How to load the Statements waiting to be confirmed; shared by the hook and by route loaders. */
+export const unconfirmedStatementsOptions = queryOptions({
+  queryKey: statementsKey("unconfirmed"),
+  queryFn: () => callApi(() => api.GET("/api/finance/statements", { params: { query: { status: "unconfirmed" } } })),
+  retry: false,
+});
+
+/** How to load the confirmed Statements; shared by the hook and by route loaders. */
+export const confirmedStatementsOptions = queryOptions({
+  queryKey: statementsKey("confirmed"),
+  queryFn: () => callApi(() => api.GET("/api/finance/statements", { params: { query: { status: "confirmed" } } })),
+  retry: false,
+});
+
 /** Statements waiting to be confirmed, newest upload first. */
 export function useUnconfirmedStatements() {
-  return useQuery({
-    queryKey: statementsKey("unconfirmed"),
-    queryFn: () => callApi(() => api.GET("/api/finance/statements", { params: { query: { status: "unconfirmed" } } })),
-    retry: false,
-  });
+  return useQuery(unconfirmedStatementsOptions);
 }
 
 /** Confirmed Statements, newest upload first. */
 export function useConfirmedStatements() {
-  return useQuery({
-    queryKey: statementsKey("confirmed"),
-    queryFn: () => callApi(() => api.GET("/api/finance/statements", { params: { query: { status: "confirmed" } } })),
-    retry: false,
-  });
+  return useQuery(confirmedStatementsOptions);
 }
 
 /**
@@ -34,6 +40,8 @@ export function useStatementPreview(id: number, enabled: boolean, initial?: Stat
   return useQuery({
     queryKey: statementPreviewKey(id),
     initialData: initial,
+    // Always refetched when shown: a seeded upload preview must pick up Account matches made since it was read.
+    staleTime: 0,
     queryFn: () => callApi(() => api.GET("/api/finance/statements/{id}", { params: { path: { id } } })),
     enabled,
     retry: false,

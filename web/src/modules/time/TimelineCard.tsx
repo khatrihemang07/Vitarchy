@@ -1,11 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useRebuildTimeline, useTimeStatus, type TimelineStatus } from "@/api/time";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, MotionButton } from "@/design";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, MotionButton, Notice } from "@/design";
 
 import { errorMessage } from "./failureMessage";
 import { formatCount, formatDay, formatSpan } from "./format";
 import { timelineFigures } from "./timelineFigures";
-import { TimeNotice } from "./TimeNotice";
 
 function withShare(secs: number, share: number | null): string {
   return share === null ? formatSpan(secs) : `${formatSpan(secs)} (${String(share)}% of covered time)`;
@@ -59,7 +58,7 @@ export function TimelineCard() {
             </p>
           </>
         )}
-        {rebuild.isError ? <TimeNotice inline kind="failure" title={errorMessage(rebuild.error)} /> : null}
+        {rebuild.isError ? <Notice inline kind="failure" title={errorMessage(rebuild.error)} /> : null}
         {rebuild.isSuccess ? (
           <p role="status" className="text-sm">
             Rebuilt: {formatCount(rebuild.data.segment_count)} Segments from {formatCount(rebuild.data.activity_count)} Activity
